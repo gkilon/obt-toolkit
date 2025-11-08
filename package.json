@@ -1,0 +1,22 @@
+
+{
+  "name": "obt-one-big-thing-tool",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "esbuild index.tsx --bundle --outfile=index.js --jsx=automatic --servedir=.",
+    "build": "esbuild index.tsx --bundle --outfile=dist/index.js --jsx=automatic && cp index.html dist/index.html && cp index.css dist/index.css"
+  },
+  "dependencies": {
+    "@google/genai": "^1.29.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.2"
+  }
+}
