@@ -95,4 +95,41 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
         const numericColumnId = Number(columnId);
         const prompt = getPromptForColumn(numericColumnId, mapData);
 
-        if (!prompt
+        // --- THIS IS THE FIX ---
+        // The error happened because this 'if' block was likely
+        // incomplete, missing the closing parenthesis or curly braces.
+        if (!prompt) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: "Invalid column ID provided." }),
+                headers: { 'Content-Type': 'application/json' },
+            };
+        }
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+
+        const text = response.text;
+        
+        return {
+            statusCode: 200,
+            body: text,
+            headers: { 
+                "Content-Type": "text/plain; charset=utf-8",
+            },
+        };
+
+    } catch (error) {
+        console.error("Error in get-insights function:", error);
+        const errorMessage = error instanceof Error ? error.message : "An unknown server error occurred.";
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: "Failed to get insights from AI.", details: errorMessage }),
+            headers: { 'Content-Type': 'application/json' },
+        };
+    }
+};
+
+export { handler };
