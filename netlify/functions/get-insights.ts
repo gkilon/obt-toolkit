@@ -34,11 +34,11 @@ const getPromptForColumn = (columnId: ColumnId, mapData: MapData): string => {
     case ColumnId.Goal:
       return `${baseInstruction}\n\n**משימה:** נסח 2-3 שאלות מאתגרות לחידוד המטרה הבאה:\n> "${goal}"`;
     case ColumnId.Behaviors:
-      return `${baseInstruction}\n\n**משימה:** נסח 2-3 שאלות חוקרות על הפער בין המטרה להתנהגות.\n**מטרה:**\n> "${goal}"\n**התנהגויות מנוגדות:**\n> "${behaviors}"`;
+      return `${baseInstruction}\n\n**משימה:** נסח 2-3 שאלות שיעזרו למקד ולהפוך את ההתנהגויות הבאות לספציפיות וברורות יותר. אל תקשר למטרה, התמקד רק בהתנהגויות עצמן.\n**התנהגויות:**\n> "${behaviors}"`;
     case ColumnId.HiddenCommitments:
-      return `${baseInstruction}\n\n**משימה:** נתח את הקשר בין הדאגות להתחייבות, הצע ניסוח חד להתחייבות, וסיים בשאלה נוקבת אחת על מחיר ההתחייבות.\n**דאגות:**\n> "${worries}"\n**התחייבות נסתרת:**\n> "${commitments}"`;
+      return `${baseInstruction}\n\n**משימה:** בהתבסס על הדאגות, נסח 2-3 שאלות שיעזרו לחדד את ניסוח ההתחייבות הנסתרת. ודא שההתחייבות מנוסחת באופן חיובי (למה אני כן מחויב/ת) ולא כשלילה. התמקד רק בחיבור בין הדאגות להתחייבות.\n**דאגות:**\n> "${worries}"\n**התחייבות נסתרת:**\n> "${commitments}"`;
     case ColumnId.BigAssumptions:
-      return `${baseInstruction}\n\n**משימה:** נסח שתי הנחות יסוד אפשריות שנובעות מההתחייבות הנסתרת.\n**התחייבות נסתרת:**\n> "${commitments}"`;
+      return `${baseInstruction}\n\n**משימה:** נסח 2-3 שאלות מאתגרות על הנחת היסוד הבאה, כדי לבחון את תוקפה ואת האופן שבו היא נתפסת כאמת מוחלטת. אל תקשר לעמודות קודמות, התמקד רק בהנחה עצמה.\n**הנחת יסוד:**\n> "${bigAssumptions}"`;
     case ColumnId.Summary:
       return `אתה יועץ מומחה למודל OBT (One Big Thing), המבוסס על עקרונות 'חסינות לשינוי', וסיימת לנתח את ארבעת העמודים של המשתמש. המשימה שלך היא לספק סיכום מאחד וחזק.
 **הנחיות:**
@@ -95,38 +95,4 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
         const numericColumnId = Number(columnId);
         const prompt = getPromptForColumn(numericColumnId, mapData);
 
-        if (!prompt) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: "Invalid column ID provided." }),
-                headers: { 'Content-Type': 'application/json' },
-            };
-        }
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-
-        const text = response.text;
-        
-        return {
-            statusCode: 200,
-            body: text,
-            headers: { 
-                "Content-Type": "text/plain; charset=utf-8",
-            },
-        };
-
-    } catch (error) {
-        console.error("Error in get-insights function:", error);
-        const errorMessage = error instanceof Error ? error.message : "An unknown server error occurred.";
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: "Failed to get insights from AI.", details: errorMessage }),
-            headers: { 'Content-Type': 'application/json' },
-        };
-    }
-};
-
-export { handler };
+        if (!prompt
