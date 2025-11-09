@@ -165,6 +165,15 @@ const ImmunityMap: React.FC = () => {
     }
   }, [mapData]);
 
+  const handleResetInsights = () => {
+    if (window.confirm('האם אתה בטוח שברצונך לאפס את כל תובנות ה-AI? לא ניתן לשחזר פעולה זו.')) {
+      setInsightsData({});
+      setSummaryContent('');
+    }
+  };
+
+  const hasInsights = Object.values(insightsData).some(insight => insight && insight.trim() !== '');
+
 
   const columnsConfig = [
     { id: ColumnId.Goal, title: "1. מטרת השיפור", description: "מהי המטרה החשובה ביותר שאת/ה מחויב/ת להשיג, ושתהווה שינוי משמעותי עבורך?", dependsOn: [] },
@@ -191,6 +200,20 @@ const ImmunityMap: React.FC = () => {
 
   return (
     <>
+      <div className="flex justify-end mb-6">
+        {hasInsights && (
+          <button
+            onClick={handleResetInsights}
+            className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-red-600 transition-colors bg-slate-200/60 hover:bg-red-100 px-4 py-2 rounded-lg"
+            title="איפוס כל התובנות והניתוחים שנוצרו על ידי AI"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+            </svg>
+            איפוס תובנות AI
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 items-start">
         {columnsConfig.map(col => {
           const isButtonDisabled = isCurrentColumnEmpty(col.id) || col.dependsOn.some(isCurrentColumnEmpty);
