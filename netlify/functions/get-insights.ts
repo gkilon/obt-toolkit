@@ -18,7 +18,7 @@ type MapData = {
   [key: string]: string | string[] | Column3Data;
 };
 
-const getPromptForColumn = (columnId: ColumnId, mapData: MapData): string => {
+const getPromptAndConfigForColumn = (columnId: ColumnId, mapData: MapData): { contents: string; config: { systemInstruction: string } } | null => {
   const goal = (mapData[String(ColumnId.Goal)] as string) || "לא צוין";
   const behaviorsList = (mapData[String(ColumnId.Behaviors)] as string[]) || [];
   const behaviors = behaviorsList.length > 0 ? behaviorsList.map(b => `- ${b}`).join('\n') : "לא צוין";
@@ -26,37 +26,46 @@ const getPromptForColumn = (columnId: ColumnId, mapData: MapData): string => {
   const worries = hiddenCommitmentsData.worries || 'לא צוין';
   const commitments = hiddenCommitmentsData.commitments || 'לא צוין';
   const bigAssumptions = (mapData[String(ColumnId.BigAssumptions)] as string) || "לא צוין";
-
-
-  // Base instruction to set the context and demand speed, followed by a clear task.
-  const baseInstruction = "אתה יועץ מומחה למודל OBT (One Big Thing), המבוסס על עקרונות 'חסינות לשינוי' של קיגן ולהי. תן תגובה קצרה וממוקדת בפורמט Markdown. התחל לספק תשובה מיידית.";
+  
+  let systemInstruction = "אתה יועץ מומחה למודל OBT (One Big Thing), המבוסס על עקרונות 'חסינות לשינוי' של קיגן ולהי. תן תגובה קצרה וממוקדת בפורמט Markdown.";
+  let contents = "";
 
   switch (columnId) {
     case ColumnId.Goal:
-      return `${baseInstruction}\n\n**משימה:** נסח 2-3 שאלות מאתגרות לחידוד המטרה הבאה:\n> "${goal}"`;
+      systemInstruction += "\n\n**משימה:** נסח 2-3 שאלות מאתגרות לחידוד המטרה שתינתן לך.";
+      contents = `**מטרה:**\n> "${goal}"`;
+      break;
     case ColumnId.Behaviors:
-      return `${baseInstruction}\n\n**משימה:** נסח 2-3 שאלות שיעזרו למקד ולהפוך את ההתנהגויות הבאות לספציפיות וברורות יותר. אל תקשר למטרה, התמקד רק בהתנהגויות עצמן.\n**התנהגויות:**\n${behaviors}`;
+      systemInstruction += "\n\n**משימה:** נסח 2-3 שאלות שיעזרו למקד ולהפוך את ההתנהגויות הנתונות לספציפיות וברורות יותר. אל תקשר למטרה, התמקד רק בהתנהגויות עצמן.";
+      contents = `**התנהגויות:**\n${behaviors}`;
+      break;
     case ColumnId.HiddenCommitments:
-      return `${baseInstruction}\n\n**משימה:** בהתבסס על הדאגות, נסח 2-3 שאלות שיעזרו לחדד את ניסוח ההתחייבות הנסתרת. ודא שההתחייבות מנוסחת באופן חיובי (למה אני כן מחויב/ת) ולא כשלילה. התמקד רק בחיבור בין הדאגות להתחייבות.\n**דאגות:**\n> "${worries}"\n**התחייבות נסתרת:**\n> "${commitments}"`;
+      systemInstruction += "\n\n**משימה:** בהתבסס על הדאגות, נסח 2-3 שאלות שיעזרו לחדד את ניסוח ההתחייבות הנסתרת. ודא שההתחייבות מנוסחת באופן חיובי (למה אני כן מחויב/ת) ולא כשלילה. התמקד רק בחיבור בין הדאגות להתחייבות.";
+      contents = `**דאגות:**\n> "${worries}"\n\n**התחייבות נסתרת:**\n> "${commitments}"`;
+      break;
     case ColumnId.BigAssumptions:
-      return `${baseInstruction}\n\n**משימה:** נסח 2-3 שאלות מאתגרות על הנחת היסוד הבאה, כדי לבחון את תוקפה ואת האופן שבו היא נתפסת כאמת מוחלטת. אל תקשר לעמודות קודמות, התמקד רק בהנחה עצמה.\n**הנחת יסוד:**\n> "${bigAssumptions}"`;
+      systemInstruction += "\n\n**משימה:** נסח 2-3 שאלות מאתגרות על הנחת היסוד הבאה, כדי לבחון את תוקפה ואת האופן שבו היא נתפסת כאמת מוחלטת. אל תקשר לעמודות קודמות, התמקד רק בהנחה עצמה.";
+      contents = `**הנחת יסוד:**\n> "${bigAssumptions}"`;
+      break;
     case ColumnId.Summary:
-      return `אתה יועץ מומחה למודל OBT (One Big Thing), המבוסס על עקרונות 'חסינות לשינוי', וסיימת לנתח את ארבעת העמודים של המשתמש. המשימה שלך היא לספק סיכום מאחד וחזק.
+      systemInstruction = `אתה יועץ מומחה למודל OBT (One Big Thing), המבוסס על עקרונות 'חסינות לשינוי'. המשימה שלך היא לספק סיכום מאחד וחזק של נתוני המשתמש.
 **הנחיות:**
 1. פתח בפסקה קצרה שמסכמת את הקונפליקט המרכזי בין המטרה המוצהרת (טור 1) לבין ההתחייבות הנסתרת (טור 3).
 2. הסבר כיצד ההתנהגויות (טור 2) הן למעשה "מערכת חיסון" מושלמת שמגינה על ההתחייבות הנסתרת ומופעלת על ידי הנחת היסוד הגדולה (טור 4).
 3. סיים בשאלת מפתח אחת, נוקבת ומעוררת מחשבה, שמאתגרת את הנחת היסוד הגדולה ומציעה דרך להתחיל לערער אותה.
 
-התגובה חייבת להיות בפורמט Markdown, קצרה, וממוקדת. התחל לספק תשובה מיידית.
-
-**נתונים:**
+התגובה חייבת להיות בפורמט Markdown, קצרה, וממוקדת.`;
+      contents = `**נתונים:**
 - **מטרה (1):** "${goal}"
 - **התנהגויות (2):**\n${behaviors}
 - **התחייבות נסתרת (3):** "${commitments}"
 - **הנחת יסוד (4):** "${bigAssumptions}"`;
+      break;
     default:
-      return "";
+      return null;
   }
+
+  return { contents, config: { systemInstruction } };
 };
 
 
@@ -94,19 +103,22 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
         const ai = new GoogleGenAI({ apiKey });
         
         const numericColumnId = Number(columnId);
-        const prompt = getPromptForColumn(numericColumnId, mapData);
+        const promptAndConfig = getPromptAndConfigForColumn(numericColumnId, mapData);
 
-        if (!prompt) {
+        if (!promptAndConfig) {
             return {
                 statusCode: 400,
                 body: JSON.stringify({ error: "Invalid column ID provided." }),
                 headers: { 'Content-Type': 'application/json' },
             };
         }
+        
+        const { contents, config } = promptAndConfig;
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: prompt,
+            contents,
+            config,
         });
 
         const text = response.text;
