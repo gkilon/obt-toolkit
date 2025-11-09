@@ -6,7 +6,7 @@ interface ColumnProps {
   id: ColumnId;
   title: string;
   description: string;
-  value: string | Column3Data;
+  value: string | string[] | Column3Data;
   onValueChange: (value: any) => void;
   onGetInsights: () => void;
   insights?: string;
@@ -40,6 +40,8 @@ export const ResizableTextarea: React.FC<{
           textarea.style.height = `${textarea.scrollHeight}px`;
           if (autoFocus) {
             textarea.focus();
+            textarea.selectionStart = textarea.value.length;
+            textarea.selectionEnd = textarea.value.length;
           }
         }
     }, [value, autoFocus]);
@@ -88,26 +90,25 @@ const EditControls: React.FC<{
 
 
 const Column: React.FC<ColumnProps> = ({ id, title, description, value, onValueChange, onGetInsights, insights, isLoading, isButtonDisabled }) => {
-  // State for regular columns (1, 2, 4)
   const [isEditing, setIsEditing] = useState(false);
-  const [tempValue, setTempValue] = useState(value as string);
+  const [tempValue, setTempValue] = useState(value);
 
   // State for Column 3 parts
   const [isEditingWorries, setIsEditingWorries] = useState(false);
   const [isEditingCommitments, setIsEditingCommitments] = useState(false);
   const [tempWorries, setTempWorries] = useState('');
   const [tempCommitments, setTempCommitments] = useState('');
-
-  useEffect(() => {
+  
+   useEffect(() => {
     if (id === ColumnId.HiddenCommitments) {
         const col3Value = value as Column3Data;
         if (!isEditingWorries) setTempWorries(col3Value.worries || '');
         if (!isEditingCommitments) setTempCommitments(col3Value.commitments || '');
     } else {
-        if (!isEditing) setTempValue(value as string || '');
+        if (!isEditing) setTempValue(value);
     }
   }, [value, isEditing, isEditingWorries, isEditingCommitments, id]);
-  
+
   const renderTextView = (text: string | undefined) => (
     <div className="prose prose-sm max-w-none text-slate-800 whitespace-pre-wrap min-h-[120px] py-3 px-3 border border-transparent rounded-lg bg-slate-100/70">
       {text && text.trim() ? (
@@ -184,11 +185,59 @@ const Column: React.FC<ColumnProps> = ({ id, title, description, value, onValueC
       );
     }
 
-    // Render logic for regular columns
+    if (id === ColumnId.Behaviors) {
+        if(isEditing) {
+            const behaviors = tempValue as string[];
+            return (
+                <div>
+                    {behaviors.map((behavior, index) => (
+                        <div key={index} className="flex items-start gap-2 mb-2">
+                            <ResizableTextarea
+                                value={behavior}
+                                onChange={e => {
+                                    const newBehaviors = [...behaviors];
+                                    newBehaviors[index] = e.target.value;
+                                    setTempValue(newBehaviors);
+                                }}
+                                placeholder={`התנהגות #${index + 1}`}
+                                className="bg-slate-50 min-h-[50px] !p-2"
+                                autoFocus={index === behaviors.length - 1 && behavior === ''}
+                            />
+                            <button 
+                                onClick={() => {
+                                    setTempValue(behaviors.filter((_, i) => i !== index));
+                                }} 
+                                className="text-slate-400 hover:text-red-500 p-1 mt-1.5 rounded-full hover:bg-red-100 transition-colors flex-shrink-0"
+                                aria-label={`הסר התנהגות ${index + 1}`}
+                            >
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path></svg>
+                            </button>
+                        </div>
+                    ))}
+                    <button onClick={() => { setTempValue([...(tempValue as string[]), '']); }} className="text-sm font-semibold text-blue-600 hover:bg-blue-100 rounded-md p-2 w-full text-center mt-2 transition-colors">
+                        + הוסף התנהגות
+                    </button>
+                </div>
+            );
+        } else {
+            const behaviors = value as string[];
+            if (!behaviors || behaviors.length === 0) {
+                return renderTextView(undefined);
+            }
+            const markdownText = behaviors.map(b => `- ${b}`).join('\n');
+            return (
+                 <div className="prose prose-sm max-w-none text-slate-800 whitespace-pre-wrap min-h-[120px] py-3 px-3 border border-transparent rounded-lg bg-slate-100/70">
+                    <ReactMarkdown>{markdownText}</ReactMarkdown>
+                </div>
+            );
+        }
+    }
+
+    // Render logic for regular columns (Goal, BigAssumptions)
     if (isEditing) {
         return (
           <ResizableTextarea
-            value={tempValue}
+            value={tempValue as string}
             onChange={(e) => setTempValue(e.target.value)}
             placeholder="התחל לכתוב כאן..."
             autoFocus
@@ -200,12 +249,16 @@ const Column: React.FC<ColumnProps> = ({ id, title, description, value, onValueC
   };
 
   const handleSave = () => {
-    onValueChange(tempValue);
+    if (id === ColumnId.Behaviors) {
+        onValueChange((tempValue as string[]).filter(b => b.trim() !== ''));
+    } else {
+        onValueChange(tempValue);
+    }
     setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setTempValue(value as string);
+    setTempValue(value);
     setIsEditing(false);
   };
 
@@ -246,13 +299,17 @@ const Column: React.FC<ColumnProps> = ({ id, title, description, value, onValueC
           )}
           קבל תובנות AI
         </button>
-        <div className="bg-blue-50 rounded-lg p-4 flex-grow min-h-[150px] border border-blue-200/80 relative">
-           <div className="absolute top-3 right-3 bg-white p-1.5 rounded-full shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v1.237a5.503 5.503 0 014.5 4.513c0 2.251-1.333 4.14-3.25 5.035V16.25a.75.75 0 01-1.5 0v-2.715C8.583 12.64 7.25 10.751 7.25 8.5A5.503 5.503 0 0111.75 4.027V2.75A.75.75 0 0110 2zM8.75 17.5a.75.75 0 00-1.5 0v.135A2.75 2.75 0 0010 20a2.75 2.75 0 002.75-2.365V17.5a.75.75 0 00-1.5 0v.135a1.25 1.25 0 01-2.5 0V17.5z" clipRule="evenodd" />
-                </svg>
+        <div className="bg-blue-50 rounded-lg p-4 flex-grow min-h-[150px] border border-blue-200/80">
+           <div className="flex justify-between items-center mb-2">
+                <h4 className="font-semibold text-blue-900 flex items-center gap-2">
+                    <div className="bg-white p-1.5 rounded-full shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v1.237a5.503 5.503 0 014.5 4.513c0 2.251-1.333 4.14-3.25 5.035V16.25a.75.75 0 01-1.5 0v-2.715C8.583 12.64 7.25 10.751 7.25 8.5A5.503 5.503 0 0111.75 4.027V2.75A.75.75 0 0110 2zM8.75 17.5a.75.75 0 00-1.5 0v.135A2.75 2.75 0 0010 20a2.75 2.75 0 002.75-2.365V17.5a.75.75 0 00-1.5 0v.135a1.25 1.25 0 01-2.5 0V17.5z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                    תובנות AI
+                </h4>
            </div>
-          <h4 className="font-semibold text-blue-900 mb-2">תובנות AI</h4>
           {isLoading ? (
             <LoadingSpinner />
           ) : insights ? (

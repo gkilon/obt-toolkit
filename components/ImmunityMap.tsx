@@ -22,12 +22,28 @@ const getStoredData = <T,>(key: string, defaultValue: T): T => {
 
 
 const ImmunityMap: React.FC = () => {
-  const [mapData, setMapData] = useState<MapData>(() => getStoredData<MapData>(MAP_DATA_STORAGE_KEY, {
-    [ColumnId.Goal]: '',
-    [ColumnId.Behaviors]: '',
-    [ColumnId.HiddenCommitments]: { worries: '', commitments: '' },
-    [ColumnId.BigAssumptions]: '',
-  }));
+    const [mapData, setMapData] = useState<MapData>(() => {
+    const initialData: MapData = {
+      [ColumnId.Goal]: '',
+      [ColumnId.Behaviors]: [],
+      [ColumnId.HiddenCommitments]: { worries: '', commitments: '' },
+      [ColumnId.BigAssumptions]: '',
+    };
+
+    const stored = getStoredData<MapData>(MAP_DATA_STORAGE_KEY, initialData);
+
+    // Migration logic for ColumnId.Behaviors from string to string[]
+    if (typeof stored[ColumnId.Behaviors] === 'string') {
+      const behaviorsString = stored[ColumnId.Behaviors] as unknown as string;
+      stored[ColumnId.Behaviors] = behaviorsString.split('\n').filter(line => line.trim() !== '');
+    }
+    
+    if (!Array.isArray(stored[ColumnId.Behaviors])) {
+        stored[ColumnId.Behaviors] = [];
+    }
+
+    return stored;
+  });
 
   const [insightsData, setInsightsData] = useState<InsightsData>(() => getStoredData<InsightsData>(INSIGHTS_DATA_STORAGE_KEY, {}));
   
@@ -56,7 +72,7 @@ const ImmunityMap: React.FC = () => {
   }, [insightsData]);
   
 
-  const handleValueChange = (columnId: ColumnId, value: string | Column3Data) => {
+  const handleValueChange = (columnId: ColumnId, value: string | string[] | Column3Data) => {
     setMapData(prev => ({ ...prev, [columnId]: value }));
   };
 
@@ -157,21 +173,16 @@ const ImmunityMap: React.FC = () => {
     { id: ColumnId.BigAssumptions, title: "4. הנחות יסוד גדולות", description: "בהינתן ההתחייבויות הנסתרות שלך, איזו הנחה עמוקה את/ה מחזיק/ה כאמת מוחלטת על עצמך או על העולם?", dependsOn: [ColumnId.Goal, ColumnId.Behaviors, ColumnId.HiddenCommitments] },
   ];
 
-  const isDependencyEmpty = (depId: ColumnId): boolean => {
-    if (depId === ColumnId.HiddenCommitments) {
-        const { worries, commitments } = mapData[depId];
-        return !worries.trim() || !commitments.trim();
-    }
-    const value = mapData[depId as Exclude<ColumnId, ColumnId.HiddenCommitments | ColumnId.Summary>];
-    return !value.trim();
-  };
-
   const isCurrentColumnEmpty = (colId: ColumnId): boolean => {
-      if (colId === ColumnId.HiddenCommitments) {
-        const { worries, commitments } = mapData[colId];
-        return !worries.trim() || !commitments.trim();
+    if (colId === ColumnId.HiddenCommitments) {
+      const { worries, commitments } = mapData[colId];
+      return !worries.trim() || !commitments.trim();
     }
-    const value = mapData[colId as Exclude<ColumnId, ColumnId.HiddenCommitments | ColumnId.Summary>];
+    if (colId === ColumnId.Behaviors) {
+        const behaviors = mapData[colId];
+        return behaviors.length === 0 || behaviors.every(b => !b.trim());
+    }
+    const value = mapData[colId as Exclude<ColumnId, ColumnId.Behaviors | ColumnId.HiddenCommitments | ColumnId.Summary>];
     return !value.trim();
   };
 
@@ -182,7 +193,7 @@ const ImmunityMap: React.FC = () => {
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 items-start">
         {columnsConfig.map(col => {
-          const isButtonDisabled = isCurrentColumnEmpty(col.id) || col.dependsOn.some(isDependencyEmpty);
+          const isButtonDisabled = isCurrentColumnEmpty(col.id) || col.dependsOn.some(isCurrentColumnEmpty);
           return (
             <Column
               key={col.id}

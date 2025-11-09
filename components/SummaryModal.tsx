@@ -79,7 +79,11 @@ const SummaryModal: React.FC<SummaryModalProps> = ({ isOpen, onClose, mapData, o
   };
   
   const handleSave = () => {
-    onMapUpdate(tempData);
+    const cleanedData = {
+        ...tempData,
+        [ColumnId.Behaviors]: tempData[ColumnId.Behaviors].filter(b => b.trim() !== '')
+    };
+    onMapUpdate(cleanedData);
     setIsEditing(false);
   };
   
@@ -135,20 +139,47 @@ const SummaryModal: React.FC<SummaryModalProps> = ({ isOpen, onClose, mapData, o
                             value={tempData[ColumnId.Goal]}
                             onChange={e => setTempData(p => ({...p, [ColumnId.Goal]: e.target.value}))}
                             placeholder="מהי המטרה החשובה ביותר?"
-                            className="bg-slate-50"
+                            className="bg-slate-50 min-h-[50px] !py-2 !px-3"
                         />
                     ) : renderTextView(mapData[ColumnId.Goal])}
                 </Section>
 
                 <Section title="2. מה אני עושה/לא עושה">
                     {isEditing ? (
-                        <ResizableTextarea
-                            value={tempData[ColumnId.Behaviors]}
-                            onChange={e => setTempData(p => ({...p, [ColumnId.Behaviors]: e.target.value}))}
-                            placeholder="אילו התנהגויות מונעות ממך להשיג את המטרה?"
-                            className="bg-slate-50"
-                        />
-                    ) : renderTextView(mapData[ColumnId.Behaviors])}
+                        <div className="space-y-2">
+                             {tempData[ColumnId.Behaviors].map((behavior, index) => (
+                                <div key={index} className="flex items-start gap-2">
+                                    <ResizableTextarea
+                                        value={behavior}
+                                        onChange={e => {
+                                            const newBehaviors = [...tempData[ColumnId.Behaviors]];
+                                            newBehaviors[index] = e.target.value;
+                                            setTempData(p => ({...p, [ColumnId.Behaviors]: newBehaviors}));
+                                        }}
+                                        placeholder={`התנהגות #${index + 1}`}
+                                        className="bg-slate-50 min-h-[50px] !py-2 !px-3"
+                                    />
+                                    <button onClick={() => {
+                                        const newBehaviors = tempData[ColumnId.Behaviors].filter((_, i) => i !== index);
+                                        setTempData(p => ({...p, [ColumnId.Behaviors]: newBehaviors}));
+                                    }} className="text-slate-400 hover:text-red-500 p-1 mt-1.5 rounded-full hover:bg-red-100 transition-colors flex-shrink-0" aria-label={`הסר התנהגות ${index + 1}`}>
+                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path></svg>
+                                    </button>
+                                </div>
+                            ))}
+                            <button onClick={() => { setTempData(p => ({...p, [ColumnId.Behaviors]: [...p[ColumnId.Behaviors], '']}))}} className="text-sm font-semibold text-blue-600 hover:text-blue-800 mt-2">
+                                + הוסף התנהגות
+                            </button>
+                        </div>
+                    ) : (
+                        (mapData[ColumnId.Behaviors] && mapData[ColumnId.Behaviors].length > 0) ? (
+                            <ul className="list-disc pl-5 prose prose-sm max-w-none text-slate-800 space-y-1">
+                                {mapData[ColumnId.Behaviors].map((behavior, index) => (
+                                    <li key={index}>{behavior}</li>
+                                ))}
+                            </ul>
+                        ) : renderTextView('')
+                    )}
                 </Section>
 
                 <Section title="3. חששות והתחייבויות נסתרות">
@@ -159,14 +190,14 @@ const SummaryModal: React.FC<SummaryModalProps> = ({ isOpen, onClose, mapData, o
                                 value={(tempData[ColumnId.HiddenCommitments] as Column3Data).worries}
                                 onChange={e => setTempData(p => ({...p, [ColumnId.HiddenCommitments]: {...(p[ColumnId.HiddenCommitments] as Column3Data), worries: e.target.value}}))}
                                 placeholder="מה מדאיג אותך?"
-                                className="bg-slate-50 mb-4"
+                                className="bg-slate-50 mb-4 min-h-[50px] !py-2 !px-3"
                             />
                             <h4 className="font-semibold text-slate-700 mb-2">התחייבויות נסתרות</h4>
                             <ResizableTextarea
                                 value={(tempData[ColumnId.HiddenCommitments] as Column3Data).commitments}
                                 onChange={e => setTempData(p => ({...p, [ColumnId.HiddenCommitments]: {...(p[ColumnId.HiddenCommitments] as Column3Data), commitments: e.target.value}}))}
                                 placeholder="למה את/ה באמת מחויב/ת?"
-                                className="bg-slate-50"
+                                className="bg-slate-50 min-h-[50px] !py-2 !px-3"
                             />
                         </>
                     ) : (
@@ -185,10 +216,10 @@ const SummaryModal: React.FC<SummaryModalProps> = ({ isOpen, onClose, mapData, o
                             value={tempData[ColumnId.BigAssumptions]}
                             onChange={e => setTempData(p => ({...p, [ColumnId.BigAssumptions]: e.target.value}))}
                             placeholder="איזו הנחה עמוקה את/ה מחזיק/ה כאמת?"
-                            className="bg-slate-50"
+                            className="bg-slate-50 min-h-[50px] !py-2 !px-3"
                         />
                     ) : renderTextView(mapData[ColumnId.BigAssumptions])}
-                </Section>
+                </section>
             </div>
              <div className="p-8 bg-slate-50 flex flex-col">
                 <div className="flex justify-between items-center mb-4">

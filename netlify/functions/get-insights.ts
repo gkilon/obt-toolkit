@@ -15,12 +15,13 @@ type Column3Data = {
 };
 
 type MapData = {
-  [key: string]: string | Column3Data;
+  [key: string]: string | string[] | Column3Data;
 };
 
 const getPromptForColumn = (columnId: ColumnId, mapData: MapData): string => {
   const goal = (mapData[String(ColumnId.Goal)] as string) || "לא צוין";
-  const behaviors = (mapData[String(ColumnId.Behaviors)] as string) || "לא צוין";
+  const behaviorsList = (mapData[String(ColumnId.Behaviors)] as string[]) || [];
+  const behaviors = behaviorsList.length > 0 ? behaviorsList.map(b => `- ${b}`).join('\n') : "לא צוין";
   const hiddenCommitmentsData = (mapData[String(ColumnId.HiddenCommitments)] as Column3Data) || { worries: 'לא צוין', commitments: 'לא צוין' };
   const worries = hiddenCommitmentsData.worries || 'לא צוין';
   const commitments = hiddenCommitmentsData.commitments || 'לא צוין';
@@ -34,7 +35,7 @@ const getPromptForColumn = (columnId: ColumnId, mapData: MapData): string => {
     case ColumnId.Goal:
       return `${baseInstruction}\n\n**משימה:** נסח 2-3 שאלות מאתגרות לחידוד המטרה הבאה:\n> "${goal}"`;
     case ColumnId.Behaviors:
-      return `${baseInstruction}\n\n**משימה:** נסח 2-3 שאלות שיעזרו למקד ולהפוך את ההתנהגויות הבאות לספציפיות וברורות יותר. אל תקשר למטרה, התמקד רק בהתנהגויות עצמן.\n**התנהגויות:**\n> "${behaviors}"`;
+      return `${baseInstruction}\n\n**משימה:** נסח 2-3 שאלות שיעזרו למקד ולהפוך את ההתנהגויות הבאות לספציפיות וברורות יותר. אל תקשר למטרה, התמקד רק בהתנהגויות עצמן.\n**התנהגויות:**\n${behaviors}`;
     case ColumnId.HiddenCommitments:
       return `${baseInstruction}\n\n**משימה:** בהתבסס על הדאגות, נסח 2-3 שאלות שיעזרו לחדד את ניסוח ההתחייבות הנסתרת. ודא שההתחייבות מנוסחת באופן חיובי (למה אני כן מחויב/ת) ולא כשלילה. התמקד רק בחיבור בין הדאגות להתחייבות.\n**דאגות:**\n> "${worries}"\n**התחייבות נסתרת:**\n> "${commitments}"`;
     case ColumnId.BigAssumptions:
@@ -50,7 +51,7 @@ const getPromptForColumn = (columnId: ColumnId, mapData: MapData): string => {
 
 **נתונים:**
 - **מטרה (1):** "${goal}"
-- **התנהגויות (2):** "${behaviors}"
+- **התנהגויות (2):**\n${behaviors}
 - **התחייבות נסתרת (3):** "${commitments}"
 - **הנחת יסוד (4):** "${bigAssumptions}"`;
     default:
@@ -95,9 +96,6 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
         const numericColumnId = Number(columnId);
         const prompt = getPromptForColumn(numericColumnId, mapData);
 
-        // --- THIS IS THE FIX ---
-        // The error happened because this 'if' block was likely
-        // incomplete, missing the closing parenthesis or curly braces.
         if (!prompt) {
             return {
                 statusCode: 400,

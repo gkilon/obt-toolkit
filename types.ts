@@ -13,7 +13,7 @@ export type Column3Data = {
 
 export type MapData = {
   [ColumnId.Goal]: string;
-  [ColumnId.Behaviors]: string;
+  [ColumnId.Behaviors]: string[];
   [ColumnId.HiddenCommitments]: Column3Data;
   [ColumnId.BigAssumptions]: string;
 };
