@@ -219,7 +219,7 @@ const SummaryModal: React.FC<SummaryModalProps> = ({ isOpen, onClose, mapData, o
                             className="bg-slate-50 min-h-[50px] !py-2 !px-3"
                         />
                     ) : renderTextView(mapData[ColumnId.BigAssumptions])}
-                </section>
+                </Section>
             </div>
              <div className="p-8 bg-slate-50 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
