@@ -99,20 +99,30 @@ const Chatbot: React.FC<ChatbotProps> = ({ history, onNewMessage, isBotTyping, i
                 </h3>
             </button>
 
-            <div className={`flex-grow p-4 overflow-y-auto transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
+            <div className={`flex-grow p-4 overflow-y-auto bg-slate-100 transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
                 <div className="space-y-4">
-                    {history.map((msg, index) => (
-                        <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] rounded-2xl p-3.5 ${msg.sender === 'user' ? 'bg-blue-600 text-white rounded-br-lg' : 'bg-slate-200 text-slate-800 rounded-bl-lg'}`}>
-                               <div className="prose prose-sm max-w-none text-white prose-headings:text-white prose-strong:text-white">
-                                 <ReactMarkdown components={{ p: React.Fragment }}>{msg.text}</ReactMarkdown>
-                               </div>
+                    {history.map((msg, index) => {
+                        const isUser = msg.sender === 'user';
+                        const bubbleClasses = isUser
+                            ? 'bg-blue-600 text-white rounded-br-lg'
+                            : 'bg-white text-slate-800 rounded-bl-lg border border-slate-200';
+                        const markdownClasses = isUser
+                            ? 'prose prose-sm max-w-none prose-p:text-white prose-strong:text-white prose-headings:text-white prose-ul:text-white prose-ol:text-white'
+                            : 'prose prose-sm max-w-none text-slate-800';
+
+                        return (
+                             <div key={index} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[85%] rounded-2xl p-3.5 ${bubbleClasses}`}>
+                                   <div className={markdownClasses}>
+                                     <ReactMarkdown components={{ p: React.Fragment }}>{msg.text}</ReactMarkdown>
+                                   </div>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                     {isBotTyping && (
                         <div className="flex justify-start">
-                             <div className="bg-slate-200 rounded-2xl rounded-bl-lg">
+                             <div className="bg-white rounded-2xl rounded-bl-lg border border-slate-200">
                                 <TypingIndicator />
                              </div>
                         </div>
