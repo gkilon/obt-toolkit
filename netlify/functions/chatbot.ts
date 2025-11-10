@@ -1,6 +1,3 @@
-
-
-
 import type { Handler, HandlerEvent } from "@netlify/functions";
 // Fix: Import `Type` to be used for defining a response schema.
 import { GoogleGenAI, Type } from "@google/genai";
@@ -41,8 +38,8 @@ const getSystemInstruction = (mapData: MapData): string => {
 -   **שלב 4 (הנחות יסוד):** לאחר ניסוח ההתחייבות, עזור לו לזהות את הנחת היסוד הגדולה.
 
 **תגובתך חייבת להיות בפורמט JSON בלבד, עם שני שדות:**
-1.  `"text"`: תגובתך למשתמש בפורמט Markdown.
-2.  `"focusedColumn"`: מספר העמודה (1, 2, 3, או 4) שבה השיחה מתמקדת כעת.
+1.  **text**: תגובתך למשתמש בפורמט Markdown.
+2.  **focusedColumn**: מספר העמודה (1, 2, 3, או 4) שבה השיחה מתמקדת כעת.
 
 **מצב המפה הנוכחי של המשתמש:**
 - **מטרה (1):** ${goal}
@@ -90,9 +87,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         const responseSchema = {
             type: Type.OBJECT,
             properties: {
-                // FIX: `Type.STRING` is an enum value (a string), not a function. It should not be called with `()`.
                 text: { type: Type.STRING },
-                // FIX: `Type.NUMBER` is an enum value (a string), not a function. It should not be called with `()`.
                 focusedColumn: { type: Type.NUMBER }
             },
             required: ['text', 'focusedColumn']
