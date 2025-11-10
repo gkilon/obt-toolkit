@@ -18,6 +18,7 @@ export type MapData = {
   [ColumnId.BigAssumptions]: string;
 };
 
-export type InsightsData = {
-  [key in ColumnId]?: string;
-};
+export type ChatMessage = {
+    sender: 'user' | 'ai';
+    text: string;
+}
