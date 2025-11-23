@@ -1,6 +1,26 @@
 import { User, FeedbackResponse, FirebaseConfig } from '../types';
 import { firebaseService } from './firebaseService';
 
+// ==========================================
+// 🟢 איזור הגדרות ידני - הדבק כאן את הקוד מ-Firebase
+// ==========================================
+// אם אתה מעדיף לא להשתמש בממשק המשתמש, אתה יכול להדביק את הערכים כאן.
+// שנה את ה-null למטה לאובייקט שקיבלת, למשל:
+/*
+const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = {
+  apiKey: "AIzaSyBrrKJzMEHqnq5mwS8QuKjjPgMv46WRW-I",
+  authDomain: "obt-ai-360.firebaseapp.com",
+  projectId: "obt-ai-360",
+  storageBucket: "obt-ai-360.firebasestorage.app",
+  messagingSenderId: "333766329584",
+  appId: "1:333766329584:web:25fe1dede13c710abe6e35",
+  measurementId: "G-LBGDP262ZN"
+};
+*/
+const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = null; 
+// ==========================================
+
+
 const USER_KEY = '360_user';
 const RESPONSES_KEY = '360_responses';
 const FB_CONFIG_KEY = '360_firebase_config';
@@ -16,6 +36,11 @@ export const storageService = {
   },
 
   getFirebaseConfig: (): FirebaseConfig | null => {
+    // 1. Priority: Hardcoded config
+    if (HARDCODED_FIREBASE_CONFIG) {
+        return HARDCODED_FIREBASE_CONFIG;
+    }
+    // 2. Fallback: Local Storage
     const stored = localStorage.getItem(FB_CONFIG_KEY);
     return stored ? JSON.parse(stored) : null;
   },

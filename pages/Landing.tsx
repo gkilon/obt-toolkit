@@ -62,7 +62,7 @@ export const Landing: React.FC = () => {
           setShowSettings(false);
           alert('הגדרות נשמרו בהצלחה! כעת הנתונים יסונכרנו לענן.');
       } catch (e) {
-          alert('פורמט JSON לא תקין. אנא וודא שהעתקת את כל האובייקט.');
+          alert('שגיאת פורמט: וודא שהמפתחות עטופים במרכאות (למשל "apiKey": "...") ולא בתור JavaScript רגיל.');
       }
   };
 
@@ -102,8 +102,9 @@ export const Landing: React.FC = () => {
               <div className="text-right space-y-4 animate-fade-in">
                   <h3 className="font-bold text-lg">הגדרת בסיס נתונים (Firebase)</h3>
                   <p className="text-xs text-slate-500">
-                      כדי לשמור נתונים בענן, צור פרויקט ב-Firebase והדבק כאן את אובייקט הקונפיגורציה.
-                      (Project settings → General → Your apps → SDK setup and configuration → Config)
+                      הדבק כאן את אובייקט הקונפיגורציה. וודא שהמפתחות במרכאות (JSON).
+                      <br/>
+                      אם זה מסובך, מומלץ לערוך את הקובץ <code>services/storageService.ts</code> ולהדביק שם ישירות.
                   </p>
                   <textarea
                     value={fbConfig}
