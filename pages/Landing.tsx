@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
+import { User } from '../types';
 
 export const Landing: React.FC = () => {
   const [isRegister, setIsRegister] = useState(true);
@@ -11,6 +12,7 @@ export const Landing: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [cloudEnabled, setCloudEnabled] = useState(false);
+  const [existingUser, setExistingUser] = useState<User | null>(null);
 
   const navigate = useNavigate();
 
@@ -21,9 +23,20 @@ export const Landing: React.FC = () => {
 
     const user = storageService.getCurrentUser();
     if (user) {
-      navigate('/dashboard');
+      setExistingUser(user);
     }
-  }, [navigate]);
+  }, []);
+
+  const handleContinueAsUser = () => {
+      navigate('/dashboard');
+  };
+
+  const handleSwitchAccount = () => {
+      storageService.logout();
+      setExistingUser(null);
+      setName('');
+      setPassword('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,19 +56,45 @@ export const Landing: React.FC = () => {
         } else {
           // הודעת שגיאה מפורטת יותר
           if (cloudEnabled) {
-             setError('לא נמצא משתמש. אם הגדרת כעת חיבור לענן, עליך להירשם מחדש כדי ליצור את המשתמש במסד הנתונים.');
+             setError('שם משתמש או סיסמה שגויים, או שהמשתמש טרם סונכרן לענן.');
           } else {
              setError('שם משתמש או סיסמה שגויים.');
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('אירעה שגיאה. אנא נסה שוב.');
+      setError(err.message || 'אירעה שגיאה. אנא נסה שוב.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (existingUser) {
+      return (
+        <Layout>
+            <div className="flex flex-col items-center justify-center flex-grow max-w-lg mx-auto w-full text-center space-y-8 animate-fade-in py-12">
+                 <div className="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center text-3xl mb-2">
+                    👋
+                 </div>
+                 <h2 className="text-2xl font-bold text-slate-800">
+                     שלום, {existingUser.name}
+                 </h2>
+                 <p className="text-slate-600">
+                     אתה מחובר כרגע במכשיר זה.
+                 </p>
+                 <div className="flex flex-col gap-3 w-full">
+                     <Button onClick={handleContinueAsUser} className="w-full">
+                         המשך ללוח הבקרה
+                     </Button>
+                     <Button onClick={handleSwitchAccount} variant="outline" className="w-full">
+                         התנתק / החלף משתמש
+                     </Button>
+                 </div>
+            </div>
+        </Layout>
+      );
+  }
 
   return (
     <Layout>
@@ -70,11 +109,11 @@ export const Landing: React.FC = () => {
             {!cloudEnabled ? (
                 <span className="block text-sm text-amber-600 mt-2 font-bold bg-amber-50 p-2 rounded-lg border border-amber-200">
                     ⚠️ מצב הדגמה מקומי (ללא סנכרון ענן).<br/>
-                    נא להגדיר את מפתחות Firebase בקובץ הקוד.
+                    נא לוודא חיבור לאינטרנט לטעינת Firebase.
                 </span>
             ) : (
-                <span className="block text-sm text-green-600 mt-2 font-bold bg-green-50 p-2 rounded-lg border border-green-200">
-                     ☁️ מחובר ומסונכרן לענן
+                <span className="block text-sm text-green-600 mt-2 font-bold bg-green-50 p-2 rounded-lg border border-green-200 inline-block">
+                     ☁️ מחובר לענן - ניתן לגשת מכל מכשיר
                 </span>
             )}
           </p>
@@ -87,13 +126,13 @@ export const Landing: React.FC = () => {
                     className={`flex-1 pb-2 text-sm font-medium transition-colors ${isRegister ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400'}`}
                     onClick={() => { setIsRegister(true); setError(''); }}
                 >
-                    הרשמה
+                    הרשמה (יצירת חשבון)
                 </button>
                 <button 
                     className={`flex-1 pb-2 text-sm font-medium transition-colors ${!isRegister ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400'}`}
                     onClick={() => { setIsRegister(false); setError(''); }}
                 >
-                    כניסה
+                    כניסה לחשבון קיים
                 </button>
             </div>
 
@@ -109,13 +148,13 @@ export const Landing: React.FC = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
-                    placeholder="ישראל ישראלי"
+                    placeholder="לדוגמה: ישראל ישראלי"
                     required
                     />
                 </div>
                 <div>
                     <label htmlFor="pass" className="block text-sm font-medium text-slate-700 mb-1">
-                    סיסמה {isRegister ? '(ליצירת המשתמש)' : ''}
+                    סיסמה {isRegister ? '(תישמר לכניסה הבאה)' : ''}
                     </label>
                     <input
                     type="password"

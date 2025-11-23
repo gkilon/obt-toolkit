@@ -1,18 +1,21 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import type { FirebaseApp } from "firebase/app";
+import * as firebaseApp from "firebase/app";
 import { getFirestore, Firestore, collection, addDoc, getDocs, query, where, doc, getDoc, setDoc } from "firebase/firestore";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
 
-let app: FirebaseApp | null = null;
+// Destructure from the namespace import to handle potential environment resolution issues
+const { initializeApp, getApps, getApp } = firebaseApp;
+
+let app: any = null; // Use any to bypass FirebaseApp type import issue
 let db: Firestore | null = null;
 
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
     try {
-      if (getApps().length === 0) {
-        app = initializeApp(config);
-      } else {
+      // Check if apps are already initialized
+      if (getApps && getApps().length > 0) {
         app = getApp();
+      } else {
+        app = initializeApp(config);
       }
       
       db = getFirestore(app);
