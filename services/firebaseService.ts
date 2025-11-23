@@ -1,4 +1,5 @@
-import { initializeApp, FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import type { FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore, collection, addDoc, getDocs, query, where, doc, getDoc, setDoc } from "firebase/firestore";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
 
@@ -8,7 +9,12 @@ let db: Firestore | null = null;
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
     try {
-      app = initializeApp(config);
+      if (getApps().length === 0) {
+        app = initializeApp(config);
+      } else {
+        app = getApp();
+      }
+      
       db = getFirestore(app);
       console.log("Firebase initialized successfully");
       return true;
