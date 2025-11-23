@@ -1,24 +1,35 @@
-export enum ColumnId {
-  Goal = 1,
-  Behaviors = 2,
-  HiddenCommitments = 3,
-  BigAssumptions = 4,
-  Summary = 5,
+export interface User {
+  id: string;
+  name: string;
+  password?: string; // Added for simple authentication
+  createdAt: number;
 }
 
-export type Column3Data = {
-  worries: string;
-  commitments: string;
-};
+export interface FeedbackResponse {
+  id: string;
+  surveyId: string; // Linked to User.id
+  q1_change: string; // "What is the one thing..."
+  q2_actions: string; // "What actions contradict..."
+  timestamp: number;
+}
 
-export type MapData = {
-  [ColumnId.Goal]: string;
-  [ColumnId.Behaviors]: string[];
-  [ColumnId.HiddenCommitments]: Column3Data;
-  [ColumnId.BigAssumptions]: string;
-};
+export interface AnalysisResult {
+  summary: string;
+  keyThemes: string[];
+  actionableAdvice: string;
+}
 
-export type ChatMessage = {
-    sender: 'user' | 'ai';
-    text: string;
+export interface FirebaseConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  storageBucket: string;
+  messagingSenderId: string;
+  appId: string;
+}
+
+export enum AppRoute {
+  HOME = '/',
+  DASHBOARD = '/dashboard',
+  SURVEY = '/survey/:userId'
 }

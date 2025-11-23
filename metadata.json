@@ -1,5 +1,5 @@
-
 {
-  "name": "כלי OBT (One Big Thing)",
-  "description": "אפליקציה אינטראקטיבית לסיוע למנהלים בתהליך ליווי ופיתוח אישי על בסיס מודל OBT (One Big Thing), המבוסס על עקרונות 'חסינות לשינוי' (Immunity to Change). הכלי מנחה את המשתמש דרך ארבעת עמודי המודל ומספק תובנות מבוססות AI."
+  "name": "OBT AI 360",
+  "description": "A 360-degree feedback tool focusing on the 'One Big Thing' to change, powered by Gemini AI for synthesis.",
+  "requestFramePermissions": []
 }
