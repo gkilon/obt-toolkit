@@ -12,25 +12,35 @@ export const Survey: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string>('');
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
     const checkConnection = async () => {
+        setIsLoadingUser(true);
+        
+        // 1. Check Cloud Config
         if (!storageService.isCloudEnabled()) {
             setError('שגיאת מערכת: האפליקציה אינה מחוברת למסד הנתונים. בעל האפליקציה צריך להגדיר מפתחות Firebase בקוד.');
+            setIsLoadingUser(false);
             return;
         }
 
+        // 2. Validate User ID
         if (userId) {
-            const name = await storageService.getUserNameById(userId);
-            if (name === "החבר/ה שלך" && storageService.isCloudEnabled()) {
-                 // Try one more time or verify user exists
-                 setUserName(name); 
-            } else {
-                 setUserName(name);
+            try {
+                const name = await storageService.getUserNameById(userId);
+                if (name) {
+                    setUserName(name);
+                } else {
+                    setError('לא נמצא משתמש כזה במערכת. ייתכן והקישור שגוי.');
+                }
+            } catch (e) {
+                setError('שגיאה בטעינת פרטי המשתמש.');
             }
         } else {
             setError('קישור לא תקין: חסר מזהה משתמש.');
         }
+        setIsLoadingUser(false);
     };
     checkConnection();
   }, [userId]);
@@ -52,6 +62,16 @@ export const Survey: React.FC = () => {
         setIsSending(false);
     }
   };
+
+  if (isLoadingUser) {
+      return (
+          <Layout>
+              <div className="flex justify-center items-center h-64">
+                  <div className="text-slate-500">טוען שאלון...</div>
+              </div>
+          </Layout>
+      );
+  }
 
   if (submitted) {
     return (
@@ -79,14 +99,20 @@ export const Survey: React.FC = () => {
   if (error) {
       return (
         <Layout>
-            <div className="max-w-md mx-auto p-6 bg-rose-50 border border-rose-200 rounded-xl text-center">
-                <h2 className="text-xl font-bold text-rose-700 mb-2">שגיאה</h2>
-                <p className="text-rose-600">{error}</p>
+            <div className="max-w-md mx-auto mt-10 p-8 bg-rose-50 border border-rose-200 rounded-xl text-center shadow-sm">
+                <div className="text-4xl mb-4">⚠️</div>
+                <h2 className="text-xl font-bold text-rose-800 mb-2">לא ניתן למלא את השאלון</h2>
+                <p className="text-rose-700 font-medium mb-4">{error}</p>
                 {!storageService.isCloudEnabled() && (
-                    <p className="text-sm text-slate-500 mt-4">
-                        (הערה למפתח: עליך לערוך את הקובץ <code>services/storageService.ts</code> ולהדביק את מפתחות ה-Firebase שלך כדי שהאפליקציה תעבוד).
-                    </p>
+                    <div className="text-xs text-slate-500 bg-white p-3 rounded border border-slate-200 text-left mt-4" dir="ltr">
+                        <strong>Developer Note:</strong><br/>
+                        Go to <code>services/storageService.ts</code><br/>
+                        Paste your Firebase keys in <code>HARDCODED_FIREBASE_CONFIG</code>.
+                    </div>
                 )}
+                <div className="mt-8">
+                     <Link to="/" className="text-indigo-600 hover:underline">חזרה לדף הבית</Link>
+                </div>
             </div>
         </Layout>
       );
@@ -94,14 +120,14 @@ export const Survey: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto w-full space-y-8">
+      <div className="max-w-2xl mx-auto w-full space-y-8 animate-fade-in">
         <div className="bg-white p-6 md:p-8 rounded-2xl shadow-xl shadow-indigo-100 border border-white">
           <div className="text-center mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
-              OBT AI 360 - פידבק עבור <span className="text-indigo-600">{userName || '...'}</span>
+              OBT AI 360 - פידבק עבור <span className="text-indigo-600">{userName}</span>
             </h1>
             <p className="text-slate-500 text-sm md:text-base">
-              התשובות שלך אנונימיות לחלוטין. כנות היא המפתח לצמיחה.
+              התשובות שלך אנונימיות לחלוטין. הן יישלחו ישירות לאזור האישי של {userName}.
             </p>
           </div>
 
@@ -138,7 +164,7 @@ export const Survey: React.FC = () => {
 
             <div className="pt-4">
               <Button type="submit" isLoading={isSending} className="w-full text-lg shadow-lg shadow-indigo-200">
-                שלח משוב אנונימי
+                שלח משוב ל-{userName}
               </Button>
             </div>
           </form>

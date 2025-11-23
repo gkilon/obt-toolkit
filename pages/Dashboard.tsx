@@ -17,6 +17,7 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check user login status locally
     const currentUser = storageService.getCurrentUser();
     if (!currentUser) {
       navigate('/');
@@ -24,8 +25,11 @@ export const Dashboard: React.FC = () => {
     }
     setUser(currentUser);
     
+    // Check if cloud is actually configured
     if (!storageService.isCloudEnabled()) {
         setCloudError(true);
+        setLoadingData(false); // Stop loading if no cloud
+        return; 
     }
 
     const loadData = async () => {
@@ -81,18 +85,21 @@ export const Dashboard: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto w-full space-y-8">
+      <div className="max-w-6xl mx-auto w-full space-y-8 animate-fade-in">
         
-        {/* Cloud Error Warning */}
+        {/* Cloud Error Warning - Very Prominent */}
         {cloudError && (
-            <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl flex items-center gap-4">
-                <div className="text-3xl">⚠️</div>
-                <div>
-                    <h3 className="font-bold">האפליקציה אינה מחוברת לענן</h3>
-                    <p className="text-sm">
-                        המשתמשים שיירשמו לא יוכלו לקבל תשובות. 
-                        עליך לעדכן את קובץ <code>services/storageService.ts</code> עם פרטי ה-Firebase שלך.
+            <div className="bg-red-100 border-2 border-red-400 text-red-900 p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center gap-4 shadow-lg">
+                <div className="text-4xl">🛑</div>
+                <div className="flex-grow">
+                    <h3 className="font-bold text-xl mb-1">האפליקציה אינה מחוברת לענן</h3>
+                    <p className="text-base mb-2">
+                        במצב הנוכחי, קישורים שתשלח <strong>לא יעבדו</strong> ואנשים לא יוכלו לשלוח לך תשובות.
+                        האפליקציה חייבת מסד נתונים מרכזי (Firebase) כדי לקשר בין המשיבים לבינך.
                     </p>
+                    <div className="bg-white/50 p-2 rounded text-sm font-mono mt-2">
+                        פתח את הקובץ <code>services/storageService.ts</code> והדבק שם את המפתחות.
+                    </div>
                 </div>
             </div>
         )}
@@ -102,11 +109,11 @@ export const Dashboard: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-slate-800">שלום, {user.name} 👋</h1>
             <p className="text-slate-500">
-                {loadingData ? 'טוען נתונים...' : `התקבלו ${responses.length} משובים עד כה.`}
+                {!cloudError && (loadingData ? 'טוען נתונים...' : `התקבלו ${responses.length} משובים עד כה.`)}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
-             <Button onClick={copyLink} variant="secondary">
+             <Button onClick={copyLink} variant="secondary" disabled={cloudError}>
                {copied ? 'הקישור הועתק!' : 'העתק קישור לשאלון'}
                {!copied && (
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,36 +131,41 @@ export const Dashboard: React.FC = () => {
           {/* Left Column: Aggregated Answers (2/3 width) */}
           <div className="lg:col-span-2 space-y-8">
             
-            {loadingData ? (
+            {loadingData && !cloudError ? (
                 <div className="text-center py-20">
                     <svg className="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <p className="text-slate-500 mt-2">טוען תשובות...</p>
+                    <p className="text-slate-500 mt-2">טוען תשובות מהענן...</p>
                 </div>
             ) : responses.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
-                <p className="text-slate-400 text-lg mb-2">עדיין אין תשובות</p>
-                <p className="text-slate-500">
-                    1. לחץ על "העתק קישור לשאלון"<br/>
-                    2. שלח אותו לחברים<br/>
-                    3. התשובות יופיעו כאן אוטומטית
+                <p className="text-slate-400 text-lg mb-2">
+                    {cloudError ? 'התחבר לענן כדי לראות תשובות' : 'עדיין אין תשובות'}
                 </p>
+                {!cloudError && (
+                    <p className="text-slate-500">
+                        1. לחץ על "העתק קישור לשאלון"<br/>
+                        2. שלח אותו לחברים בוואטסאפ או במייל<br/>
+                        3. התשובות יופיעו כאן אוטומטית כשהם ישלחו
+                    </p>
+                )}
               </div>
             ) : (
               <>
                 {/* Question 1 Aggregate */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="bg-indigo-50/50 p-4 border-b border-indigo-100">
+                    <div className="bg-indigo-50/50 p-4 border-b border-indigo-100 flex justify-between items-center">
                         <h2 className="text-lg font-bold text-indigo-900">
-                           1. מהו הדבר האחד שמעכב אותי? (OBT)
+                           1. הדבר האחד שמעכב אותי (OBT)
                         </h2>
+                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">{responses.length} תשובות</span>
                     </div>
-                    <div className="p-4 space-y-3">
-                        {responses.map((resp, idx) => (
-                            <div key={resp.id} className="p-3 bg-slate-50 rounded-lg text-slate-700 text-sm border border-slate-100">
-                                {resp.q1_change}
+                    <div className="divide-y divide-slate-100">
+                        {responses.map((resp) => (
+                            <div key={resp.id} className="p-4 hover:bg-slate-50 transition-colors">
+                                <p className="text-slate-700 text-sm leading-relaxed">{resp.q1_change}</p>
                             </div>
                         ))}
                     </div>
@@ -161,15 +173,16 @@ export const Dashboard: React.FC = () => {
 
                 {/* Question 2 Aggregate */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="bg-rose-50/50 p-4 border-b border-rose-100">
+                    <div className="bg-rose-50/50 p-4 border-b border-rose-100 flex justify-between items-center">
                         <h2 className="text-lg font-bold text-rose-900">
-                           2. פעולות סותרות (התנהגויות שכדאי לשנות)
+                           2. פעולות שסותרות את השינוי
                         </h2>
+                        <span className="text-xs bg-rose-100 text-rose-700 px-2 py-1 rounded-full">{responses.length} תשובות</span>
                     </div>
-                    <div className="p-4 space-y-3">
-                        {responses.map((resp, idx) => (
-                            <div key={resp.id} className="p-3 bg-slate-50 rounded-lg text-slate-700 text-sm border border-slate-100">
-                                {resp.q2_actions}
+                    <div className="divide-y divide-slate-100">
+                        {responses.map((resp) => (
+                            <div key={resp.id} className="p-4 hover:bg-slate-50 transition-colors">
+                                <p className="text-slate-700 text-sm leading-relaxed">{resp.q2_actions}</p>
                             </div>
                         ))}
                     </div>

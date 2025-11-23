@@ -8,12 +8,12 @@ import { firebaseService } from './firebaseService';
 // =================================================================
 
 const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = {
-  apiKey: "הדבק כאן את ה-API Key",
-  authDomain: "הדבק כאן (למשל your-app.firebaseapp.com)",
-  projectId: "הדבק כאן (למשל your-app)",
-  storageBucket: "הדבק כאן (למשל your-app.appspot.com)",
-  messagingSenderId: "הדבק כאן את מספר השולח",
-  appId: "הדבק כאן את ה-App ID"
+  apiKey: "AIzaSyBrrKJzMEHqnq5mwS8QuKjjPgMv46WRW-I",
+  authDomain: "obt-ai-360.firebaseapp.com",
+  projectId: "obt-ai-360",
+  storageBucket: "obt-ai-360.firebasestorage.app",
+  messagingSenderId: "333766329584",
+  appId: "1:333766329584:web:25fe1dede13c710abe6e35"
 }; 
 
 // =================================================================
@@ -26,8 +26,6 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 export const storageService = {
   // Configuration
   getFirebaseConfig: (): FirebaseConfig | null => {
-    // בדיקה שהמשתנה קיים ושדה ה-apiKey לא מכיל את טקסט ברירת המחדל
-    // אם לא מילאת את הפרטים, המערכת לא תתחבר לענן
     if (HARDCODED_FIREBASE_CONFIG && 
         HARDCODED_FIREBASE_CONFIG.apiKey && 
         !HARDCODED_FIREBASE_CONFIG.apiKey.includes("הדבק כאן")) {
@@ -72,7 +70,6 @@ export const storageService = {
         console.error("Cloud login failed", e);
       }
     }
-    // אם אין ענן, אי אפשר להתחבר באפליקציה ציבורית
     return null; 
   },
 
@@ -92,6 +89,7 @@ export const storageService = {
       await firebaseService.createUser(newUser);
     } else {
         console.error("Critical: User created locally only because Firebase keys are missing.");
+        throw new Error("לא ניתן ליצור משתמש: אין חיבור למסד הנתונים (Firebase).");
     }
 
     return newUser;
@@ -103,13 +101,15 @@ export const storageService = {
 
   // Response Management
   addResponse: async (surveyId: string, q1: string, q2: string) => {
+    // 🔴 Critical Change: Do NOT save to local storage if cloud fails.
+    // This prevents the illusion of success.
     if (!storageService.isCloudEnabled()) {
-        throw new Error("שגיאת מערכת: אין חיבור למסד נתונים (Firebase Keys Missing). התשובה לא נשמרה.");
+        throw new Error("שגיאת מערכת חמורה: האפליקציה לא מחוברת לענן (Firebase). התשובה לא יכולה להישלח.");
     }
 
     const newResponse: FeedbackResponse = {
       id: generateId(),
-      surveyId,
+      surveyId, // This links the response to the specific User ID
       q1_change: q1,
       q2_actions: q2,
       timestamp: Date.now(),
@@ -119,7 +119,7 @@ export const storageService = {
       await firebaseService.addResponse(newResponse);
     } catch (e) {
       console.error("Cloud save failed", e);
-      throw new Error("שגיאה בשמירת הנתונים בענן.");
+      throw new Error("שגיאה בשמירת הנתונים בענן. אנא נסה שוב.");
     }
   },
 
@@ -132,6 +132,7 @@ export const storageService = {
         return [];
       }
     }
+    // Return empty if no cloud, do not fallback to local storage
     return [];
   },
 
@@ -140,8 +141,7 @@ export const storageService = {
         const user = await firebaseService.getUser(userId);
         if (user) return user.name;
     }
-    // אם הגענו לכאן, כנראה שאין חיבור לענן
-    return "החבר/ה שלך";
+    return ""; // Return empty if not found in cloud
   }
 };
 
