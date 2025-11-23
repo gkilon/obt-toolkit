@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
-import { FirebaseConfig } from '../types';
 
 export const Landing: React.FC = () => {
   const [isRegister, setIsRegister] = useState(true);
@@ -11,28 +10,18 @@ export const Landing: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  // Settings Modal State
-  const [showSettings, setShowSettings] = useState(false);
-  const [fbConfig, setFbConfig] = useState<string>('');
-  
-  // New state to force re-render on init
   const [cloudEnabled, setCloudEnabled] = useState(false);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Force init check when landing loads to catch code changes
+    // Force init check when landing loads
     storageService.init();
     setCloudEnabled(storageService.isCloudEnabled());
 
     const user = storageService.getCurrentUser();
     if (user) {
       navigate('/dashboard');
-    }
-    const existingConfig = storageService.getFirebaseConfig();
-    if (existingConfig) {
-        setFbConfig(JSON.stringify(existingConfig, null, 2));
     }
   }, [navigate]);
 
@@ -52,26 +41,20 @@ export const Landing: React.FC = () => {
         if (user) {
           navigate('/dashboard');
         } else {
-          setError('שם משתמש או סיסמה שגויים, או שהחיבור למסד הנתונים נכשל.');
+          // הודעת שגיאה מפורטת יותר
+          if (cloudEnabled) {
+             setError('לא נמצא משתמש. אם הגדרת כעת חיבור לענן, עליך להירשם מחדש כדי ליצור את המשתמש במסד הנתונים.');
+          } else {
+             setError('שם משתמש או סיסמה שגויים.');
+          }
         }
       }
     } catch (err) {
+      console.error(err);
       setError('אירעה שגיאה. אנא נסה שוב.');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const saveConfig = () => {
-      try {
-          const config: FirebaseConfig = JSON.parse(fbConfig);
-          storageService.saveFirebaseConfig(config);
-          setShowSettings(false);
-          setCloudEnabled(true); // Update UI state
-          alert('הגדרות נשמרו בהצלחה! כעת הנתונים יסונכרנו לענן.');
-      } catch (e) {
-          alert('שגיאת פורמט: וודא שהמפתחות עטופים במרכאות (למשל "apiKey": "...") ולא בתור JavaScript רגיל.');
-      }
   };
 
   return (
@@ -86,12 +69,12 @@ export const Landing: React.FC = () => {
             מערכת לזיהוי ה"דבר האחד" (One Big Thing) על בסיס פידבק כנה ואנונימי, מנותח על ידי AI.
             {!cloudEnabled ? (
                 <span className="block text-sm text-amber-600 mt-2 font-bold bg-amber-50 p-2 rounded-lg border border-amber-200">
-                    ⚠️ מצב הדגמה (ללא סנכרון ענן).<br/>
-                    הדבק את פרטי Firebase בקובץ <code>storageService.ts</code> או לחץ על גלגל השיניים.
+                    ⚠️ מצב הדגמה מקומי (ללא סנכרון ענן).<br/>
+                    נא להגדיר את מפתחות Firebase בקובץ הקוד.
                 </span>
             ) : (
                 <span className="block text-sm text-green-600 mt-2 font-bold bg-green-50 p-2 rounded-lg border border-green-200">
-                     ☁️ מחובר לענן
+                     ☁️ מחובר ומסונכרן לענן
                 </span>
             )}
           </p>
@@ -99,94 +82,63 @@ export const Landing: React.FC = () => {
 
         <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl shadow-indigo-100 border border-white relative">
           
-          {/* Settings Toggle */}
-          <button 
-            onClick={() => setShowSettings(!showSettings)}
-            className="absolute top-4 left-4 text-slate-400 hover:text-indigo-600 transition-colors"
-            title="הגדרות מסד נתונים"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
+            <div className="flex mb-6 border-b border-slate-100">
+                <button 
+                    className={`flex-1 pb-2 text-sm font-medium transition-colors ${isRegister ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400'}`}
+                    onClick={() => { setIsRegister(true); setError(''); }}
+                >
+                    הרשמה
+                </button>
+                <button 
+                    className={`flex-1 pb-2 text-sm font-medium transition-colors ${!isRegister ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400'}`}
+                    onClick={() => { setIsRegister(false); setError(''); }}
+                >
+                    כניסה
+                </button>
+            </div>
 
-          {showSettings ? (
-              <div className="text-right space-y-4 animate-fade-in">
-                  <h3 className="font-bold text-lg">הגדרת בסיס נתונים (Firebase)</h3>
-                  <p className="text-xs text-slate-500">
-                      הדבק כאן את אובייקט הקונפיגורציה. וודא שהמפתחות במרכאות (JSON).
-                      <br/>
-                      אם זה מסובך, מומלץ לערוך את הקובץ <code>services/storageService.ts</code> ולהדביק שם ישירות.
-                  </p>
-                  <textarea
-                    value={fbConfig}
-                    onChange={(e) => setFbConfig(e.target.value)}
-                    className="w-full h-32 text-xs font-mono p-2 border rounded bg-slate-50 text-left"
-                    placeholder='{ "apiKey": "...", "authDomain": "...", ... }'
-                  />
-                  <div className="flex gap-2">
-                    <Button onClick={saveConfig} className="w-full text-sm">שמור הגדרות</Button>
-                    <Button variant="outline" onClick={() => setShowSettings(false)} className="w-full text-sm">ביטול</Button>
-                  </div>
-              </div>
-          ) : (
-              <>
-                <div className="flex mb-6 border-b border-slate-100">
-                    <button 
-                        className={`flex-1 pb-2 text-sm font-medium transition-colors ${isRegister ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400'}`}
-                        onClick={() => setIsRegister(true)}
-                    >
-                        הרשמה
-                    </button>
-                    <button 
-                        className={`flex-1 pb-2 text-sm font-medium transition-colors ${!isRegister ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400'}`}
-                        onClick={() => setIsRegister(false)}
-                    >
-                        כניסה
-                    </button>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="text-right space-y-4">
+                <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
+                    שם מלא
+                    </label>
+                    <input
+                    type="text"
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                    placeholder="ישראל ישראלי"
+                    required
+                    />
+                </div>
+                <div>
+                    <label htmlFor="pass" className="block text-sm font-medium text-slate-700 mb-1">
+                    סיסמה {isRegister ? '(ליצירת המשתמש)' : ''}
+                    </label>
+                    <input
+                    type="password"
+                    id="pass"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                    placeholder="********"
+                    required
+                    />
+                </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="text-right space-y-4">
-                    <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
-                        שם מלא
-                        </label>
-                        <input
-                        type="text"
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
-                        placeholder="ישראל ישראלי"
-                        required
-                        />
+                {error && (
+                    <div className="bg-rose-50 text-rose-600 text-sm p-3 rounded-lg text-right border border-rose-100">
+                        {error}
                     </div>
-                    <div>
-                        <label htmlFor="pass" className="block text-sm font-medium text-slate-700 mb-1">
-                        סיסמה {isRegister ? '(ליצירת המשתמש)' : ''}
-                        </label>
-                        <input
-                        type="password"
-                        id="pass"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
-                        placeholder="********"
-                        required
-                        />
-                    </div>
-                    </div>
+                )}
 
-                    {error && <p className="text-rose-500 text-sm">{error}</p>}
-
-                    <Button type="submit" className="w-full text-lg" isLoading={isLoading}>
-                    {isRegister ? 'צור חשבון והתחל' : 'התחבר לאזור אישי'}
-                    </Button>
-                </form>
-            </>
-          )}
+                <Button type="submit" className="w-full text-lg" isLoading={isLoading}>
+                {isRegister ? 'צור חשבון והתחל' : 'התחבר לאזור אישי'}
+                </Button>
+            </form>
         </div>
       </div>
     </Layout>

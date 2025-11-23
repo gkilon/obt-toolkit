@@ -23,7 +23,6 @@ export const Dashboard: React.FC = () => {
     }
     setUser(currentUser);
     
-    // Load responses asynchronously
     const loadData = async () => {
         setLoadingData(true);
         try {
@@ -56,7 +55,6 @@ export const Dashboard: React.FC = () => {
   const copyLink = () => {
     if (!user) return;
     const baseUrl = window.location.href.split('#')[0];
-    // Handle trailing slash
     const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const url = `${cleanBase}/#/survey/${user.id}`;
     
@@ -84,13 +82,8 @@ export const Dashboard: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-slate-800">שלום, {user.name} 👋</h1>
             <p className="text-slate-500">
-                {loadingData ? 'טוען נתונים...' : `יש לך ${responses.length} תשובות עד כה.`}
+                {loadingData ? 'טוען נתונים...' : `התקבלו ${responses.length} משובים עד כה.`}
             </p>
-            {!storageService.isCloudEnabled() && (
-                <p className="text-xs text-amber-600 mt-1 font-medium">
-                    ⚠️ מצב מקומי: נתונים שיוזנו ממכשירים אחרים לא יופיעו כאן.
-                </p>
-            )}
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
              <Button onClick={copyLink} variant="secondary">
@@ -108,13 +101,9 @@ export const Dashboard: React.FC = () => {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column: Raw Responses (2/3 width) */}
-          <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <span className="bg-indigo-100 text-indigo-700 p-1.5 rounded-md text-sm">📝</span>
-              תשובות שהתקבלו
-            </h2>
-
+          {/* Left Column: Aggregated Answers (2/3 width) */}
+          <div className="lg:col-span-2 space-y-8">
+            
             {loadingData ? (
                 <div className="text-center py-20">
                     <svg className="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -129,34 +118,46 @@ export const Dashboard: React.FC = () => {
                 <p className="text-slate-500">שלח/י את הקישור לחברים וקולגות כדי להתחיל.</p>
               </div>
             ) : (
-              <div className="grid gap-6">
-                {responses.map((resp, idx) => (
-                  <div key={resp.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">משיב #{responses.length - idx}</span>
-                      <span className="text-xs text-slate-400">{new Date(resp.timestamp).toLocaleDateString('he-IL')} {new Date(resp.timestamp).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})}</span>
+              <>
+                {/* Question 1 Aggregate */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="bg-indigo-50/50 p-4 border-b border-indigo-100">
+                        <h2 className="text-lg font-bold text-indigo-900">
+                           1. מהו הדבר האחד שמעכב אותי? (OBT)
+                        </h2>
                     </div>
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="text-sm font-bold text-indigo-600 mb-1">הדבר האחד לשינוי</h3>
-                        <p className="text-slate-800 bg-indigo-50/50 p-3 rounded-lg border border-indigo-50">{resp.q1_change}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-rose-600 mb-1">פעולות סותרות</h3>
-                        <p className="text-slate-800 bg-rose-50/50 p-3 rounded-lg border border-rose-50">{resp.q2_actions}</p>
-                      </div>
+                    <div className="p-4 space-y-3">
+                        {responses.map((resp, idx) => (
+                            <div key={resp.id} className="p-3 bg-slate-50 rounded-lg text-slate-700 text-sm border border-slate-100">
+                                {resp.q1_change}
+                            </div>
+                        ))}
                     </div>
-                  </div>
-                ))}
-              </div>
+                </div>
+
+                {/* Question 2 Aggregate */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="bg-rose-50/50 p-4 border-b border-rose-100">
+                        <h2 className="text-lg font-bold text-rose-900">
+                           2. פעולות סותרות (התנהגויות שכדאי לשנות)
+                        </h2>
+                    </div>
+                    <div className="p-4 space-y-3">
+                        {responses.map((resp, idx) => (
+                            <div key={resp.id} className="p-3 bg-slate-50 rounded-lg text-slate-700 text-sm border border-slate-100">
+                                {resp.q2_actions}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+              </>
             )}
           </div>
 
-          {/* Right Column: AI Analysis (1/3 width) - Sticky */}
+          {/* Right Column: AI Analysis (1/3 width) */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
               <div className="bg-gradient-to-b from-indigo-600 to-indigo-800 text-white rounded-2xl p-6 shadow-xl shadow-indigo-200 relative overflow-hidden">
-                {/* Decorative background elements */}
                 <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                 <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl"></div>
 
@@ -171,7 +172,7 @@ export const Dashboard: React.FC = () => {
                   <div className="text-center py-8 relative z-10">
                     <p className="text-indigo-100 mb-6">
                       {responses.length > 0 
-                        ? "המערכת מוכנה לנתח את הדבר האחד הגדול מתוך כל התשובות." 
+                        ? "לחץ למטה כדי שה-AI יקרא את כל התשובות ויזקק את 'הדבר האחד'." 
                         : "המתן לקבלת תשובות כדי להפעיל את הניתוח."}
                     </p>
                     <Button 
@@ -215,14 +216,6 @@ export const Dashboard: React.FC = () => {
                     </Button>
                   </div>
                 )}
-              </div>
-              
-              {/* Privacy Note */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-500">
-                <p className="flex items-start gap-2">
-                  <span className="text-lg">🔒</span>
-                  <span>הניתוח מתבצע בצורה מאובטחת. המערכת מתמקדת רק ב"דבר האחד" כפי שהתבקש.</span>
-                </p>
               </div>
             </div>
           </div>
