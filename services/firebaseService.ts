@@ -1,9 +1,6 @@
-import * as firebaseApp from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, Firestore, collection, addDoc, getDocs, query, where, doc, getDoc, setDoc } from "firebase/firestore";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
-
-// Destructure from the namespace import to handle potential environment resolution issues
-const { initializeApp, getApps, getApp } = firebaseApp;
 
 let app: any = null; // Use any to bypass FirebaseApp type import issue
 let db: Firestore | null = null;
@@ -47,6 +44,16 @@ export const firebaseService = {
     }
   },
 
+  findUserByEmail: async (email: string): Promise<User | null> => {
+    if (!db) throw new Error("DB not initialized");
+    const q = query(collection(db, "users"), where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) return null;
+    return querySnapshot.docs[0].data() as User;
+  },
+
+  // Fallback for older users without email (optional support)
   findUserByName: async (name: string): Promise<User | null> => {
     if (!db) throw new Error("DB not initialized");
     const q = query(collection(db, "users"), where("name", "==", name));

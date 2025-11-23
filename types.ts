@@ -1,7 +1,8 @@
 export interface User {
   id: string;
   name: string;
-  password?: string; // Added for simple authentication
+  email: string; // Added for professional auth
+  password?: string;
   createdAt: number;
 }
 

@@ -3,8 +3,6 @@ import { firebaseService } from './firebaseService';
 
 // =================================================================
 // הגדרות FIREBASE
-// כדי שהאפליקציה תעבוד בין מכשירים שונים (למשל, לשלוח לחבר),
-// חובה למלא את הפרטים האלו מתוך קונסולת Firebase.
 // =================================================================
 
 const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = {
@@ -20,7 +18,6 @@ const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = {
 // =================================================================
 
 const USER_KEY = '360_user';
-const USERS_DB_KEY = '360_users_db'; // Local simulation of a users database
 const RESPONSES_KEY = '360_responses';
 
 // Helper to generate IDs
@@ -45,7 +42,7 @@ export const storageService = {
           console.log("Storage Service: Cloud connected successfully.");
       }
     } else {
-        console.warn("Storage Service: Running in LOCAL MODE (No Firebase keys). Data will not sync between devices.");
+        console.warn("Storage Service: Running in LOCAL MODE (No Firebase keys).");
     }
   },
 
@@ -61,87 +58,61 @@ export const storageService = {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
   },
 
-  // Local helper to simulate a DB finding a user
-  findLocalUser: (name: string): User | null => {
-      const users: User[] = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
-      return users.find(u => u.name === name) || null;
-  },
-
-  findLocalUserById: (id: string): User | null => {
-      const users: User[] = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
-      return users.find(u => u.id === id) || null;
-  },
-
-  saveLocalUserToDb: (user: User) => {
-      const users: User[] = JSON.parse(localStorage.getItem(USERS_DB_KEY) || '[]');
-      // Update if exists, else push
-      const index = users.findIndex(u => u.id === user.id);
-      if (index >= 0) {
-          users[index] = user;
-      } else {
-          users.push(user);
-      }
-      localStorage.setItem(USERS_DB_KEY, JSON.stringify(users));
-  },
-
-  login: async (name: string, password?: string): Promise<User | null> => {
-    // 1. Try Cloud
-    if (storageService.isCloudEnabled()) {
-      try {
-        const user = await firebaseService.findUserByName(name);
-        if (user && user.password === password) {
-          storageService.setCurrentUser(user);
-          return user;
-        }
-      } catch (e) {
-        console.error("Cloud login failed", e);
-      }
-    }
-    
-    // 2. Fallback to Local Simulation
-    const localUser = storageService.findLocalUser(name);
-    if (localUser && localUser.password === password) {
-        // MIGRATION FIX: If we found them locally but they weren't in cloud (or cloud failed),
-        // and cloud IS enabled now, let's backfill them to cloud so their survey links work for others.
-        if (storageService.isCloudEnabled()) {
-            console.log("Syncing local user to cloud...");
-            try {
-                await firebaseService.createUser(localUser);
-            } catch (e) {
-                console.warn("Failed to sync local user to cloud", e);
-            }
-        }
-
-        storageService.setCurrentUser(localUser);
-        return localUser;
+  login: async (email: string, password?: string): Promise<User | null> => {
+    if (!storageService.isCloudEnabled()) {
+        throw new Error("אין חיבור לענן. לא ניתן להתחבר.");
     }
 
-    return null; 
+    try {
+        // Try finding by email (New Standard)
+        const user = await firebaseService.findUserByEmail(email);
+        
+        if (user) {
+           if (user.password === password) {
+             storageService.setCurrentUser(user);
+             return user;
+           } else {
+             throw new Error("סיסמה שגויה.");
+           }
+        } else {
+            // User not found
+            return null;
+        }
+    } catch (e: any) {
+        console.error("Login error", e);
+        throw e;
+    }
   },
 
-  registerUser: async (name: string, password?: string): Promise<User> => {
+  registerUser: async (name: string, email: string, password?: string): Promise<User> => {
+    if (!storageService.isCloudEnabled()) {
+        throw new Error("שגיאת מערכת: אין חיבור לענן. לא ניתן ליצור חשבון ציבורי כרגע.");
+    }
+
+    // Check duplicates by Email
+    const existing = await firebaseService.findUserByEmail(email);
+    if (existing) {
+        throw new Error("כתובת האימייל הזו כבר רשומה במערכת.");
+    }
+
     const newUser: User = {
       id: generateId(),
       name,
+      email,
       password,
       createdAt: Date.now(),
     };
 
-    // Always save to current session
-    storageService.setCurrentUser(newUser);
-    // Always save to local "DB" simulation
-    storageService.saveLocalUserToDb(newUser);
-
-    // Try Cloud
-    if (storageService.isCloudEnabled()) {
-      try {
+    // Save to Cloud (Must succeed)
+    try {
         await firebaseService.createUser(newUser);
-      } catch (e) {
-        console.error("Failed to sync new user to cloud", e);
-        // We do NOT throw here, so the user can still use the app locally
-      }
+    } catch (e) {
+        console.error("Cloud create failed", e);
+        throw new Error("נכשל הרישום לענן. אנא בדוק את החיבור לאינטרנט.");
     }
 
+    // Save Locally
+    storageService.setCurrentUser(newUser);
     return newUser;
   },
 
@@ -165,54 +136,32 @@ export const storageService = {
         await firebaseService.addResponse(newResponse);
         return; // Success
       } catch (e) {
-        console.error("Cloud save failed, falling back to local", e);
-        // If cloud fails, we try local, but warn that it might not reach the user
+        console.error("Cloud save failed", e);
+        throw new Error("שגיאה בשמירת הנתונים בענן.");
       }
+    } else {
+        throw new Error("אין חיבור לענן. לא ניתן לשלוח משוב.");
     }
-
-    // 2. Fallback Local
-    const responses: FeedbackResponse[] = JSON.parse(localStorage.getItem(RESPONSES_KEY) || '[]');
-    responses.push(newResponse);
-    localStorage.setItem(RESPONSES_KEY, JSON.stringify(responses));
   },
 
   getResponsesForUser: async (userId: string): Promise<FeedbackResponse[]> => {
-    let cloudResponses: FeedbackResponse[] = [];
-    
     if (storageService.isCloudEnabled()) {
       try {
-        cloudResponses = await firebaseService.getResponsesForUser(userId);
+        return await firebaseService.getResponsesForUser(userId);
       } catch (e) {
         console.error("Cloud fetch failed", e);
+        return [];
       }
     }
-
-    // Get local responses
-    const allLocal: FeedbackResponse[] = JSON.parse(localStorage.getItem(RESPONSES_KEY) || '[]');
-    const localForUser = allLocal.filter(r => r.surveyId === userId);
-
-    // Merge unique by ID (prefer cloud version if duplicate)
-    const merged = [...cloudResponses];
-    for (const local of localForUser) {
-        if (!merged.find(r => r.id === local.id)) {
-            merged.push(local);
-        }
-    }
-
-    return merged.sort((a, b) => b.timestamp - a.timestamp);
+    return [];
   },
 
   getUserNameById: async (userId: string): Promise<string> => {
-    // 1. Try Cloud
+    // Always try Cloud first for survey links
     if (storageService.isCloudEnabled()) {
         const user = await firebaseService.getUser(userId);
         if (user) return user.name;
     }
-
-    // 2. Try Local
-    const localUser = storageService.findLocalUserById(userId);
-    if (localUser) return localUser.name;
-
     return ""; 
   }
 };
