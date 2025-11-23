@@ -13,6 +13,7 @@ export const Dashboard: React.FC = () => {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [cloudError, setCloudError] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,6 +24,10 @@ export const Dashboard: React.FC = () => {
     }
     setUser(currentUser);
     
+    if (!storageService.isCloudEnabled()) {
+        setCloudError(true);
+    }
+
     const loadData = async () => {
         setLoadingData(true);
         try {
@@ -77,6 +82,21 @@ export const Dashboard: React.FC = () => {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto w-full space-y-8">
+        
+        {/* Cloud Error Warning */}
+        {cloudError && (
+            <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl flex items-center gap-4">
+                <div className="text-3xl">⚠️</div>
+                <div>
+                    <h3 className="font-bold">האפליקציה אינה מחוברת לענן</h3>
+                    <p className="text-sm">
+                        המשתמשים שיירשמו לא יוכלו לקבל תשובות. 
+                        עליך לעדכן את קובץ <code>services/storageService.ts</code> עם פרטי ה-Firebase שלך.
+                    </p>
+                </div>
+            </div>
+        )}
+
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div>
@@ -115,7 +135,11 @@ export const Dashboard: React.FC = () => {
             ) : responses.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
                 <p className="text-slate-400 text-lg mb-2">עדיין אין תשובות</p>
-                <p className="text-slate-500">שלח/י את הקישור לחברים וקולגות כדי להתחיל.</p>
+                <p className="text-slate-500">
+                    1. לחץ על "העתק קישור לשאלון"<br/>
+                    2. שלח אותו לחברים<br/>
+                    3. התשובות יופיעו כאן אוטומטית
+                </p>
               </div>
             ) : (
               <>

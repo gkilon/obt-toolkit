@@ -1,55 +1,39 @@
 import { User, FeedbackResponse, FirebaseConfig } from '../types';
 import { firebaseService } from './firebaseService';
 
-// ==========================================
-// 🟢 איזור הגדרות ידני - הדבק כאן את הקוד מ-Firebase
-// ==========================================
-
-// הוראות:
-// 1. מלא את הערכים בתוך המרכאות למטה (במקום "הדבק כאן...").
-// 2. אם השורה כרגע בהערה (מתחילה ב //), מחק את ה-// שבתחילת השורה.
-// 3. וודא שאין משתנה אחר עם אותו שם שמוגדר כ-null.
+// =================================================================
+// 🔴 חובה למלא: הגדרות FIREBASE
+// כדי שהאפליקציה תעבוד בין משתמשים שונים, חובה למלא את הפרטים מטה.
+// ללא הפרטים האלו, הנתונים לא יישמרו בענן ולא יגיעו למשתמש.
+// =================================================================
 
 const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = {
-  apiKey: "AIzaSyBrrKJzMEHqnq5mwS8QuKjjPgMv46WRW-I",
-  authDomain: "bt-ai-360.firebaseapp.com",
-  projectId: "obt-ai-360",
-  storageBucket: "obt-ai-360.firebasestorage.app",
-  messagingSenderId: "333766329584",
-  appId: "1:333766329584:web:25fe1dede13c710abe6e35"
+  apiKey: "הדבק כאן את ה-API Key",
+  authDomain: "הדבק כאן (למשל your-app.firebaseapp.com)",
+  projectId: "הדבק כאן (למשל your-app)",
+  storageBucket: "הדבק כאן (למשל your-app.appspot.com)",
+  messagingSenderId: "הדבק כאן את מספר השולח",
+  appId: "הדבק כאן את ה-App ID"
 }; 
 
-// אם אתה רוצה לחזור למצב ידני דרך הממשק, שנה את המשתנה למעלה ל-null כך:
-// const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = null;
-
-// ==========================================
-
+// =================================================================
 
 const USER_KEY = '360_user';
-const RESPONSES_KEY = '360_responses';
-const FB_CONFIG_KEY = '360_firebase_config';
 
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
 export const storageService = {
   // Configuration
-  saveFirebaseConfig: (config: FirebaseConfig) => {
-    localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(config));
-    firebaseService.init(config);
-  },
-
   getFirebaseConfig: (): FirebaseConfig | null => {
-    // 1. Priority: Hardcoded config
     // בדיקה שהמשתנה קיים ושדה ה-apiKey לא מכיל את טקסט ברירת המחדל
+    // אם לא מילאת את הפרטים, המערכת לא תתחבר לענן
     if (HARDCODED_FIREBASE_CONFIG && 
         HARDCODED_FIREBASE_CONFIG.apiKey && 
         !HARDCODED_FIREBASE_CONFIG.apiKey.includes("הדבק כאן")) {
         return HARDCODED_FIREBASE_CONFIG;
     }
-    // 2. Fallback: Local Storage
-    const stored = localStorage.getItem(FB_CONFIG_KEY);
-    return stored ? JSON.parse(stored) : null;
+    return null;
   },
 
   init: () => {
@@ -57,8 +41,10 @@ export const storageService = {
     if (config) {
       const success = firebaseService.init(config);
       if (success) {
-          console.log("Storage Service: Cloud connected via " + (HARDCODED_FIREBASE_CONFIG ? "Hardcoded Config" : "Local Storage"));
+          console.log("Storage Service: Cloud connected successfully.");
       }
+    } else {
+        console.warn("Storage Service: Cloud NOT connected. Missing real Firebase keys in storageService.ts");
     }
   },
 
@@ -75,7 +61,6 @@ export const storageService = {
   },
 
   login: async (name: string, password?: string): Promise<User | null> => {
-    // 1. Try Cloud
     if (storageService.isCloudEnabled()) {
       try {
         const user = await firebaseService.findUserByName(name);
@@ -83,21 +68,12 @@ export const storageService = {
           storageService.setCurrentUser(user);
           return user;
         }
-        return null;
       } catch (e) {
         console.error("Cloud login failed", e);
       }
     }
-
-    // 2. Local Fallback
-    const localUser = storageService.getCurrentUser();
-    if (localUser && localUser.name === name) {
-        // Simple check for local dev
-        if (!localUser.password || localUser.password === password) {
-            return localUser;
-        }
-    }
-    return null;
+    // אם אין ענן, אי אפשר להתחבר באפליקציה ציבורית
+    return null; 
   },
 
   registerUser: async (name: string, password?: string): Promise<User> => {
@@ -108,12 +84,14 @@ export const storageService = {
       createdAt: Date.now(),
     };
 
-    // Save locally as session
+    // Save locally just for current session
     storageService.setCurrentUser(newUser);
 
-    // Save to Cloud if enabled
+    // Save to Cloud - MUST SUCCEED for app to work properly
     if (storageService.isCloudEnabled()) {
       await firebaseService.createUser(newUser);
+    } else {
+        console.error("Critical: User created locally only because Firebase keys are missing.");
     }
 
     return newUser;
@@ -125,6 +103,10 @@ export const storageService = {
 
   // Response Management
   addResponse: async (surveyId: string, q1: string, q2: string) => {
+    if (!storageService.isCloudEnabled()) {
+        throw new Error("שגיאת מערכת: אין חיבור למסד נתונים (Firebase Keys Missing). התשובה לא נשמרה.");
+    }
+
     const newResponse: FeedbackResponse = {
       id: generateId(),
       surveyId,
@@ -133,53 +115,32 @@ export const storageService = {
       timestamp: Date.now(),
     };
 
-    // 1. Try Cloud
-    if (storageService.isCloudEnabled()) {
-      try {
-        await firebaseService.addResponse(newResponse);
-        return; 
-      } catch (e) {
-        console.error("Cloud save failed, falling back to local", e);
-      }
+    try {
+      await firebaseService.addResponse(newResponse);
+    } catch (e) {
+      console.error("Cloud save failed", e);
+      throw new Error("שגיאה בשמירת הנתונים בענן.");
     }
-
-    // 2. Local Fallback (Note: This stays on respondent's device, so it won't sync)
-    const responses = storageService.getAllLocalResponses();
-    responses.push(newResponse);
-    localStorage.setItem(RESPONSES_KEY, JSON.stringify(responses));
   },
 
   getResponsesForUser: async (userId: string): Promise<FeedbackResponse[]> => {
-    // 1. Try Cloud
     if (storageService.isCloudEnabled()) {
       try {
         return await firebaseService.getResponsesForUser(userId);
       } catch (e) {
         console.error("Cloud fetch failed", e);
+        return [];
       }
     }
-
-    // 2. Local Fallback
-    const all = storageService.getAllLocalResponses();
-    return all.filter(r => r.surveyId === userId).sort((a, b) => b.timestamp - a.timestamp);
-  },
-
-  getAllLocalResponses: (): FeedbackResponse[] => {
-    const stored = localStorage.getItem(RESPONSES_KEY);
-    return stored ? JSON.parse(stored) : [];
+    return [];
   },
 
   getUserNameById: async (userId: string): Promise<string> => {
-    // Try Cloud
     if (storageService.isCloudEnabled()) {
         const user = await firebaseService.getUser(userId);
         if (user) return user.name;
     }
-
-    // Try Local Session
-    const currentUser = storageService.getCurrentUser();
-    if (currentUser && currentUser.id === userId) return currentUser.name;
-    
+    // אם הגענו לכאן, כנראה שאין חיבור לענן
     return "החבר/ה שלך";
   }
 };
