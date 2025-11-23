@@ -15,10 +15,17 @@ export const Landing: React.FC = () => {
   // Settings Modal State
   const [showSettings, setShowSettings] = useState(false);
   const [fbConfig, setFbConfig] = useState<string>('');
+  
+  // New state to force re-render on init
+  const [cloudEnabled, setCloudEnabled] = useState(false);
 
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Force init check when landing loads to catch code changes
+    storageService.init();
+    setCloudEnabled(storageService.isCloudEnabled());
+
     const user = storageService.getCurrentUser();
     if (user) {
       navigate('/dashboard');
@@ -60,6 +67,7 @@ export const Landing: React.FC = () => {
           const config: FirebaseConfig = JSON.parse(fbConfig);
           storageService.saveFirebaseConfig(config);
           setShowSettings(false);
+          setCloudEnabled(true); // Update UI state
           alert('הגדרות נשמרו בהצלחה! כעת הנתונים יסונכרנו לענן.');
       } catch (e) {
           alert('שגיאת פורמט: וודא שהמפתחות עטופים במרכאות (למשל "apiKey": "...") ולא בתור JavaScript רגיל.');
@@ -76,9 +84,14 @@ export const Landing: React.FC = () => {
           </h1>
           <p className="text-lg text-slate-600 max-w-lg mx-auto leading-relaxed">
             מערכת לזיהוי ה"דבר האחד" (One Big Thing) על בסיס פידבק כנה ואנונימי, מנותח על ידי AI.
-            {!storageService.isCloudEnabled() && (
-                <span className="block text-sm text-amber-600 mt-2 font-bold bg-amber-50 p-2 rounded-lg">
-                    ⚠️ מצב הדגמה (ללא סנכרון ענן). לחץ על גלגל השיניים להגדרת בסיס נתונים.
+            {!cloudEnabled ? (
+                <span className="block text-sm text-amber-600 mt-2 font-bold bg-amber-50 p-2 rounded-lg border border-amber-200">
+                    ⚠️ מצב הדגמה (ללא סנכרון ענן).<br/>
+                    הדבק את פרטי Firebase בקובץ <code>storageService.ts</code> או לחץ על גלגל השיניים.
+                </span>
+            ) : (
+                <span className="block text-sm text-green-600 mt-2 font-bold bg-green-50 p-2 rounded-lg border border-green-200">
+                     ☁️ מחובר לענן
                 </span>
             )}
           </p>

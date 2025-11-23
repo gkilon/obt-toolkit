@@ -4,20 +4,24 @@ import { firebaseService } from './firebaseService';
 // ==========================================
 // 🟢 איזור הגדרות ידני - הדבק כאן את הקוד מ-Firebase
 // ==========================================
-// אם אתה מעדיף לא להשתמש בממשק המשתמש, אתה יכול להדביק את הערכים כאן.
-// שנה את ה-null למטה לאובייקט שקיבלת, למשל:
-/*
+
+// הוראות:
+// 1. מלא את הערכים בתוך המרכאות למטה (במקום "הדבק כאן...").
+// 2. אם השורה כרגע בהערה (מתחילה ב //), מחק את ה-// שבתחילת השורה.
+// 3. וודא שאין משתנה אחר עם אותו שם שמוגדר כ-null.
+
 const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = {
   apiKey: "AIzaSyBrrKJzMEHqnq5mwS8QuKjjPgMv46WRW-I",
-  authDomain: "obt-ai-360.firebaseapp.com",
+  authDomain: "bt-ai-360.firebaseapp.com",
   projectId: "obt-ai-360",
   storageBucket: "obt-ai-360.firebasestorage.app",
   messagingSenderId: "333766329584",
-  appId: "1:333766329584:web:25fe1dede13c710abe6e35",
-  measurementId: "G-LBGDP262ZN"
-};
-*/
-const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = null; 
+  appId: "1:333766329584:web:25fe1dede13c710abe6e35"
+}; 
+
+// אם אתה רוצה לחזור למצב ידני דרך הממשק, שנה את המשתנה למעלה ל-null כך:
+// const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = null;
+
 // ==========================================
 
 
@@ -37,7 +41,10 @@ export const storageService = {
 
   getFirebaseConfig: (): FirebaseConfig | null => {
     // 1. Priority: Hardcoded config
-    if (HARDCODED_FIREBASE_CONFIG) {
+    // בדיקה שהמשתנה קיים ושדה ה-apiKey לא מכיל את טקסט ברירת המחדל
+    if (HARDCODED_FIREBASE_CONFIG && 
+        HARDCODED_FIREBASE_CONFIG.apiKey && 
+        !HARDCODED_FIREBASE_CONFIG.apiKey.includes("הדבק כאן")) {
         return HARDCODED_FIREBASE_CONFIG;
     }
     // 2. Fallback: Local Storage
@@ -48,7 +55,10 @@ export const storageService = {
   init: () => {
     const config = storageService.getFirebaseConfig();
     if (config) {
-      firebaseService.init(config);
+      const success = firebaseService.init(config);
+      if (success) {
+          console.log("Storage Service: Cloud connected via " + (HARDCODED_FIREBASE_CONFIG ? "Hardcoded Config" : "Local Storage"));
+      }
     }
   },
 
