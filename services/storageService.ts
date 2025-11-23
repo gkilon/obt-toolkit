@@ -5,7 +5,7 @@ import { firebaseService } from './firebaseService';
 // הגדרות FIREBASE
 // =================================================================
 
-const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = {
+const HARDCODED_FIREBASE_CONFIG: FirebaseConfig = {
   apiKey: "AIzaSyBrrKJzMEHqnq5mwS8QuKjjPgMv46WRW-I",
   authDomain: "obt-ai-360.firebaseapp.com",
   projectId: "obt-ai-360",
@@ -17,32 +17,18 @@ const HARDCODED_FIREBASE_CONFIG: FirebaseConfig | null = {
 
 // =================================================================
 
-const USER_KEY = '360_user';
-const RESPONSES_KEY = '360_responses';
+const USER_KEY = '360_user_session';
 
 // Helper to generate IDs
-const generateId = () => Math.random().toString(36).substring(2, 9);
+const generateId = () => Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
 
 export const storageService = {
-  // Configuration
-  getFirebaseConfig: (): FirebaseConfig | null => {
-    if (HARDCODED_FIREBASE_CONFIG && 
-        HARDCODED_FIREBASE_CONFIG.apiKey && 
-        HARDCODED_FIREBASE_CONFIG.apiKey.length > 10) {
-        return HARDCODED_FIREBASE_CONFIG;
-    }
-    return null;
-  },
-
+  
   init: () => {
-    const config = storageService.getFirebaseConfig();
-    if (config) {
-      const success = firebaseService.init(config);
-      if (success) {
-          console.log("Storage Service: Cloud connected successfully.");
-      }
-    } else {
-        console.warn("Storage Service: Running in LOCAL MODE (No Firebase keys).");
+    // Always init Firebase
+    const success = firebaseService.init(HARDCODED_FIREBASE_CONFIG);
+    if (!success) {
+        console.error("CRITICAL: Failed to connect to Firebase Cloud.");
     }
   },
 
@@ -50,69 +36,71 @@ export const storageService = {
 
   // User Management
   getCurrentUser: (): User | null => {
-    const stored = localStorage.getItem(USER_KEY);
-    return stored ? JSON.parse(stored) : null;
+    try {
+        const stored = localStorage.getItem(USER_KEY);
+        return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+        return null;
+    }
   },
 
-  setCurrentUser: (user: User) => {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-  },
-
-  login: async (email: string, password?: string): Promise<User | null> => {
+  // LOGIN: Strict Cloud Check
+  login: async (email: string, password?: string): Promise<User> => {
     if (!storageService.isCloudEnabled()) {
-        throw new Error("אין חיבור לענן. לא ניתן להתחבר.");
+        throw new Error("שגיאת תקשורת: אין חיבור לשרת.");
     }
 
     try {
-        // Try finding by email (New Standard)
         const user = await firebaseService.findUserByEmail(email);
         
-        if (user) {
-           if (user.password === password) {
-             storageService.setCurrentUser(user);
-             return user;
-           } else {
-             throw new Error("סיסמה שגויה.");
-           }
-        } else {
-            // User not found
-            return null;
+        if (!user) {
+            throw new Error("משתמש לא קיים. אנא בדוק את האימייל או הירשם.");
         }
+
+        // Simple password check (In a real production app, utilize Firebase Auth instead of Firestore for users)
+        if (user.password !== password) {
+             throw new Error("סיסמה שגויה.");
+        }
+
+        // Save session locally only AFTER successful cloud verification
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        return user;
+
     } catch (e: any) {
-        console.error("Login error", e);
+        console.error("Login logic error", e);
         throw e;
     }
   },
 
+  // REGISTER: Strict Cloud Creation
   registerUser: async (name: string, email: string, password?: string): Promise<User> => {
     if (!storageService.isCloudEnabled()) {
-        throw new Error("שגיאת מערכת: אין חיבור לענן. לא ניתן ליצור חשבון ציבורי כרגע.");
+        throw new Error("שגיאת תקשורת: לא ניתן ליצור חשבון כרגע.");
     }
 
-    // Check duplicates by Email
+    // 1. Check if email already exists
     const existing = await firebaseService.findUserByEmail(email);
     if (existing) {
-        throw new Error("כתובת האימייל הזו כבר רשומה במערכת.");
+        throw new Error("כתובת האימייל הזו כבר רשומה במערכת. אנא נסה להתחבר.");
     }
 
     const newUser: User = {
       id: generateId(),
       name,
       email,
-      password,
+      password, // Note: storing plain text password is bad practice for production, but fits this demo scope
       createdAt: Date.now(),
     };
 
-    // Save to Cloud (Must succeed)
+    // 2. Create in Cloud
     try {
         await firebaseService.createUser(newUser);
     } catch (e) {
-        console.error("Cloud create failed", e);
-        throw new Error("נכשל הרישום לענן. אנא בדוק את החיבור לאינטרנט.");
+        throw new Error("נכשל הרישום לשרת. אנא נסה שנית.");
     }
 
-    // Save Locally
-    storageService.setCurrentUser(newUser);
+    // 3. Login immediately
+    localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     return newUser;
   },
 
@@ -130,34 +118,21 @@ export const storageService = {
       timestamp: Date.now(),
     };
 
-    // 1. Try Cloud
     if (storageService.isCloudEnabled()) {
-      try {
-        await firebaseService.addResponse(newResponse);
-        return; // Success
-      } catch (e) {
-        console.error("Cloud save failed", e);
-        throw new Error("שגיאה בשמירת הנתונים בענן.");
-      }
+      await firebaseService.addResponse(newResponse);
     } else {
-        throw new Error("אין חיבור לענן. לא ניתן לשלוח משוב.");
+        throw new Error("אין חיבור לשרת. לא ניתן לשלוח משוב.");
     }
   },
 
   getResponsesForUser: async (userId: string): Promise<FeedbackResponse[]> => {
     if (storageService.isCloudEnabled()) {
-      try {
-        return await firebaseService.getResponsesForUser(userId);
-      } catch (e) {
-        console.error("Cloud fetch failed", e);
-        return [];
-      }
+       return await firebaseService.getResponsesForUser(userId);
     }
     return [];
   },
 
   getUserNameById: async (userId: string): Promise<string> => {
-    // Always try Cloud first for survey links
     if (storageService.isCloudEnabled()) {
         const user = await firebaseService.getUser(userId);
         if (user) return user.name;
@@ -166,5 +141,5 @@ export const storageService = {
   }
 };
 
-// Initialize on load
+// Auto-init
 storageService.init();
