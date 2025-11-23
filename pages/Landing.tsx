@@ -71,11 +71,11 @@ export const Landing: React.FC = () => {
       <div className="flex flex-col items-center justify-center flex-grow max-w-2xl mx-auto w-full text-center space-y-8 animate-fade-in">
         <div className="space-y-4">
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
-            OBT AI 360 <br />
-            <span className="text-indigo-600">גלה את הדבר האחד שמעכב אותך</span>
+            גלה את הצעד הבא שלך <br />
+            <span className="text-indigo-600">בעזרת פידבק כנה</span>
           </h1>
           <p className="text-lg text-slate-600 max-w-lg mx-auto leading-relaxed">
-            מערכת לזיהוי ה"דבר האחד" (One Big Thing) על בסיס פידבק כנה ואנונימי, מנותח על ידי AI.
+            מערכת <b>OBT AI 360</b> לזיהוי ה"דבר האחד" שמעכב אותך.
             {!storageService.isCloudEnabled() && (
                 <span className="block text-sm text-amber-600 mt-2 font-bold bg-amber-50 p-2 rounded-lg">
                     ⚠️ מצב הדגמה (ללא סנכרון ענן). לחץ על גלגל השיניים להגדרת בסיס נתונים.
@@ -103,7 +103,7 @@ export const Landing: React.FC = () => {
                   <h3 className="font-bold text-lg">הגדרת בסיס נתונים (Firebase)</h3>
                   <p className="text-xs text-slate-500">
                       כדי לשמור נתונים בענן, צור פרויקט ב-Firebase והדבק כאן את אובייקט הקונפיגורציה.
-                      (Project settings → General → Your apps → SDK setup and configuration → Config)
+                      (Project settings -> General -> Your apps -> SDK setup and configuration -> Config)
                   </p>
                   <textarea
                     value={fbConfig}
