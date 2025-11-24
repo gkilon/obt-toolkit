@@ -1,4 +1,4 @@
-import { User, FeedbackResponse, FirebaseConfig } from '../types';
+import { User, FeedbackResponse, FirebaseConfig, RelationshipType } from '../types';
 import { firebaseService } from './firebaseService';
 
 // =================================================================
@@ -19,27 +19,19 @@ const HARDCODED_FIREBASE_CONFIG: FirebaseConfig = {
 
 const USER_KEY = '360_user_session';
 
-// Helper to generate IDs
 const generateId = () => Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
 
 export const storageService = {
   
   init: () => {
-    // Only init if not already done
     if (firebaseService.isInitialized()) return;
-
     const success = firebaseService.init(HARDCODED_FIREBASE_CONFIG);
-    if (!success) {
-        console.error("CRITICAL: Failed to connect to Firebase Cloud.");
-    }
+    if (!success) console.error("CRITICAL: Failed to connect to Firebase Cloud.");
   },
 
   isCloudEnabled: () => firebaseService.isInitialized(),
-  
-  // Actually verify connection
   testConnection: async () => firebaseService.testConnection(),
 
-  // User Management
   getCurrentUser: (): User | null => {
     try {
         const stored = localStorage.getItem(USER_KEY);
@@ -49,75 +41,80 @@ export const storageService = {
     }
   },
 
-  // LOGIN: Strict Cloud Check
-  login: async (email: string, password?: string): Promise<User> => {
-    if (!storageService.isCloudEnabled()) {
-        throw new Error("שגיאת תצורה: אין הגדרות חיבור לשרת.");
-    }
-
-    try {
-        const user = await firebaseService.findUserByEmail(email);
-        
-        if (!user) {
-            throw new Error("משתמש לא קיים. אנא בדוק את האימייל או הירשם.");
-        }
-
-        // Simple password check (In a real production app, utilize Firebase Auth instead of Firestore for users)
-        if (user.password !== password) {
-             throw new Error("סיסמה שגויה.");
-        }
-
-        // Save session locally only AFTER successful cloud verification
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-        return user;
-
-    } catch (e: any) {
-        console.error("Login logic error", e);
-        throw e;
-    }
+  // ADMIN
+  updateRegistrationCode: async (newCode: string): Promise<void> => {
+      if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת.");
+      await firebaseService.updateRegistrationCode(newCode);
   },
 
-  // REGISTER: Strict Cloud Creation
-  registerUser: async (name: string, email: string, password?: string): Promise<User> => {
-    if (!storageService.isCloudEnabled()) {
-        throw new Error("שגיאת תצורה: לא ניתן ליצור חשבון כרגע.");
+  // LOGIN
+  login: async (email: string, password?: string): Promise<User> => {
+    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת.");
+
+    const user = await firebaseService.findUserByEmail(email);
+    if (!user) throw new Error("משתמש לא קיים.");
+
+    // Simple password check
+    if (user.password !== password) throw new Error("סיסמה שגויה.");
+
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    return user;
+  },
+
+  // REGISTER (With Access Code)
+  registerUser: async (name: string, email: string, password?: string, registrationCode?: string): Promise<User> => {
+    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת.");
+
+    // 1. Validate Access Code
+    if (!registrationCode) throw new Error("נדרש קוד רישום (Registration Code).");
+    const isValidCode = await firebaseService.validateRegistrationCode(registrationCode);
+    if (!isValidCode) {
+        throw new Error("קוד רישום שגוי. אנא פנה למנהל המערכת.");
     }
 
-    // 1. Check if email already exists
+    // 2. Check existing
     const existing = await firebaseService.findUserByEmail(email);
-    if (existing) {
-        throw new Error("כתובת האימייל הזו כבר רשומה במערכת. אנא נסה להתחבר.");
-    }
+    if (existing) throw new Error("כתובת האימייל כבר רשומה.");
 
     const newUser: User = {
       id: generateId(),
       name,
       email,
-      password, // Note: storing plain text password is bad practice for production, but fits this demo scope
+      password,
       createdAt: Date.now(),
     };
 
-    // 2. Create in Cloud
-    try {
-        await firebaseService.createUser(newUser);
-    } catch (e) {
-        throw new Error("נכשל הרישום לשרת. בדוק חיבור אינטרנט או הגדרות Firebase.");
-    }
-
-    // 3. Login immediately
+    // 3. Create
+    await firebaseService.createUser(newUser);
     localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     return newUser;
+  },
+
+  // RESET PASSWORD
+  resetPassword: async (email: string, registrationCode: string, newPassword: string): Promise<void> => {
+    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת.");
+
+    // 1. Verify Code (Admin Auth)
+    const isValidCode = await firebaseService.validateRegistrationCode(registrationCode);
+    if (!isValidCode) throw new Error("קוד אימות שגוי. לא ניתן לאפס סיסמה ללא הרשאה.");
+
+    // 2. Find User
+    const user = await firebaseService.findUserByEmail(email);
+    if (!user) throw new Error("לא נמצא משתמש עם האימייל הזה.");
+
+    // 3. Update
+    await firebaseService.updatePassword(user.id, newPassword);
   },
 
   logout: () => {
     localStorage.removeItem(USER_KEY);
   },
 
-  // Response Management
-  addResponse: async (surveyId: string, q1: string, q2: string) => {
+  addResponse: async (surveyId: string, relationship: RelationshipType, q1: string, q2: string) => {
     const newResponse: FeedbackResponse = {
       id: generateId(),
       surveyId,
+      relationship,
       q1_change: q1,
       q2_actions: q2,
       timestamp: Date.now(),
@@ -126,7 +123,7 @@ export const storageService = {
     if (storageService.isCloudEnabled()) {
       await firebaseService.addResponse(newResponse);
     } else {
-        throw new Error("אין חיבור לשרת. לא ניתן לשלוח משוב.");
+        throw new Error("אין חיבור לשרת.");
     }
   },
 
@@ -146,5 +143,4 @@ export const storageService = {
   }
 };
 
-// Initial run
 storageService.init();

@@ -1,212 +1,222 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
 
 export const Landing: React.FC = () => {
-  const [isRegister, setIsRegister] = useState(false); // Default to Login
+  const [view, setView] = useState<'login' | 'register' | 'reset'>('login');
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   
   // Fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [registrationCode, setRegistrationCode] = useState(''); // New Master Key Field
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 1. Ensure JS SDK is loaded
     storageService.init();
-    
-    // 2. Perform a real network test to Firebase
     const verifyConnection = async () => {
         setConnectionStatus('checking');
         const isLive = await storageService.testConnection();
         setConnectionStatus(isLive ? 'connected' : 'disconnected');
     };
-    
     verifyConnection();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
     setIsLoading(true);
 
     try {
-      if (!email || !password) {
-          throw new Error("אנא מלא את כל שדות החובה");
-      }
-
+      // Re-verify connection
       if (connectionStatus !== 'connected') {
-          // Retry connection before failing
           const retry = await storageService.testConnection();
-          if (!retry) throw new Error("אין חיבור לשרת Firebase. אנא בדוק את הגדרות האבטחה (Rules) ב-Console.");
-          setConnectionStatus('connected');
+          if (!retry) throw new Error("אין תקשורת לשרת. בדוק חיבור אינטרנט.");
       }
 
-      if (isRegister) {
-        if (!name) throw new Error("אנא הזן שם מלא");
-        // Registration flow
-        await storageService.registerUser(name, email, password);
+      if (view === 'register') {
+        if (!name || !email || !password || !registrationCode) throw new Error("אנא מלא את כל השדות");
+        await storageService.registerUser(name, email, password, registrationCode);
         navigate('/dashboard');
-      } else {
-        // Login flow
+      } 
+      else if (view === 'login') {
+        if (!email || !password) throw new Error("אנא מלא אימייל וסיסמה");
         await storageService.login(email, password);
         navigate('/dashboard');
       }
-    } catch (err: any) {
-      console.error(err);
-      let msg = err.message;
-      if (msg.includes("Firebase") || msg.includes("firestore") || msg.includes("permission-denied")) {
-          msg = "שגיאת הרשאה או תקשורת. וודא שחוקי ה-Firestore (Rules) מוגדרים ל-public.";
+      else if (view === 'reset') {
+         if (!email || !registrationCode || !password) throw new Error("נדרש אימייל, קוד אימות וסיסמה חדשה");
+         await storageService.resetPassword(email, registrationCode, password);
+         setSuccessMsg("הסיסמה שונתה בהצלחה! כעת ניתן להתחבר.");
+         setTimeout(() => setView('login'), 2000);
       }
-      setError(msg || 'אירעה שגיאה. אנא נסה שוב.');
+    } catch (err: any) {
+      console.error("Submit Error:", err);
+      setError(err.message || 'אירעה שגיאה. אנא נסה שוב.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const toggleMode = () => {
-      setIsRegister(!isRegister);
-      setError('');
-  };
-
   return (
     <Layout>
-      <div className="flex flex-col items-center justify-center flex-grow w-full max-w-4xl mx-auto space-y-8 animate-fade-in py-8">
+      <div className="flex flex-col items-center justify-center min-h-[80vh]">
         
-        {/* Header Section */}
-        <div className="text-center space-y-4 max-w-2xl">
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
-            OBT AI 360
+        {/* Hero Section */}
+        <div className="text-center space-y-4 max-w-3xl mb-12 animate-slide-up">
+          <span className="text-amber-600 tracking-[0.3em] text-xs font-bold uppercase">Executive Growth Platform</span>
+          <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight">
+             הכלי שלך <span className="text-transparent bg-clip-text gold-gradient">לפריצת דרך</span>
           </h1>
-          <p className="text-xl text-slate-600">
-            הכלי המקצועי לניתוח משוב אישי וארגוני.
-            <br/>
-            <span className="text-base text-slate-500">
-                מבוסס Gemini AI לזיהוי "הדבר האחד" שמעכב צמיחה.
-            </span>
+          <p className="text-xl text-slate-500 font-light max-w-2xl mx-auto">
+            מערכת 360° חכמה שתעזור לך לזהות את "הדבר האחד" שיקפיץ אותך קדימה, באמצעות ניתוח בינה מלאכותית של פידבק מהסביבה שלך.
           </p>
         </div>
 
         {/* Auth Card */}
-        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl shadow-slate-200 border border-slate-100">
-          
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-800">
-                    {isRegister ? 'יצירת חשבון חדש' : 'כניסה למערכת'}
+        <div className="w-full max-w-md glass-panel p-8 rounded-2xl shadow-2xl shadow-slate-200/50 relative overflow-hidden animate-fade-in">
+            {/* Top accent line */}
+            <div className="absolute top-0 left-0 w-full h-1 gold-gradient"></div>
+
+            <div className="text-center mb-8">
+                <h2 className="text-2xl font-serif font-bold text-slate-800">
+                    {view === 'register' ? 'הצטרפות למערכת' : view === 'reset' ? 'שחזור סיסמה' : 'כניסה למנויים'}
                 </h2>
-                <div className="flex items-center gap-2" title="סטטוס חיבור לשרת">
-                    {connectionStatus === 'checking' && (
-                         <span className="text-xs text-slate-400">בודק חיבור...</span>
-                    )}
-                    {connectionStatus === 'connected' && (
-                        <>
-                            <span className="text-xs text-green-600">מחובר</span>
-                            <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
-                        </>
-                    )}
-                    {connectionStatus === 'disconnected' && (
-                        <>
-                            <span className="text-xs text-rose-600">מנותק</span>
-                            <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-                        </>
-                    )}
-                </div>
+                <p className="text-slate-400 text-sm mt-1">
+                   {view === 'register' ? 'נדרש קוד רישום (VIP) להצטרפות' : view === 'reset' ? 'הזן את קוד הרישום לאימות' : 'הזן את פרטי הגישה שלך'}
+                </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
                 
-                {/* Name Field - Only for Register */}
-                {isRegister && (
+                {/* Name - Register only */}
+                {view === 'register' && (
                     <div className="animate-fade-in">
-                        <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
-                        שם מלא
-                        </label>
+                        <label className="block text-xs font-bold text-slate-600 mb-1 uppercase tracking-wider">שם מלא</label>
                         <input
                         type="text"
-                        id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-amber-400 outline-none transition-all"
                         placeholder="ישראל ישראלי"
-                        autoComplete="name"
                         />
                     </div>
                 )}
 
-                {/* Email Field */}
+                {/* Email - All views */}
                 <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-                    אימייל
-                    </label>
+                    <label className="block text-xs font-bold text-slate-600 mb-1 uppercase tracking-wider">אימייל עסקי</label>
                     <input
                     type="email"
-                    id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-left"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-amber-400 outline-none transition-all text-left"
                     placeholder="name@company.com"
-                    autoComplete="username"
                     dir="ltr"
                     />
                 </div>
 
-                {/* Password Field */}
+                {/* Registration Code - Register & Reset */}
+                {(view === 'register' || view === 'reset') && (
+                    <div className="animate-fade-in">
+                        <label className="block text-xs font-bold text-amber-600 mb-1 uppercase tracking-wider">
+                            {view === 'reset' ? 'קוד אימות (Master Key)' : 'קוד רישום (VIP Code)'}
+                        </label>
+                        <input
+                        type="text"
+                        value={registrationCode}
+                        onChange={(e) => setRegistrationCode(e.target.value)}
+                        className="w-full px-4 py-3 rounded-lg border border-amber-200 bg-amber-50/50 focus:bg-white focus:border-amber-400 outline-none transition-all text-center tracking-widest font-mono"
+                        placeholder="XXXX-XXXX"
+                        dir="ltr"
+                        />
+                    </div>
+                )}
+
+                {/* Password - All views (In reset it's "New Password") */}
                 <div>
-                    <label htmlFor="pass" className="block text-sm font-medium text-slate-700 mb-1">
-                    סיסמה
+                    <label className="block text-xs font-bold text-slate-600 mb-1 uppercase tracking-wider">
+                        {view === 'reset' ? 'סיסמה חדשה' : 'סיסמה'}
                     </label>
                     <input
                     type="password"
-                    id="pass"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
-                    placeholder="********"
-                    autoComplete={isRegister ? "new-password" : "current-password"}
+                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-amber-400 outline-none transition-all"
+                    placeholder="••••••••"
                     dir="ltr"
                     />
                 </div>
 
+                {/* Messages */}
                 {error && (
-                    <div className="bg-rose-50 text-rose-600 text-sm p-3 rounded-lg text-right border border-rose-100 flex items-start gap-2">
-                        <span className="mt-0.5">⚠️</span>
-                        <span>{error}</span>
+                    <div className="bg-rose-50 text-rose-700 text-sm p-3 rounded border border-rose-100 text-center animate-fade-in">
+                        {error}
+                    </div>
+                )}
+                {successMsg && (
+                    <div className="bg-emerald-50 text-emerald-700 text-sm p-3 rounded border border-emerald-100 text-center animate-fade-in">
+                        {successMsg}
                     </div>
                 )}
 
                 <Button 
                     type="submit" 
-                    className="w-full text-lg font-bold shadow-indigo-500/20 shadow-lg" 
+                    variant="gold"
+                    className="w-full mt-4 text-base shadow-lg" 
                     isLoading={isLoading}
-                    disabled={connectionStatus === 'checking'}
+                    disabled={connectionStatus === 'disconnected'}
                 >
-                    {isRegister ? 'הירשם' : 'התחבר'}
+                    {view === 'register' ? 'צור חשבון' : view === 'reset' ? 'אפס סיסמה' : 'התחבר למערכת'}
                 </Button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-slate-100 text-center">
-                <span className="text-slate-500 text-sm ml-2">
-                    {isRegister ? 'כבר יש לך חשבון?' : 'עדיין אין לך חשבון?'}
-                </span>
-                <button 
-                    onClick={toggleMode}
-                    className="text-indigo-600 font-bold text-sm hover:underline"
-                >
-                    {isRegister ? 'התחבר כאן' : 'הירשם בחינם'}
-                </button>
+            {/* Links */}
+            <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col gap-2 text-center text-sm">
+                
+                {view === 'login' && (
+                    <>
+                        <button onClick={() => setView('reset')} className="text-slate-500 hover:text-slate-800 transition-colors">
+                            שכחתי סיסמה?
+                        </button>
+                        <div className="text-slate-400">
+                             אין לך חשבון עדיין? <button onClick={() => setView('register')} className="text-amber-600 font-bold hover:underline">הצטרף כאן</button>
+                        </div>
+                    </>
+                )}
+
+                {(view === 'register' || view === 'reset') && (
+                    <button onClick={() => {
+                        setView('login');
+                        setError('');
+                        setSuccessMsg('');
+                    }} className="text-slate-500 hover:text-slate-800 font-medium">
+                        חזרה להתחברות
+                    </button>
+                )}
             </div>
             
-            {connectionStatus === 'disconnected' && (
-                <div className="mt-4 text-xs text-slate-400 text-center px-4">
-                    החיבור לשרת נכשל. וודא שחוקי ה-Firestore (Rules) מוגדרים כ-public ב-Console.
-                </div>
-            )}
+            <div className="mt-4 flex justify-between items-center text-[10px]">
+                 <div>
+                    {connectionStatus === 'disconnected' ? (
+                        <span className="text-rose-500 bg-rose-50 px-2 py-1 rounded">שרת מנותק</span>
+                    ) : (
+                        <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            מחובר לענן
+                        </span>
+                    )}
+                 </div>
+                 <Link to="/admin" className="text-slate-300 hover:text-slate-500 transition-colors">ניהול מערכת</Link>
+            </div>
         </div>
       </div>
     </Layout>

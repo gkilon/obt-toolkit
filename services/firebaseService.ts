@@ -7,32 +7,28 @@ import {
   getDocs, 
   query, 
   where,
+  limit,
+  updateDoc,
   Firestore
 } from "firebase/firestore";
-import * as firebaseApp from "firebase/app";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
 
 // Global instances
-let app: any = null;
+let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
 
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
     try {
-      // 1. Initialize App safely
-      // Access functions from namespace to avoid named export resolution issues
-      const apps = firebaseApp.getApps();
-      
+      const apps = getApps();
       if (apps.length > 0) {
-        app = firebaseApp.getApp();
+        app = getApp();
       } else {
-        app = firebaseApp.initializeApp(config);
+        app = initializeApp(config);
       }
-      
-      // 2. Initialize Firestore with specific app instance
       db = getFirestore(app);
-      
-      console.log("Firebase initialized (client-side)");
+      console.log("Firebase initialized");
       return true;
     } catch (e) {
       console.error("Firebase init critical error:", e);
@@ -44,30 +40,80 @@ export const firebaseService = {
 
   isInitialized: () => !!db,
 
-  // New method to verify actual network connectivity
   testConnection: async (): Promise<boolean> => {
     if (!db) return false;
     try {
-      // Try to fetch a dummy document to verify permissions and connection
-      // We don't care if it exists, just that we can reach the server
-      const testRef = doc(db, "system_checks", "connectivity_test");
-      await getDoc(testRef); 
+      const dummyRef = collection(db, "users");
+      const q = query(dummyRef, limit(1));
+      await getDocs(q);
       return true;
-    } catch (e) {
-      console.error("Connectivity test failed:", e);
+    } catch (e: any) {
+      console.error("Connectivity test failed:", e.code);
       return false;
     }
   },
 
-  // User Operations
+  // --- System Config (Registration Code) ---
+  
+  validateRegistrationCode: async (codeToCheck: string): Promise<boolean> => {
+    if (!db) return false;
+    try {
+        const configRef = doc(db, "settings", "config");
+        const docSnap = await getDoc(configRef);
+        
+        let validCode = "OBT-VIP"; // Default fallback code if not set in DB
+        
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.registrationCode) {
+                validCode = data.registrationCode;
+            }
+        } else {
+            // If document doesn't exist, create it with default
+            await setDoc(configRef, { registrationCode: "OBT-VIP" });
+        }
+
+        return codeToCheck === validCode;
+    } catch (e) {
+        console.error("Error validating code", e);
+        // Fallback to allow default code if DB read fails (to prevent lockout on first run)
+        return codeToCheck === "OBT-VIP";
+    }
+  },
+
+  updateRegistrationCode: async (newCode: string): Promise<void> => {
+    if (!db) throw new Error("Database not connected");
+    try {
+        const configRef = doc(db, "settings", "config");
+        await setDoc(configRef, { registrationCode: newCode }, { merge: true });
+    } catch (e) {
+        throw new Error("Failed to update registration code");
+    }
+  },
+
+  // --- User Operations ---
+
   createUser: async (user: User): Promise<void> => {
     if (!db) throw new Error("System Error: Database not connected.");
     try {
       const userRef = doc(db, "users", user.id);
       await setDoc(userRef, user);
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        throw new Error("שגיאת הרשאה. בדוק Rules.");
+      }
+      throw new Error("נכשל הרישום לענן.");
+    }
+  },
+
+  updatePassword: async (userId: string, newPassword: string): Promise<void> => {
+    if (!db) throw new Error("Database disconnected");
+    try {
+        const userRef = doc(db, "users", userId);
+        await updateDoc(userRef, { password: newPassword });
     } catch (e) {
-      console.error("Error creating user in Firestore:", e);
-      throw new Error("Failed to save user to cloud.");
+        console.error("Password update failed", e);
+        throw new Error("עדכון סיסמה נכשל.");
     }
   },
 
@@ -76,15 +122,9 @@ export const firebaseService = {
     try {
       const userRef = doc(db, "users", userId);
       const docSnap = await getDoc(userRef);
-      
-      if (docSnap.exists()) {
-        return docSnap.data() as User;
-      }
+      if (docSnap.exists()) return docSnap.data() as User;
       return null;
-    } catch (e) {
-      console.error("Error fetching user:", e);
-      return null;
-    }
+    } catch (e) { return null; }
   },
 
   findUserByEmail: async (email: string): Promise<User | null> => {
@@ -96,20 +136,20 @@ export const firebaseService = {
       
       if (querySnapshot.empty) return null;
       return querySnapshot.docs[0].data() as User;
-    } catch (e) {
-      console.error("Error finding user by email:", e);
+    } catch (e: any) {
+      if (e.code === 'permission-denied') throw new Error("permission-denied");
       throw e;
     }
   },
 
-  // Response Operations
+  // --- Response Operations ---
+
   addResponse: async (response: FeedbackResponse): Promise<void> => {
     if (!db) throw new Error("Database not connected");
     try {
       const responseRef = doc(db, "responses", response.id);
       await setDoc(responseRef, response);
     } catch (e) {
-      console.error("Error adding response:", e);
       throw new Error("Failed to save response to cloud.");
     }
   },
@@ -128,7 +168,6 @@ export const firebaseService = {
       
       return responses.sort((a, b) => b.timestamp - a.timestamp);
     } catch (e) {
-      console.error("Error fetching responses:", e);
       return [];
     }
   }

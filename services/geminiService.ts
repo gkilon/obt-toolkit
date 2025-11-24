@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { AnalysisResult } from "../types";
+import { AnalysisResult, FeedbackResponse } from "../types";
 
 const getClient = () => {
   const apiKey = process.env.API_KEY;
@@ -9,21 +9,33 @@ const getClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-export const analyzeFeedback = async (responses: string[]): Promise<AnalysisResult> => {
+export const analyzeFeedback = async (responses: FeedbackResponse[]): Promise<AnalysisResult> => {
   if (responses.length === 0) {
     throw new Error("No responses to analyze");
   }
 
   const ai = getClient();
   
+  // Format data for AI
+  const formattedData = responses.map(r => ({
+      relationship: r.relationship,
+      feedback: r.q1_change,
+      contradictions: r.q2_actions
+  }));
+
   const prompt = `
-    הנה רשימה של תשובות שניתנו על ידי אנשים שונים לשאלה: "מהו הדבר האחד שאם אשנה אותו יקפיץ אותי קדימה?".
+    תפקידך הוא להיות פסיכולוג ארגוני ומאמן קריירה בכיר.
+    יש לנתח את המשובים הבאים שניתנו למנהל/עובד.
+    המשובים מחולקים לפי סוג הקשר (מנהל, כפיף, קולגה, חבר).
     
-    המשימה שלך היא לנתח את כל התשובות הללו, למצוא את המכנה המשותף, ולסכם את ה"דבר הגדול" שאני צריך לשנות.
-    התייחס לזה כמו מאמן קריירה אמפתי אך חד.
-    
-    התשובות:
-    ${JSON.stringify(responses)}
+    המשימה:
+    1. זהה את "הדבר האחד" (The One Thing) המרכזי שאם ישונה - יקפיץ את האדם קדימה.
+    2. מצא נושאים חוזרים.
+    3. נתח הבדלים בין הקבוצות השונות (למשל: מה המנהלים רואים לעומת הכפיפים).
+    4. תן עצה מעשית.
+
+    הנתונים:
+    ${JSON.stringify(formattedData)}
   `;
 
   try {
@@ -31,7 +43,7 @@ export const analyzeFeedback = async (responses: string[]): Promise<AnalysisResu
       model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
-        systemInstruction: "You are an expert organizational psychologist and career coach speaking Hebrew.",
+        systemInstruction: "You are an expert organizational psychologist speaking Hebrew. Focus on growth and forward momentum.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -49,8 +61,19 @@ export const analyzeFeedback = async (responses: string[]): Promise<AnalysisResu
               type: Type.STRING,
               description: "A specific, encouraging piece of advice based on this feedback.",
             },
+            groupAnalysis: {
+                type: Type.OBJECT,
+                description: "A dictionary where key is the group name (e.g. 'Manager', 'Peer') and value is a short insight about that group's perspective. If a group has no data, do not include it.",
+                properties: {
+                    "manager": { type: Type.STRING },
+                    "peer": { type: Type.STRING },
+                    "subordinate": { type: Type.STRING },
+                    "friend": { type: Type.STRING },
+                    "other": { type: Type.STRING }
+                }
+            }
           },
-          required: ["summary", "keyThemes", "actionableAdvice"],
+          required: ["summary", "keyThemes", "actionableAdvice", "groupAnalysis"],
         },
       },
     });

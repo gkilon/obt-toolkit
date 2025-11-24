@@ -15,6 +15,7 @@
     "react": "^19.2.0",
     "@vitejs/plugin-react": "^5.1.1",
     "vite": "^7.2.4",
+    "docx": "latest",
     "firebase": "^12.6.0"
   },
   "devDependencies": {

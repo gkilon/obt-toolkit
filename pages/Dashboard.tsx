@@ -2,9 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { analyzeFeedback } from '../services/geminiService';
-import { User, FeedbackResponse, AnalysisResult } from '../types';
+import { exportToWord } from '../services/exportService';
+import { User, FeedbackResponse, AnalysisResult, RelationshipType } from '../types';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
+
+const relationshipLabels: Record<string, string> = {
+  'manager': 'מנהלים',
+  'peer': 'קולגות',
+  'subordinate': 'כפיפים',
+  'friend': 'חברים/משפחה',
+  'other': 'אחר'
+};
 
 export const Dashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -13,11 +22,10 @@ export const Dashboard: React.FC = () => {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [cloudError, setCloudError] = useState(false);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check user login status locally
     const currentUser = storageService.getCurrentUser();
     if (!currentUser) {
       navigate('/');
@@ -25,20 +33,18 @@ export const Dashboard: React.FC = () => {
     }
     setUser(currentUser);
     
-    // Check if cloud is actually configured
-    if (!storageService.isCloudEnabled()) {
-        setCloudError(true);
-        setLoadingData(false); // Stop loading if no cloud
-        return; 
-    }
-
+    // Strict Cloud Check for Data
     const loadData = async () => {
+        if (!storageService.isCloudEnabled()) {
+             setLoadingData(false);
+             return;
+        }
         setLoadingData(true);
         try {
             const data = await storageService.getResponsesForUser(currentUser.id);
             setResponses(data);
         } catch (e) {
-            console.error("Failed to load responses", e);
+            console.error(e);
         } finally {
             setLoadingData(false);
         }
@@ -50,12 +56,11 @@ export const Dashboard: React.FC = () => {
     if (responses.length === 0) return;
     setLoadingAnalysis(true);
     try {
-      const q1Answers = responses.map(r => r.q1_change);
-      const result = await analyzeFeedback(q1Answers);
+      const result = await analyzeFeedback(responses);
       setAnalysis(result);
     } catch (error) {
       console.error(error);
-      alert("שגיאה בניתוח הנתונים. אנא וודא שיש לך מפתח API תקין ל-Gemini.");
+      alert("שגיאה בניתוח הנתונים.");
     } finally {
       setLoadingAnalysis(false);
     }
@@ -70,189 +75,190 @@ export const Dashboard: React.FC = () => {
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    }).catch((err) => {
-      console.error('Could not copy text: ', err);
-      alert(`העתק את הקישור:\n${url}`);
     });
   };
 
-  const handleLogout = () => {
-    storageService.logout();
-    navigate('/');
+  const handleExport = () => {
+      if(user) exportToWord(user, analysis, responses);
+  };
+
+  const groupResponses = (data: FeedbackResponse[]) => {
+      const grouped: Record<string, FeedbackResponse[]> = {};
+      data.forEach(r => {
+          const key = r.relationship || 'other';
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push(r);
+      });
+      return grouped;
   };
 
   if (!user) return null;
 
+  const groupedResponses = groupResponses(responses);
+
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto w-full space-y-8 animate-fade-in">
+      <div className="animate-fade-in space-y-8">
         
-        {/* Cloud Error Warning - Very Prominent */}
-        {cloudError && (
-            <div className="bg-red-100 border-2 border-red-400 text-red-900 p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center gap-4 shadow-lg">
-                <div className="text-4xl">🛑</div>
-                <div className="flex-grow">
-                    <h3 className="font-bold text-xl mb-1">האפליקציה אינה מחוברת לענן</h3>
-                    <p className="text-base mb-2">
-                        במצב הנוכחי, קישורים שתשלח <strong>לא יעבדו</strong> ואנשים לא יוכלו לשלוח לך תשובות.
-                        האפליקציה חייבת מסד נתונים מרכזי (Firebase) כדי לקשר בין המשיבים לבינך.
-                    </p>
-                    <div className="bg-white/50 p-2 rounded text-sm font-mono mt-2">
-                        פתח את הקובץ <code>services/storageService.ts</code> והדבק שם את המפתחות.
-                    </div>
-                </div>
-            </div>
-        )}
-
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-200">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">שלום, {user.name} 👋</h1>
-            <p className="text-slate-500">
-                {!cloudError && (loadingData ? 'טוען נתונים...' : `התקבלו ${responses.length} משובים עד כה.`)}
+            <h1 className="text-3xl font-serif font-bold text-slate-900 mb-1">
+                לוח בקרה אישי
+            </h1>
+            <p className="text-slate-500 font-light">
+                שלום, <span className="font-medium text-slate-800">{user.name}</span>. 
+                {loadingData ? ' מסנכרן נתונים...' : ` התקבלו ${responses.length} משובים.`}
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-             <Button onClick={copyLink} variant="secondary" disabled={cloudError}>
-               {copied ? 'הקישור הועתק!' : 'העתק קישור לשאלון'}
-               {!copied && (
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                 </svg>
-               )}
+          <div className="flex flex-wrap gap-3">
+             <Button onClick={copyLink} variant="outline" className="border-slate-300">
+               {copied ? 'הקישור הועתק!' : 'העתק קישור להפצה'}
              </Button>
-             <Button onClick={handleLogout} variant="outline">התנתק</Button>
+             
+             {responses.length > 0 && (
+                <Button onClick={handleExport} variant="secondary" className="gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    הורד דוח Word
+                </Button>
+             )}
+
+             <Button onClick={() => { storageService.logout(); navigate('/'); }} variant="primary" className="bg-slate-800">
+                יציאה
+             </Button>
           </div>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* Left Column: Aggregated Answers (2/3 width) */}
-          <div className="lg:col-span-2 space-y-8">
+          {/* Left Column: Data (8/12) */}
+          <div className="lg:col-span-8 space-y-8">
             
-            {loadingData && !cloudError ? (
-                <div className="text-center py-20">
-                    <svg className="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p className="text-slate-500 mt-2">טוען תשובות מהענן...</p>
-                </div>
-            ) : responses.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
-                <p className="text-slate-400 text-lg mb-2">
-                    {cloudError ? 'התחבר לענן כדי לראות תשובות' : 'עדיין אין תשובות'}
+            {responses.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300 shadow-sm">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
+                <h3 className="text-lg font-bold text-slate-700">התחל את המסע שלך</h3>
+                <p className="text-slate-500 max-w-sm mx-auto mt-2">
+                    שלח את הקישור למנהלים, קולגות וכפיפים כדי לגלות מה יקפיץ אותך קדימה.
                 </p>
-                {!cloudError && (
-                    <p className="text-slate-500">
-                        1. לחץ על "העתק קישור לשאלון"<br/>
-                        2. שלח אותו לחברים בוואטסאפ או במייל<br/>
-                        3. התשובות יופיעו כאן אוטומטית כשהם ישלחו
-                    </p>
-                )}
+                <Button onClick={copyLink} variant="gold" className="mt-6 mx-auto">
+                    העתק קישור עכשיו
+                </Button>
               </div>
             ) : (
-              <>
-                {/* Question 1 Aggregate */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="bg-indigo-50/50 p-4 border-b border-indigo-100 flex justify-between items-center">
-                        <h2 className="text-lg font-bold text-indigo-900">
-                           1. הדבר האחד שמעכב אותי (OBT)
-                        </h2>
-                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">{responses.length} תשובות</span>
-                    </div>
-                    <div className="divide-y divide-slate-100">
-                        {responses.map((resp) => (
-                            <div key={resp.id} className="p-4 hover:bg-slate-50 transition-colors">
-                                <p className="text-slate-700 text-sm leading-relaxed">{resp.q1_change}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Question 2 Aggregate */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="bg-rose-50/50 p-4 border-b border-rose-100 flex justify-between items-center">
-                        <h2 className="text-lg font-bold text-rose-900">
-                           2. פעולות שסותרות את השינוי
-                        </h2>
-                        <span className="text-xs bg-rose-100 text-rose-700 px-2 py-1 rounded-full">{responses.length} תשובות</span>
-                    </div>
-                    <div className="divide-y divide-slate-100">
-                        {responses.map((resp) => (
-                            <div key={resp.id} className="p-4 hover:bg-slate-50 transition-colors">
-                                <p className="text-slate-700 text-sm leading-relaxed">{resp.q2_actions}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-              </>
+              <div className="space-y-6">
+                {Object.entries(groupedResponses).map(([rel, items]) => (
+                   <div key={rel} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                       <div className="bg-slate-50 p-4 border-b border-slate-200 flex items-center gap-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">קבוצה:</span>
+                            <h2 className="text-lg font-serif font-bold text-slate-800">
+                                {relationshipLabels[rel] || rel}
+                            </h2>
+                            <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full ml-auto">
+                                {items.length} תשובות
+                            </span>
+                       </div>
+                       <div className="divide-y divide-slate-100">
+                            {items.map((resp) => (
+                                <div key={resp.id} className="p-5 hover:bg-amber-50/10 transition-colors grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <h4 className="text-xs font-bold text-amber-600 mb-1">הדבר האחד לשינוי:</h4>
+                                        <p className="text-slate-800 leading-relaxed">{resp.q1_change}</p>
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xs font-bold text-slate-400 mb-1">חסם/סתירה:</h4>
+                                        <p className="text-slate-500 leading-relaxed italic text-sm">"{resp.q2_actions}"</p>
+                                    </div>
+                                </div>
+                            ))}
+                       </div>
+                   </div> 
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Right Column: AI Analysis (1/3 width) */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
-              <div className="bg-gradient-to-b from-indigo-600 to-indigo-800 text-white rounded-2xl p-6 shadow-xl shadow-indigo-200 relative overflow-hidden">
-                <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl"></div>
+          {/* Right Column: Analysis (4/12) */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-28">
+              <div className="navy-gradient text-white rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+                {/* Decoration */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -ml-10 -mb-10"></div>
 
-                <h2 className="text-xl font-bold mb-4 relative z-10 flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  ניתוח AI
-                </h2>
-                
-                {!analysis ? (
-                  <div className="text-center py-8 relative z-10">
-                    <p className="text-indigo-100 mb-6">
-                      {responses.length > 0 
-                        ? "לחץ למטה כדי שה-AI יקרא את כל התשובות ויזקק את 'הדבר האחד'." 
-                        : "המתן לקבלת תשובות כדי להפעיל את הניתוח."}
-                    </p>
-                    <Button 
-                      onClick={handleAnalyze} 
-                      disabled={responses.length === 0}
-                      isLoading={loadingAnalysis}
-                      className="w-full bg-white text-indigo-700 hover:bg-indigo-700/10 hover:text-white border-2 border-transparent hover:border-white transition-all"
-                    >
-                      נתח תובנות עכשיו
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-6 relative z-10 animate-fade-in">
-                    <div>
-                      <h3 className="text-xs uppercase tracking-wider text-indigo-200 mb-1">הדבר הגדול</h3>
-                      <p className="text-lg font-bold leading-relaxed">{analysis.summary}</p>
+                <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-6">
+                        <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center backdrop-blur-sm">✨</div>
+                        <h2 className="text-xl font-serif font-bold tracking-wide">ניתוח AI מתקדם</h2>
                     </div>
                     
-                    <div>
-                      <h3 className="text-xs uppercase tracking-wider text-indigo-200 mb-2">נושאים מרכזיים</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {analysis.keyThemes.map((theme, i) => (
-                          <span key={i} className="text-xs bg-white/20 px-2 py-1 rounded-md backdrop-blur-sm">
-                            {theme}
-                          </span>
-                        ))}
-                      </div>
+                    {!analysis ? (
+                    <div className="text-center py-6">
+                        <p className="text-slate-300 text-sm mb-8 leading-relaxed">
+                        המערכת תסרוק את כל התשובות (מנהלים, קולגות, כפיפים) ותזקק עבורך את התובנה המרכזית לפריצת דרך.
+                        </p>
+                        <Button 
+                        onClick={handleAnalyze} 
+                        disabled={responses.length === 0}
+                        isLoading={loadingAnalysis}
+                        className="w-full bg-amber-500 hover:bg-amber-400 text-slate-900 border-none font-bold"
+                        >
+                        בצע ניתוח נתונים
+                        </Button>
                     </div>
+                    ) : (
+                    <div className="space-y-6 animate-fade-in max-h-[80vh] overflow-y-auto custom-scrollbar pr-2">
+                        {/* Summary */}
+                        <div>
+                            <h3 className="text-[10px] uppercase tracking-widest text-amber-500 mb-2">השורה התחתונה</h3>
+                            <p className="text-lg font-medium leading-relaxed text-white">{analysis.summary}</p>
+                        </div>
+                        
+                        <div className="w-full h-px bg-white/10"></div>
 
-                    <div className="bg-white/10 p-4 rounded-xl border border-white/10">
-                      <h3 className="text-xs uppercase tracking-wider text-indigo-200 mb-1">עצה לפעולה</h3>
-                      <p className="text-sm">{analysis.actionableAdvice}</p>
+                        {/* Themes */}
+                        <div>
+                            <h3 className="text-[10px] uppercase tracking-widest text-amber-500 mb-2">נושאים חוזרים</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {analysis.keyThemes.map((theme, i) => (
+                                <span key={i} className="text-xs bg-white/10 px-3 py-1.5 rounded-full border border-white/5">
+                                    {theme}
+                                </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Group Breakdown */}
+                        {analysis.groupAnalysis && Object.keys(analysis.groupAnalysis).length > 0 && (
+                            <div className="bg-white/5 rounded-lg p-3 space-y-3">
+                                <h3 className="text-[10px] uppercase tracking-widest text-amber-500">תובנות לפי קבוצה</h3>
+                                {Object.entries(analysis.groupAnalysis).map(([key, val]) => (
+                                    <div key={key}>
+                                        <span className="text-xs font-bold text-white block">{relationshipLabels[key] || key}:</span>
+                                        <p className="text-xs text-slate-300">{val}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Advice */}
+                        <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5 mt-4">
+                            <h3 className="text-[10px] uppercase tracking-widest text-amber-500 mb-2">המלצה לדרך פעולה</h3>
+                            <p className="text-sm text-slate-300 leading-relaxed">{analysis.actionableAdvice}</p>
+                        </div>
+
+                        <button 
+                            onClick={handleAnalyze} 
+                            className="text-xs text-slate-400 hover:text-white underline mt-2 w-full text-center"
+                        >
+                        נתח מחדש
+                        </button>
                     </div>
-
-                    <Button 
-                      onClick={handleAnalyze} 
-                      isLoading={loadingAnalysis}
-                      className="w-full bg-indigo-700/50 hover:bg-indigo-700 text-sm py-2"
-                    >
-                      נתח מחדש
-                    </Button>
-                  </div>
-                )}
+                    )}
+                </div>
               </div>
             </div>
           </div>
