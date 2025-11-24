@@ -6,6 +6,7 @@ import { Layout } from '../components/Layout';
 
 export const Landing: React.FC = () => {
   const [isRegister, setIsRegister] = useState(false); // Default to Login for a cleaner look
+  const [isConnected, setIsConnected] = useState(false);
   
   // Fields
   const [name, setName] = useState('');
@@ -19,6 +20,8 @@ export const Landing: React.FC = () => {
   useEffect(() => {
     // Ensure we start with a clean connection attempt
     storageService.init();
+    // Check connection status
+    setIsConnected(storageService.isCloudEnabled());
     
     // NOTE: Auto-login logic removed to ensure explicit user identification
     // on every visit, as requested.
@@ -86,7 +89,12 @@ export const Landing: React.FC = () => {
                 <h2 className="text-2xl font-bold text-slate-800">
                     {isRegister ? 'יצירת חשבון חדש' : 'כניסה למערכת'}
                 </h2>
-                <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]" title="מחובר לשרת"></div>
+                <div className="flex items-center gap-2" title={isConnected ? "מחובר לשרת" : "אין חיבור לשרת"}>
+                    <span className={`text-xs ${isConnected ? 'text-green-600' : 'text-rose-600'}`}>
+                        {isConnected ? 'מחובר' : 'מנותק'}
+                    </span>
+                    <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]' : 'bg-rose-500'} transition-colors duration-300`}></div>
+                </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">

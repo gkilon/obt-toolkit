@@ -6,31 +6,39 @@ import {
   getDoc, 
   getDocs, 
   query, 
-  where
+  where,
+  Firestore
 } from "firebase/firestore";
-// Fix: Use namespace import and cast to any to handle potential environment type discrepancies
 import * as firebaseApp from "firebase/app";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
 
-// Extract functions with type casting to bypass "no exported member" errors
+// Workaround for TypeScript resolution issues with firebase/app exports
+// We use a namespace import and cast to any to access the members that exist at runtime
 const { initializeApp, getApps, getApp } = firebaseApp as any;
 
-// Using 'any' for app/db variables to handle potential type mismatches with CDN imports
-let app: any = null;
-let db: any = null;
+// Define FirebaseApp as any to avoid import errors
+type FirebaseApp = any;
+
+// Global instances
+let app: FirebaseApp | null = null;
+let db: Firestore | null = null;
 
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
     try {
-      // Check if apps are already initialized (Modular style)
-      if (getApps().length > 0) {
+      // 1. Try to get existing app (hot-reload support)
+      // We use getApps() from the modular SDK to check for existing apps
+      if (getApps && getApps().length > 0) {
         app = getApp();
       } else {
+        // 2. Initialize new app
         app = initializeApp(config);
       }
       
+      // 3. Initialize Firestore
+      // Pass the specific app instance to ensure connection
       db = getFirestore(app);
-      console.log("Firebase connection established.");
+      console.log("Firebase connection established successfully.");
       return true;
     } catch (e) {
       console.error("Firebase init critical error:", e);
