@@ -24,12 +24,11 @@ export const Survey: React.FC = () => {
         setIsLoadingUser(true);
         if (userId) {
             try {
-                // Must fetch from cloud
                 const name = await storageService.getUserNameById(userId);
                 if (name) {
                     setUserName(name);
                 } else {
-                    setError('הקישור אינו תקין או שהמשתמש אינו קיים.');
+                    setError('קישור לא תקין.');
                 }
             } catch (e) {
                 setError('שגיאה בטעינת הנתונים.');
@@ -48,7 +47,7 @@ export const Survey: React.FC = () => {
         await storageService.addResponse(userId, relationship, q1, q2);
         setSubmitted(true);
     } catch (err) {
-        setError('אירעה שגיאה בשמירה. אנא נסה שוב.');
+        setError('שגיאה בשמירה.');
     } finally {
         setIsSending(false);
     }
@@ -58,7 +57,7 @@ export const Survey: React.FC = () => {
       return (
           <Layout>
               <div className="flex justify-center items-center h-64 animate-fade-in">
-                 <div className="animate-spin h-8 w-8 border-4 border-amber-500 border-t-transparent rounded-full"></div>
+                 <div className="w-1 h-16 bg-bronze-500 animate-pulse"></div>
               </div>
           </Layout>
       );
@@ -67,19 +66,17 @@ export const Survey: React.FC = () => {
   if (submitted) {
     return (
       <Layout>
-        <div className="flex flex-col items-center justify-center max-w-lg mx-auto text-center space-y-8 animate-slide-up py-16">
-          <div className="w-24 h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-5xl shadow-sm mb-2">
-            ✓
+        <div className="glass-panel rounded-2xl flex flex-col items-center justify-center max-w-lg mx-auto text-center py-20 px-6 animate-fade-in shadow-2xl">
+          <div className="text-6xl text-emerald-500 mb-6 drop-shadow-md">✓</div>
+          <h2 className="text-3xl font-serif font-bold text-ink mb-6">תודה על הכנות</h2>
+          <p className="text-slate-600 text-lg font-light leading-relaxed max-w-md">
+                המשוב שלך נקלט בהצלחה ויישמר באנונימיות מוחלטת. תרומתך תסייע ל-{userName} בתהליך הצמיחה.
+          </p>
+          <div className="mt-12">
+            <Link to="/">
+                <Button variant="outline" className="text-slate-500 border-slate-300">חזרה לדף הבית</Button>
+            </Link>
           </div>
-          <div>
-            <h2 className="text-4xl font-serif font-bold text-slate-800 mb-4">תודה רבה</h2>
-            <p className="text-slate-600 text-lg font-light leading-relaxed">
-                הכנות שלך מוערכת מאוד. התשובות נשמרו בהצלחה באופן אנונימי ויעזרו ל-{userName} לקפוץ קדימה.
-            </p>
-          </div>
-          <Link to="/">
-              <Button variant="outline" className="mt-8">חזרה לדף הבית</Button>
-          </Link>
         </div>
       </Layout>
     );
@@ -88,11 +85,11 @@ export const Survey: React.FC = () => {
   if (error) {
       return (
         <Layout>
-            <div className="max-w-md mx-auto mt-12 p-8 bg-white rounded-xl text-center shadow-lg animate-fade-in border-t-4 border-rose-500">
-                <h2 className="text-xl font-bold text-slate-800 mb-2">שגיאה</h2>
-                <p className="text-slate-600">{error}</p>
+            <div className="glass-panel max-w-md mx-auto mt-20 text-center animate-fade-in p-10 rounded-xl">
+                <h2 className="text-xl font-bold text-rose-700 mb-4">שגיאת מערכת</h2>
+                <p className="text-slate-600 mb-8">{error}</p>
                 <Link to="/">
-                    <Button variant="secondary" className="mt-6 w-full">חזרה</Button>
+                    <Button variant="secondary">חזרה</Button>
                 </Link>
             </div>
         </Layout>
@@ -101,80 +98,83 @@ export const Survey: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto w-full animate-fade-in pb-12">
+      <div className="max-w-2xl mx-auto w-full animate-fade-in">
         
-        <div className="bg-white p-8 md:p-12 rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 relative">
-          
-          <div className="text-center mb-12">
-            <h1 className="text-3xl font-serif font-bold text-slate-900 mb-4">
-              משוב מקדם ובונה
+        {/* Document Header */}
+        <div className="text-center mb-12">
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-bronze-300 block mb-3">טופס משוב דיסקרטי</span>
+            <h1 className="text-4xl md:text-5xl font-serif font-black text-white drop-shadow-lg">
+              {userName}
             </h1>
-            <div className="inline-block bg-slate-100 text-slate-800 px-6 py-2 rounded-full font-medium text-sm tracking-wide">
-              עבור: {userName}
-            </div>
-            <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-100/50">
-                 <p className="text-amber-800 text-sm font-medium">
-                    🔒 המשוב הינו אנונימי לחלוטין ומנותח על ידי בינה מלאכותית.
-                 </p>
-            </div>
-          </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-10">
-            
-            {/* Relationship */}
-            <div className="space-y-2 bg-slate-50 p-6 rounded-xl border border-slate-100">
-                <label className="block text-lg font-serif font-bold text-slate-800">
-                    אני עבור {userName}...
+        <div className="glass-panel p-8 md:p-12 rounded-2xl shadow-2xl relative">
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-bronze-800 to-bronze-500"></div>
+
+            <form onSubmit={handleSubmit} className="space-y-12">
+                
+                {/* Context */}
+                <div className="text-center bg-slate-50 p-6 rounded-xl border border-slate-100">
+                    <p className="text-slate-500 font-serif italic text-lg mb-4">
+                        "מהו הקשר המקצועי שלך למוערך?"
+                    </p>
+                    <div className="inline-block relative w-full max-w-xs">
+                        <select 
+                            value={relationship}
+                            onChange={(e) => setRelationship(e.target.value as RelationshipType)}
+                            className="w-full appearance-none bg-white border border-slate-200 rounded-lg py-3 px-4 text-ink font-bold text-lg focus:outline-none focus:border-bronze-600 focus:ring-2 focus:ring-bronze-100 cursor-pointer text-center transition-all"
+                        >
+                            <option value="peer">אני קולגה / עמית</option>
+                            <option value="manager">אני מנהל/ת ישיר/ה</option>
+                            <option value="subordinate">אני כפיף/ה</option>
+                            <option value="friend">אני חבר/ה</option>
+                            <option value="other">ממשק עבודה אחר</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
+                            <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Q1 */}
+                <div className="group">
+                <label className="block text-xl md:text-2xl font-serif font-bold text-ink mb-4 leading-relaxed">
+                    1. מהו <span className="text-bronze-600 underline decoration-bronze-300 decoration-4 underline-offset-4">הדבר האחד</span> (One Big Thing) שאם ישונה, יקפיץ את האדם הזה קדימה?
                 </label>
-                <select 
-                    value={relationship}
-                    onChange={(e) => setRelationship(e.target.value as RelationshipType)}
-                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:border-amber-400 outline-none transition-all"
-                >
-                    <option value="peer">קולגה / עמית לעבודה</option>
-                    <option value="manager">מנהל/ת ישיר/ה</option>
-                    <option value="subordinate">כפיף/ה (מנוהל/ת ע"י {userName})</option>
-                    <option value="friend">חבר/ה או בן/בת משפחה</option>
-                    <option value="other">אחר / ממשק עבודה אחר</option>
-                </select>
-            </div>
+                <textarea
+                    required
+                    value={q1}
+                    onChange={(e) => setQ1(e.target.value)}
+                    rows={4}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg focus:border-bronze-500 focus:ring-2 focus:ring-bronze-100 outline-none transition-all text-lg text-ink placeholder-slate-400 resize-none p-4 font-sans"
+                    placeholder="התשובה שלך..."
+                />
+                </div>
 
-            {/* Question 1 */}
-            <div className="space-y-4">
-              <label className="block text-xl font-serif font-bold text-slate-800 leading-relaxed">
-                1. מהו <span className="text-amber-600 border-b-2 border-amber-200/50 pb-1">הדבר האחד</span> (One Big Thing) שאם {userName} ישנה אותו, זה <span className="text-emerald-600 font-bold">יקפיץ אותו/ה משמעותית קדימה</span>?
-              </label>
-              <textarea
-                required
-                value={q1}
-                onChange={(e) => setQ1(e.target.value)}
-                rows={4}
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10 outline-none transition-all resize-none text-lg"
-                placeholder="תן דוגמה ספציפית ובונה..."
-              />
-            </div>
+                {/* Q2 */}
+                <div className="group">
+                <label className="block text-xl md:text-2xl font-serif font-bold text-ink mb-4 leading-relaxed">
+                    2. אילו התנהגויות קיימות כיום מעכבות או סותרות את השינוי הזה?
+                </label>
+                <textarea
+                    required
+                    value={q2}
+                    onChange={(e) => setQ2(e.target.value)}
+                    rows={4}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg focus:border-bronze-500 focus:ring-2 focus:ring-bronze-100 outline-none transition-all text-lg text-ink placeholder-slate-400 resize-none p-4 font-sans"
+                    placeholder="התשובה שלך..."
+                />
+                </div>
 
-            {/* Question 2 */}
-            <div className="space-y-4">
-              <label className="block text-xl font-serif font-bold text-slate-800">
-                2. אילו התנהגויות או פעולות קיימות כיום סותרות את אותו השינוי?
-              </label>
-              <textarea
-                required
-                value={q2}
-                onChange={(e) => setQ2(e.target.value)}
-                rows={4}
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10 outline-none transition-all resize-none text-lg"
-                placeholder="למשל: נטייה להימנע מ..."
-              />
-            </div>
-
-            <div className="pt-6">
-              <Button type="submit" variant="gold" isLoading={isSending} className="w-full py-4 text-lg font-bold shadow-xl shadow-amber-500/10">
-                שלח משוב
-              </Button>
-            </div>
-          </form>
+                <div className="pt-4 text-center">
+                <Button type="submit" variant="gold" isLoading={isSending} className="w-full md:w-auto min-w-[200px] text-lg py-4 shadow-xl">
+                    שליחת משוב
+                </Button>
+                <p className="mt-4 text-xs text-slate-400 font-bold tracking-wide">
+                    🔒 המשוב הינו אנונימי לחלוטין.
+                </p>
+                </div>
+            </form>
         </div>
       </div>
     </Layout>

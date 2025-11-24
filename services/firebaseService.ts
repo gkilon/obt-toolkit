@@ -11,21 +11,22 @@ import {
   updateDoc,
   Firestore
 } from "firebase/firestore";
-import * as firebaseApp from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import type { FirebaseApp } from "firebase/app";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
 
 // Global instances
-let app: firebaseApp.FirebaseApp | null = null;
+let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
 
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
     try {
-      const apps = firebaseApp.getApps();
+      const apps = getApps();
       if (apps.length > 0) {
-        app = firebaseApp.getApp();
+        app = getApp();
       } else {
-        app = firebaseApp.initializeApp(config);
+        app = initializeApp(config);
       }
       db = getFirestore(app);
       console.log("Firebase initialized");
@@ -43,6 +44,7 @@ export const firebaseService = {
   testConnection: async (): Promise<boolean> => {
     if (!db) return false;
     try {
+      // Try to read something public or just check if we can reach the server
       const dummyRef = collection(db, "users");
       const q = query(dummyRef, limit(1));
       await getDocs(q);
@@ -51,6 +53,7 @@ export const firebaseService = {
       // If permission denied, it means we successfully contacted the server, 
       // but security rules blocked the read. This counts as "Connected".
       if (e.code === 'permission-denied') {
+          console.log("Connection verified (permission denied is OK)");
           return true;
       }
       
@@ -67,7 +70,8 @@ export const firebaseService = {
   
   validateRegistrationCode: async (codeToCheck: string): Promise<boolean> => {
     if (!db) return false;
-    const cleanCode = codeToCheck.trim();
+    // Normalize code: remove spaces, uppercase
+    const cleanCode = codeToCheck.trim().toUpperCase();
     
     try {
         const configRef = doc(db, "settings", "config");
@@ -80,20 +84,14 @@ export const firebaseService = {
             if (data.registrationCode) {
                 validCode = data.registrationCode;
             }
-        } else {
-            // If document doesn't exist, try to create it with default
-            // This might fail if user is unauth, which is fine, we use fallback
-            try {
-                await setDoc(configRef, { registrationCode: "OBT-VIP" });
-            } catch (err) {
-                // Ignore write error
-            }
-        }
+        } 
+        
+        // Check match (case insensitive)
+        return cleanCode === validCode.toUpperCase();
 
-        return cleanCode === validCode;
     } catch (e) {
-        console.error("Error validating code (using fallback)", e);
-        // Fallback: If we can't read DB (e.g. permission denied), 
+        console.warn("Error validating code (using fallback mode):", e);
+        // Fallback: If we can't read DB (e.g. permission denied or offline), 
         // we ONLY allow the default code to prevent total lockout.
         return cleanCode === "OBT-VIP";
     }
@@ -118,9 +116,10 @@ export const firebaseService = {
       await setDoc(userRef, user);
     } catch (e: any) {
       if (e.code === 'permission-denied') {
-        throw new Error("שגיאת הרשאה. וודא שחוקי ה-Firestore מאפשרים כתיבה.");
+        throw new Error("שגיאת הרשאה. ייתכן וקוד הרישום לא נקלט כראוי, או שיש חסימת אבטחה.");
       }
-      throw new Error("נכשל הרישום לענן.");
+      console.error("Create User Error:", e);
+      throw new Error("נכשל הרישום לענן. אנא נסה שוב.");
     }
   },
 
