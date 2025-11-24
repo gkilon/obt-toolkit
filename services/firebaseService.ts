@@ -8,11 +8,11 @@ import {
   query, 
   where,
   limit,
-  updateDoc,
-  Firestore
+  updateDoc
 } from "firebase/firestore";
-import { initializeApp, getApps, getApp } from "firebase/app";
-import type { FirebaseApp } from "firebase/app";
+// Separate type import to avoid runtime errors in some environments
+import type { Firestore } from "firebase/firestore";
+import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
 
 // Global instances
@@ -22,6 +22,7 @@ let db: Firestore | null = null;
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
     try {
+      // Check for existing apps using named exports logic
       const apps = getApps();
       if (apps.length > 0) {
         app = getApp();

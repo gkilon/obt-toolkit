@@ -74,7 +74,7 @@ export const Survey: React.FC = () => {
           </p>
           <div className="mt-12">
             <Link to="/">
-                <Button variant="outline" className="text-slate-500 border-slate-300">חזרה לדף הבית</Button>
+                <Button variant="secondary">חזרה לדף הבית</Button>
             </Link>
           </div>
         </div>

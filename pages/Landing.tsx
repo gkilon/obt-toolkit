@@ -90,6 +90,14 @@ export const Landing: React.FC = () => {
             {/* Top Accent Line */}
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-bronze-800 via-bronze-500 to-bronze-800"></div>
             
+            {/* Admin Link - Made more visible */}
+            <div className="absolute top-3 left-3">
+                 <Link to="/admin" className="text-[10px] text-slate-400 hover:text-bronze-600 tracking-widest uppercase font-bold transition-all flex items-center gap-1 group">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-bronze-500 transition-colors"></span>
+                    Admin
+                 </Link>
+            </div>
+
             <div className="text-center mb-10">
                 <h2 className="text-3xl font-serif font-bold text-ink">
                     {view === 'register' ? 'הרשמה למערכת' : view === 'reset' ? 'איפוס סיסמה' : 'כניסת מנויים'}
@@ -180,10 +188,6 @@ export const Landing: React.FC = () => {
                         חזרה לכניסה
                     </button>
                 )}
-            </div>
-            
-            <div className="absolute top-2 right-2">
-                 <Link to="/admin" className="text-[10px] text-slate-200 hover:text-bronze-300 tracking-widest uppercase p-2">Admin</Link>
             </div>
         </div>
       </div>
