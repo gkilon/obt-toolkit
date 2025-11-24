@@ -35,6 +35,9 @@ export const storageService = {
   },
 
   isCloudEnabled: () => firebaseService.isInitialized(),
+  
+  // Actually verify connection
+  testConnection: async () => firebaseService.testConnection(),
 
   // User Management
   getCurrentUser: (): User | null => {
@@ -49,7 +52,7 @@ export const storageService = {
   // LOGIN: Strict Cloud Check
   login: async (email: string, password?: string): Promise<User> => {
     if (!storageService.isCloudEnabled()) {
-        throw new Error("שגיאת תקשורת: אין חיבור לשרת.");
+        throw new Error("שגיאת תצורה: אין הגדרות חיבור לשרת.");
     }
 
     try {
@@ -77,7 +80,7 @@ export const storageService = {
   // REGISTER: Strict Cloud Creation
   registerUser: async (name: string, email: string, password?: string): Promise<User> => {
     if (!storageService.isCloudEnabled()) {
-        throw new Error("שגיאת תקשורת: לא ניתן ליצור חשבון כרגע.");
+        throw new Error("שגיאת תצורה: לא ניתן ליצור חשבון כרגע.");
     }
 
     // 1. Check if email already exists
@@ -98,7 +101,7 @@ export const storageService = {
     try {
         await firebaseService.createUser(newUser);
     } catch (e) {
-        throw new Error("נכשל הרישום לשרת. אנא נסה שנית.");
+        throw new Error("נכשל הרישום לשרת. בדוק חיבור אינטרנט או הגדרות Firebase.");
     }
 
     // 3. Login immediately

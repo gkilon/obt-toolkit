@@ -5,8 +5,8 @@ import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
 
 export const Landing: React.FC = () => {
-  const [isRegister, setIsRegister] = useState(false); // Default to Login for a cleaner look
-  const [isConnected, setIsConnected] = useState(false);
+  const [isRegister, setIsRegister] = useState(false); // Default to Login
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   
   // Fields
   const [name, setName] = useState('');
@@ -18,13 +18,17 @@ export const Landing: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Ensure we start with a clean connection attempt
+    // 1. Ensure JS SDK is loaded
     storageService.init();
-    // Check connection status
-    setIsConnected(storageService.isCloudEnabled());
     
-    // NOTE: Auto-login logic removed to ensure explicit user identification
-    // on every visit, as requested.
+    // 2. Perform a real network test to Firebase
+    const verifyConnection = async () => {
+        setConnectionStatus('checking');
+        const isLive = await storageService.testConnection();
+        setConnectionStatus(isLive ? 'connected' : 'disconnected');
+    };
+    
+    verifyConnection();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,6 +39,13 @@ export const Landing: React.FC = () => {
     try {
       if (!email || !password) {
           throw new Error("אנא מלא את כל שדות החובה");
+      }
+
+      if (connectionStatus !== 'connected') {
+          // Retry connection before failing
+          const retry = await storageService.testConnection();
+          if (!retry) throw new Error("אין חיבור לשרת Firebase. אנא בדוק את הגדרות האבטחה (Rules) ב-Console.");
+          setConnectionStatus('connected');
       }
 
       if (isRegister) {
@@ -49,9 +60,10 @@ export const Landing: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      // Clean error message for user
       let msg = err.message;
-      if (msg.includes("Firebase") || msg.includes("firestore")) msg = "שגיאת תקשורת עם השרת.";
+      if (msg.includes("Firebase") || msg.includes("firestore") || msg.includes("permission-denied")) {
+          msg = "שגיאת הרשאה או תקשורת. וודא שחוקי ה-Firestore (Rules) מוגדרים ל-public.";
+      }
       setError(msg || 'אירעה שגיאה. אנא נסה שוב.');
     } finally {
       setIsLoading(false);
@@ -61,7 +73,6 @@ export const Landing: React.FC = () => {
   const toggleMode = () => {
       setIsRegister(!isRegister);
       setError('');
-      // Keep email/pass filled if switching, but maybe clear name
   };
 
   return (
@@ -89,11 +100,22 @@ export const Landing: React.FC = () => {
                 <h2 className="text-2xl font-bold text-slate-800">
                     {isRegister ? 'יצירת חשבון חדש' : 'כניסה למערכת'}
                 </h2>
-                <div className="flex items-center gap-2" title={isConnected ? "מחובר לשרת" : "אין חיבור לשרת"}>
-                    <span className={`text-xs ${isConnected ? 'text-green-600' : 'text-rose-600'}`}>
-                        {isConnected ? 'מחובר' : 'מנותק'}
-                    </span>
-                    <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]' : 'bg-rose-500'} transition-colors duration-300`}></div>
+                <div className="flex items-center gap-2" title="סטטוס חיבור לשרת">
+                    {connectionStatus === 'checking' && (
+                         <span className="text-xs text-slate-400">בודק חיבור...</span>
+                    )}
+                    {connectionStatus === 'connected' && (
+                        <>
+                            <span className="text-xs text-green-600">מחובר</span>
+                            <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
+                        </>
+                    )}
+                    {connectionStatus === 'disconnected' && (
+                        <>
+                            <span className="text-xs text-rose-600">מנותק</span>
+                            <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -158,7 +180,12 @@ export const Landing: React.FC = () => {
                     </div>
                 )}
 
-                <Button type="submit" className="w-full text-lg font-bold shadow-indigo-500/20 shadow-lg" isLoading={isLoading}>
+                <Button 
+                    type="submit" 
+                    className="w-full text-lg font-bold shadow-indigo-500/20 shadow-lg" 
+                    isLoading={isLoading}
+                    disabled={connectionStatus === 'checking'}
+                >
                     {isRegister ? 'הירשם' : 'התחבר'}
                 </Button>
             </form>
@@ -174,6 +201,12 @@ export const Landing: React.FC = () => {
                     {isRegister ? 'התחבר כאן' : 'הירשם בחינם'}
                 </button>
             </div>
+            
+            {connectionStatus === 'disconnected' && (
+                <div className="mt-4 text-xs text-slate-400 text-center px-4">
+                    החיבור לשרת נכשל. וודא שחוקי ה-Firestore (Rules) מוגדרים כ-public ב-Console.
+                </div>
+            )}
         </div>
       </div>
     </Layout>

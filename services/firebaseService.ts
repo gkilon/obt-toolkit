@@ -9,11 +9,8 @@ import {
   where,
   Firestore
 } from "firebase/firestore";
-import * as firebaseAppModule from "firebase/app";
+import * as firebaseApp from "firebase/app";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
-
-// Workaround for potential type definition mismatch in the environment
-const firebaseApp = firebaseAppModule as any;
 
 // Global instances
 let app: any = null;
@@ -22,10 +19,9 @@ let db: Firestore | null = null;
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
     try {
-      // 1. Initialize App
-      // Check if an app is already initialized (prevent hot-reload errors)
-      // Use safe access in case of interop issues
-      const apps = firebaseApp.getApps ? firebaseApp.getApps() : [];
+      // 1. Initialize App safely
+      // Access functions from namespace to avoid named export resolution issues
+      const apps = firebaseApp.getApps();
       
       if (apps.length > 0) {
         app = firebaseApp.getApp();
@@ -33,15 +29,13 @@ export const firebaseService = {
         app = firebaseApp.initializeApp(config);
       }
       
-      // 2. Initialize Firestore
-      // explicitly pass the app instance to avoid "No Firebase App '[DEFAULT]'" error
+      // 2. Initialize Firestore with specific app instance
       db = getFirestore(app);
       
-      console.log("Firebase initialized successfully");
+      console.log("Firebase initialized (client-side)");
       return true;
     } catch (e) {
       console.error("Firebase init critical error:", e);
-      // Ensure db is null if init failed
       db = null;
       app = null;
       return false;
@@ -49,6 +43,21 @@ export const firebaseService = {
   },
 
   isInitialized: () => !!db,
+
+  // New method to verify actual network connectivity
+  testConnection: async (): Promise<boolean> => {
+    if (!db) return false;
+    try {
+      // Try to fetch a dummy document to verify permissions and connection
+      // We don't care if it exists, just that we can reach the server
+      const testRef = doc(db, "system_checks", "connectivity_test");
+      await getDoc(testRef); 
+      return true;
+    } catch (e) {
+      console.error("Connectivity test failed:", e);
+      return false;
+    }
+  },
 
   // User Operations
   createUser: async (user: User): Promise<void> => {
