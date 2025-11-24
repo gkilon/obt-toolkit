@@ -9,39 +9,41 @@ import {
   where,
   Firestore
 } from "firebase/firestore";
-import * as firebaseApp from "firebase/app";
+import * as firebaseAppModule from "firebase/app";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
 
-// Workaround for TypeScript resolution issues with firebase/app exports
-// We use a namespace import and cast to any to access the members that exist at runtime
-const { initializeApp, getApps, getApp } = firebaseApp as any;
-
-// Define FirebaseApp as any to avoid import errors
-type FirebaseApp = any;
+// Workaround for potential type definition mismatch in the environment
+const firebaseApp = firebaseAppModule as any;
 
 // Global instances
-let app: FirebaseApp | null = null;
+let app: any = null;
 let db: Firestore | null = null;
 
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
     try {
-      // 1. Try to get existing app (hot-reload support)
-      // We use getApps() from the modular SDK to check for existing apps
-      if (getApps && getApps().length > 0) {
-        app = getApp();
+      // 1. Initialize App
+      // Check if an app is already initialized (prevent hot-reload errors)
+      // Use safe access in case of interop issues
+      const apps = firebaseApp.getApps ? firebaseApp.getApps() : [];
+      
+      if (apps.length > 0) {
+        app = firebaseApp.getApp();
       } else {
-        // 2. Initialize new app
-        app = initializeApp(config);
+        app = firebaseApp.initializeApp(config);
       }
       
-      // 3. Initialize Firestore
-      // Pass the specific app instance to ensure connection
+      // 2. Initialize Firestore
+      // explicitly pass the app instance to avoid "No Firebase App '[DEFAULT]'" error
       db = getFirestore(app);
-      console.log("Firebase connection established successfully.");
+      
+      console.log("Firebase initialized successfully");
       return true;
     } catch (e) {
       console.error("Firebase init critical error:", e);
+      // Ensure db is null if init failed
+      db = null;
+      app = null;
       return false;
     }
   },
@@ -84,7 +86,6 @@ export const firebaseService = {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) return null;
-      // Return the first match
       return querySnapshot.docs[0].data() as User;
     } catch (e) {
       console.error("Error finding user by email:", e);

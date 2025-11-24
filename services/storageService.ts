@@ -25,7 +25,9 @@ const generateId = () => Math.random().toString(36).substring(2, 9) + Date.now()
 export const storageService = {
   
   init: () => {
-    // Always init Firebase
+    // Only init if not already done
+    if (firebaseService.isInitialized()) return;
+
     const success = firebaseService.init(HARDCODED_FIREBASE_CONFIG);
     if (!success) {
         console.error("CRITICAL: Failed to connect to Firebase Cloud.");
@@ -141,5 +143,5 @@ export const storageService = {
   }
 };
 
-// Auto-init
+// Initial run
 storageService.init();
