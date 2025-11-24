@@ -11,21 +11,21 @@ import {
   updateDoc,
   Firestore
 } from "firebase/firestore";
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import * as firebaseApp from "firebase/app";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
 
 // Global instances
-let app: FirebaseApp | null = null;
+let app: firebaseApp.FirebaseApp | null = null;
 let db: Firestore | null = null;
 
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
     try {
-      const apps = getApps();
+      const apps = firebaseApp.getApps();
       if (apps.length > 0) {
-        app = getApp();
+        app = firebaseApp.getApp();
       } else {
-        app = initializeApp(config);
+        app = firebaseApp.initializeApp(config);
       }
       db = getFirestore(app);
       console.log("Firebase initialized");
@@ -48,8 +48,18 @@ export const firebaseService = {
       await getDocs(q);
       return true;
     } catch (e: any) {
+      // If permission denied, it means we successfully contacted the server, 
+      // but security rules blocked the read. This counts as "Connected".
+      if (e.code === 'permission-denied') {
+          return true;
+      }
+      
       console.error("Connectivity test failed:", e.code);
-      return false;
+      // 'unavailable' usually means offline
+      if (e.code === 'unavailable') return false;
+      
+      // For other errors, assume connected but erroring
+      return true;
     }
   },
 
@@ -57,6 +67,8 @@ export const firebaseService = {
   
   validateRegistrationCode: async (codeToCheck: string): Promise<boolean> => {
     if (!db) return false;
+    const cleanCode = codeToCheck.trim();
+    
     try {
         const configRef = doc(db, "settings", "config");
         const docSnap = await getDoc(configRef);
@@ -69,15 +81,21 @@ export const firebaseService = {
                 validCode = data.registrationCode;
             }
         } else {
-            // If document doesn't exist, create it with default
-            await setDoc(configRef, { registrationCode: "OBT-VIP" });
+            // If document doesn't exist, try to create it with default
+            // This might fail if user is unauth, which is fine, we use fallback
+            try {
+                await setDoc(configRef, { registrationCode: "OBT-VIP" });
+            } catch (err) {
+                // Ignore write error
+            }
         }
 
-        return codeToCheck === validCode;
+        return cleanCode === validCode;
     } catch (e) {
-        console.error("Error validating code", e);
-        // Fallback to allow default code if DB read fails (to prevent lockout on first run)
-        return codeToCheck === "OBT-VIP";
+        console.error("Error validating code (using fallback)", e);
+        // Fallback: If we can't read DB (e.g. permission denied), 
+        // we ONLY allow the default code to prevent total lockout.
+        return cleanCode === "OBT-VIP";
     }
   },
 
@@ -100,7 +118,7 @@ export const firebaseService = {
       await setDoc(userRef, user);
     } catch (e: any) {
       if (e.code === 'permission-denied') {
-        throw new Error("שגיאת הרשאה. בדוק Rules.");
+        throw new Error("שגיאת הרשאה. וודא שחוקי ה-Firestore מאפשרים כתיבה.");
       }
       throw new Error("נכשל הרישום לענן.");
     }

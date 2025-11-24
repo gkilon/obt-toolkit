@@ -36,15 +36,16 @@ export const Landing: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Re-verify connection
-      if (connectionStatus !== 'connected') {
+      // Re-verify connection if it was disconnected
+      if (connectionStatus === 'disconnected') {
           const retry = await storageService.testConnection();
           if (!retry) throw new Error("אין תקשורת לשרת. בדוק חיבור אינטרנט.");
+          setConnectionStatus('connected');
       }
 
       if (view === 'register') {
         if (!name || !email || !password || !registrationCode) throw new Error("אנא מלא את כל השדות");
-        await storageService.registerUser(name, email, password, registrationCode);
+        await storageService.registerUser(name, email, password, registrationCode.trim());
         navigate('/dashboard');
       } 
       else if (view === 'login') {
@@ -54,7 +55,7 @@ export const Landing: React.FC = () => {
       }
       else if (view === 'reset') {
          if (!email || !registrationCode || !password) throw new Error("נדרש אימייל, קוד אימות וסיסמה חדשה");
-         await storageService.resetPassword(email, registrationCode, password);
+         await storageService.resetPassword(email, registrationCode.trim(), password);
          setSuccessMsg("הסיסמה שונתה בהצלחה! כעת ניתן להתחבר.");
          setTimeout(() => setView('login'), 2000);
       }
@@ -72,7 +73,7 @@ export const Landing: React.FC = () => {
         
         {/* Hero Section */}
         <div className="text-center space-y-4 max-w-3xl mb-12 animate-slide-up">
-          <span className="text-amber-600 tracking-[0.3em] text-xs font-bold uppercase">Executive Growth Platform</span>
+          <span className="text-amber-600 tracking-[0.3em] text-xs font-bold uppercase">Personal Growth Accelerator</span>
           <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight">
              הכלי שלך <span className="text-transparent bg-clip-text gold-gradient">לפריצת דרך</span>
           </h1>
@@ -135,13 +136,14 @@ export const Landing: React.FC = () => {
                         value={registrationCode}
                         onChange={(e) => setRegistrationCode(e.target.value)}
                         className="w-full px-4 py-3 rounded-lg border border-amber-200 bg-amber-50/50 focus:bg-white focus:border-amber-400 outline-none transition-all text-center tracking-widest font-mono"
-                        placeholder="XXXX-XXXX"
+                        placeholder="OBT-VIP"
                         dir="ltr"
                         />
+                        <p className="text-[10px] text-slate-400 mt-1 text-center">קוד ברירת מחדל: OBT-VIP</p>
                     </div>
                 )}
 
-                {/* Password - All views (In reset it's "New Password") */}
+                {/* Password - All views */}
                 <div>
                     <label className="block text-xs font-bold text-slate-600 mb-1 uppercase tracking-wider">
                         {view === 'reset' ? 'סיסמה חדשה' : 'סיסמה'}
