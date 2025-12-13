@@ -13,11 +13,13 @@ import {
 // Separate type import to avoid runtime errors in some environments
 import type { Firestore } from "firebase/firestore";
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider, signInWithPopup, Auth, User as FirebaseUser } from "firebase/auth";
 import { FirebaseConfig, User, FeedbackResponse } from "../types";
 
 // Global instances
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
+let auth: Auth | null = null;
 
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
@@ -30,12 +32,14 @@ export const firebaseService = {
         app = initializeApp(config);
       }
       db = getFirestore(app);
+      auth = getAuth(app);
       console.log("Firebase initialized");
       return true;
     } catch (e) {
       console.error("Firebase init critical error:", e);
       db = null;
       app = null;
+      auth = null;
       return false;
     }
   },
@@ -65,6 +69,26 @@ export const firebaseService = {
       // For other errors, assume connected but erroring
       return true;
     }
+  },
+
+  // --- Auth & Google Sign In ---
+
+  loginWithGoogle: async (): Promise<FirebaseUser> => {
+    if (!auth) throw new Error("Auth not initialized");
+    const provider = new GoogleAuthProvider();
+    try {
+        const result = await signInWithPopup(auth, provider);
+        return result.user;
+    } catch (error) {
+        console.error("Google Sign In Error", error);
+        throw error;
+    }
+  },
+
+  logout: async (): Promise<void> => {
+      if (auth) {
+          await auth.signOut();
+      }
   },
 
   // --- System Config (Registration Code) ---

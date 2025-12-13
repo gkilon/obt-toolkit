@@ -1,40 +1,43 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-transparent text-ink selection:bg-bronze-200">
+    <div className="min-h-screen flex flex-col bg-midnight-900 bg-radial-glow text-slate-100 selection:bg-primary-500 selection:text-white">
       
-      {/* Modern Glass Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-md border-b border-white/10 shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 h-20 flex items-center justify-between">
-          
-          {/* Logo */}
-          <div className="flex flex-col group cursor-default">
-            <h1 className="text-2xl font-serif font-black tracking-wider text-white group-hover:text-bronze-200 transition-colors">
-              OBT <span className="font-light text-bronze-400">360°</span>
-            </h1>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-slate-300 font-bold mt-0.5">
-              Executive Suite
+      {/* Decorative Glows */}
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-accent-900/20 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-[100px]"></div>
+      </div>
+
+      {/* Glass Header */}
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-midnight-900/70 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="relative">
+                <div className="absolute inset-0 bg-primary-500 blur opacity-40 group-hover:opacity-70 transition-opacity rounded-lg"></div>
+                <div className="relative w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center text-white font-bold font-heading shadow-lg border border-white/10">
+                360
+                </div>
+            </div>
+            <span className="font-heading font-semibold text-xl tracking-tight text-white group-hover:text-primary-400 transition-colors">
+              OBT <span className="font-light text-slate-400">System</span>
             </span>
-          </div>
-          
+          </Link>
         </div>
       </header>
       
-      <main className="flex-grow flex flex-col relative pt-32 pb-16">
-        <div className="px-6 w-full max-w-4xl mx-auto z-10">
-          {children}
-        </div>
+      {/* Main Content */}
+      <main className="flex-grow w-full max-w-6xl mx-auto px-6 py-12 relative z-10">
+        {children}
       </main>
       
-      <footer className="py-12 text-center text-slate-400 border-t border-white/10 mt-auto bg-black/20 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-6 flex flex-col items-center gap-2">
-            <p className="font-serif italic text-sm text-slate-400 opacity-80">
-                "The only way to do great work is to love what you do."
-            </p>
-            <p className="text-[10px] uppercase tracking-widest mt-4 opacity-50 text-slate-500">
-                © 2024 OBT System • Powered by Gemini Advanced
-            </p>
+      {/* Footer */}
+      <footer className="border-t border-white/5 bg-midnight-900/50 backdrop-blur-sm relative z-10">
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 uppercase tracking-widest">
+            <p>© 2024 OBT Intelligent Feedback</p>
+            <p className="mt-2 md:mt-0">Secured & Anonymous</p>
         </div>
       </footer>
     </div>

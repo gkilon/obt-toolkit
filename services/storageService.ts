@@ -2,17 +2,17 @@ import { User, FeedbackResponse, FirebaseConfig, RelationshipType } from '../typ
 import { firebaseService } from './firebaseService';
 
 // =================================================================
-// הגדרות FIREBASE
+// הגדרות FIREBASE (ממשתני סביבה בלבד)
 // =================================================================
 
-const HARDCODED_FIREBASE_CONFIG: FirebaseConfig = {
-  apiKey: "AIzaSyDgjGk6q8BUieAGCybYdTOBpiUIxm8JXw0",
-  authDomain: "obt-ai-360.firebaseapp.com",
-  projectId: "obt-ai-360",
-  storageBucket: "obt-ai-360.firebasestorage.app",
-  messagingSenderId: "333766329584",
-  appId: "1:333766329584:web:25fe1dede13c710abe6e35",
-  measurementId: "G-LBGDP262ZN"
+const FIREBASE_CONFIG: FirebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY || "",
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.FIREBASE_APP_ID || "",
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID || ""
 }; 
 
 // =================================================================
@@ -25,7 +25,14 @@ export const storageService = {
   
   init: () => {
     if (firebaseService.isInitialized()) return;
-    const success = firebaseService.init(HARDCODED_FIREBASE_CONFIG);
+    
+    // Check if config exists
+    if (!FIREBASE_CONFIG.apiKey) {
+        console.warn("Notice: Firebase Configuration missing in Environment Variables. App running in offline mode.");
+        return;
+    }
+
+    const success = firebaseService.init(FIREBASE_CONFIG);
     if (!success) console.error("CRITICAL: Failed to connect to Firebase Cloud.");
   },
 
@@ -47,9 +54,9 @@ export const storageService = {
       await firebaseService.updateRegistrationCode(newCode);
   },
 
-  // LOGIN
+  // LOGIN (EMAIL)
   login: async (email: string, password?: string): Promise<User> => {
-    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת.");
+    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת (חסרה קונפיגורציה).");
 
     const user = await firebaseService.findUserByEmail(email);
     if (!user) throw new Error("משתמש לא קיים.");
@@ -61,9 +68,34 @@ export const storageService = {
     return user;
   },
 
+  // LOGIN (GOOGLE)
+  loginWithGoogle: async (): Promise<User> => {
+      if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת (חסרה קונפיגורציה).");
+      
+      const firebaseUser = await firebaseService.loginWithGoogle();
+      if (!firebaseUser.email) throw new Error("לא התקבל אימייל מגוגל.");
+
+      // Check if user already exists in OUR database
+      let user = await firebaseService.findUserByEmail(firebaseUser.email);
+
+      if (!user) {
+          // New user from Google - Create account automatically
+          user = {
+              id: generateId(),
+              name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+              email: firebaseUser.email,
+              createdAt: Date.now()
+          };
+          await firebaseService.createUser(user);
+      }
+
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      return user;
+  },
+
   // REGISTER (With Access Code)
   registerUser: async (name: string, email: string, password?: string, registrationCode?: string): Promise<User> => {
-    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת.");
+    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת (חסרה קונפיגורציה).");
 
     // 1. Validate Access Code
     if (!registrationCode) throw new Error("נדרש קוד רישום (Registration Code).");
@@ -92,7 +124,7 @@ export const storageService = {
 
   // RESET PASSWORD
   resetPassword: async (email: string, registrationCode: string, newPassword: string): Promise<void> => {
-    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת.");
+    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת (חסרה קונפיגורציה).");
 
     // 1. Verify Code (Admin Auth)
     const isValidCode = await firebaseService.validateRegistrationCode(registrationCode);
@@ -106,7 +138,8 @@ export const storageService = {
     await firebaseService.updatePassword(user.id, newPassword);
   },
 
-  logout: () => {
+  logout: async () => {
+    await firebaseService.logout();
     localStorage.removeItem(USER_KEY);
   },
 
@@ -123,7 +156,9 @@ export const storageService = {
     if (storageService.isCloudEnabled()) {
       await firebaseService.addResponse(newResponse);
     } else {
-        throw new Error("אין חיבור לשרת.");
+        // Fallback for demo mode - log but don't save to cloud
+        console.warn("Cloud not enabled. Response not saved to DB.", newResponse);
+        throw new Error("אין חיבור לשרת (שמירה בענן נכשלה).");
     }
   },
 
