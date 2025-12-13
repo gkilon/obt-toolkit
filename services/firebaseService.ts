@@ -10,7 +10,6 @@ import {
   limit,
   updateDoc
 } from "firebase/firestore";
-// Separate type import to avoid runtime errors in some environments
 import type { Firestore } from "firebase/firestore";
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, Auth, User as FirebaseUser } from "firebase/auth";
@@ -23,26 +22,35 @@ let auth: Auth | null = null;
 
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
-    // Critical fix: Do not attempt to initialize if config is empty
+    console.log("------------------------------------------------");
+    console.log("FIREBASE INIT START");
+    console.log("API Key present:", config.apiKey ? "YES (Length: " + config.apiKey.length + ")" : "NO");
+    console.log("Project ID:", config.projectId);
+    console.log("Auth Domain:", config.authDomain);
+    console.log("------------------------------------------------");
+
     if (!config.apiKey || config.apiKey.length === 0) {
-        console.warn("Firebase init skipped: No API Key provided.");
+        console.error("Firebase Init Failed: Missing API Key.");
         return false;
     }
 
     try {
-      // Check for existing apps using named exports logic
       const apps = getApps();
       if (apps.length > 0) {
+        console.log("Firebase App already exists, reusing.");
         app = getApp();
       } else {
+        console.log("Initializing new Firebase App...");
         app = initializeApp(config);
       }
+      
       db = getFirestore(app);
       auth = getAuth(app);
-      console.log("Firebase initialized");
+      
+      console.log("Firebase services initialized successfully.");
       return true;
     } catch (e) {
-      console.error("Firebase init critical error:", e);
+      console.error("CRITICAL ERROR during Firebase Initialization:", e);
       db = null;
       app = null;
       auth = null;
@@ -50,43 +58,51 @@ export const firebaseService = {
     }
   },
 
-  isInitialized: () => !!db,
+  isInitialized: () => {
+      const initialized = !!db && !!auth;
+      if (!initialized) console.warn("Firebase isInitialized check returned FALSE");
+      return initialized;
+  },
 
   testConnection: async (): Promise<boolean> => {
-    if (!db) return false;
+    if (!db) {
+        console.error("testConnection failed: DB is null");
+        return false;
+    }
     try {
-      // Try to read something public or just check if we can reach the server
+      console.log("Testing connection to Firestore...");
       const dummyRef = collection(db, "users");
       const q = query(dummyRef, limit(1));
       await getDocs(q);
+      console.log("Connection test PASSED");
       return true;
     } catch (e: any) {
-      // If permission denied, it means we successfully contacted the server, 
-      // but security rules blocked the read. This counts as "Connected".
       if (e.code === 'permission-denied') {
-          console.log("Connection verified (permission denied is OK)");
+          console.log("Connection verified (permission denied is expected without login)");
           return true;
       }
-      
-      console.error("Connectivity test failed:", e.code);
-      // 'unavailable' usually means offline
-      if (e.code === 'unavailable') return false;
-      
-      // For other errors, assume connected but erroring
-      return true;
+      console.error("Connection test FAILED:", e.code, e.message);
+      return false;
     }
   },
 
   // --- Auth & Google Sign In ---
 
   loginWithGoogle: async (): Promise<FirebaseUser> => {
-    if (!auth) throw new Error("Auth not initialized");
+    if (!auth) {
+        console.error("Login attempted but Auth is null");
+        throw new Error("Auth not initialized - check console logs");
+    }
+    console.log("Starting Google Sign In...");
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
+        console.log("Google Sign In Success:", result.user.email);
         return result.user;
-    } catch (error) {
-        console.error("Google Sign In Error", error);
+    } catch (error: any) {
+        console.error("Google Sign In Error Details:", error);
+        console.error("Error Code:", error.code);
+        console.error("Error Message:", error.message);
         throw error;
     }
   },
@@ -101,14 +117,13 @@ export const firebaseService = {
   
   validateRegistrationCode: async (codeToCheck: string): Promise<boolean> => {
     if (!db) return false;
-    // Normalize code: remove spaces, uppercase
     const cleanCode = codeToCheck.trim().toUpperCase();
     
     try {
         const configRef = doc(db, "settings", "config");
         const docSnap = await getDoc(configRef);
         
-        let validCode = "OBT-VIP"; // Default fallback code if not set in DB
+        let validCode = "OBT-VIP"; 
         
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -116,14 +131,10 @@ export const firebaseService = {
                 validCode = data.registrationCode;
             }
         } 
-        
-        // Check match (case insensitive)
         return cleanCode === validCode.toUpperCase();
 
     } catch (e) {
         console.warn("Error validating code (using fallback mode):", e);
-        // Fallback: If we can't read DB (e.g. permission denied or offline), 
-        // we ONLY allow the default code to prevent total lockout.
         return cleanCode === "OBT-VIP";
     }
   },
@@ -143,13 +154,15 @@ export const firebaseService = {
   createUser: async (user: User): Promise<void> => {
     if (!db) throw new Error("System Error: Database not connected.");
     try {
+      console.log("Creating user in Firestore:", user.id);
       const userRef = doc(db, "users", user.id);
       await setDoc(userRef, user);
+      console.log("User created successfully");
     } catch (e: any) {
+      console.error("Create User Error:", e);
       if (e.code === 'permission-denied') {
         throw new Error("שגיאת הרשאה. ייתכן וקוד הרישום לא נקלט כראוי, או שיש חסימת אבטחה.");
       }
-      console.error("Create User Error:", e);
       throw new Error("נכשל הרישום לענן. אנא נסה שוב.");
     }
   },
@@ -178,13 +191,19 @@ export const firebaseService = {
   findUserByEmail: async (email: string): Promise<User | null> => {
     if (!db) return null;
     try {
+      console.log("Searching for user by email:", email);
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("email", "==", email));
       const querySnapshot = await getDocs(q);
       
-      if (querySnapshot.empty) return null;
+      if (querySnapshot.empty) {
+          console.log("User not found via email query");
+          return null;
+      }
+      console.log("User found via email");
       return querySnapshot.docs[0].data() as User;
     } catch (e: any) {
+      console.error("findUserByEmail Error:", e);
       if (e.code === 'permission-denied') throw new Error("permission-denied");
       throw e;
     }
@@ -198,6 +217,7 @@ export const firebaseService = {
       const responseRef = doc(db, "responses", response.id);
       await setDoc(responseRef, response);
     } catch (e) {
+      console.error("Add Response Error:", e);
       throw new Error("Failed to save response to cloud.");
     }
   },
@@ -216,6 +236,7 @@ export const firebaseService = {
       
       return responses.sort((a, b) => b.timestamp - a.timestamp);
     } catch (e) {
+      console.error("Get Responses Error:", e);
       return [];
     }
   }
