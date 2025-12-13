@@ -28,12 +28,12 @@ export const storageService = {
     
     // Check if config exists
     if (!FIREBASE_CONFIG.apiKey) {
-        console.warn("Notice: Firebase Configuration missing in Environment Variables. App running in offline mode.");
+        console.warn("CRITICAL: Missing Firebase API Key. Cloud storage will fail.");
         return;
     }
 
     const success = firebaseService.init(FIREBASE_CONFIG);
-    if (!success) console.error("CRITICAL: Failed to connect to Firebase Cloud.");
+    if (!success) console.error("Failed to connect to Firebase Cloud.");
   },
 
   isCloudEnabled: () => firebaseService.isInitialized(),
@@ -50,63 +50,98 @@ export const storageService = {
 
   // ADMIN
   updateRegistrationCode: async (newCode: string): Promise<void> => {
-      if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת.");
-      await firebaseService.updateRegistrationCode(newCode);
+      if (storageService.isCloudEnabled()) {
+          await firebaseService.updateRegistrationCode(newCode);
+      } else {
+          throw new Error("אין חיבור לענן. לא ניתן לעדכן קוד.");
+      }
   },
 
   // LOGIN (EMAIL)
   login: async (email: string, password?: string): Promise<User> => {
-    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת (חסרה קונפיגורציה).");
+    // Must be cloud based
+    if (!storageService.isCloudEnabled()) throw new Error("אין חיבור לענן.");
 
     const user = await firebaseService.findUserByEmail(email);
-    if (!user) throw new Error("משתמש לא קיים.");
+    if (user && user.password === password) {
+            localStorage.setItem(USER_KEY, JSON.stringify(user));
+            return user;
+    }
 
-    // Simple password check
-    if (user.password !== password) throw new Error("סיסמה שגויה.");
+    throw new Error("משתמש לא נמצא או סיסמה שגויה.");
+  },
 
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-    return user;
+  // CLOUD GUEST LOGIN (Anonymous Session that SAVES to DB)
+  loginAsGuest: async (): Promise<User> => {
+     // 1. Generate a UNIQUE real ID
+     const guestId = generateId();
+     
+     // 2. Create User Object
+     const guestUser: User = {
+          id: guestId,
+          name: 'אורח מערכת', 
+          email: `guest_${guestId}@obt.system`, // Fake email identifier
+          createdAt: Date.now()
+      };
+
+      // 3. CRITICAL: Save to Cloud DB so links work for others
+      if (storageService.isCloudEnabled()) {
+           try {
+            await firebaseService.createUser(guestUser);
+           } catch (e) {
+             console.error("Cloud creation failed", e);
+             throw new Error("שגיאה ביצירת משתמש ענן. אנא בדוק חיבור אינטרנט.");
+           }
+      } else {
+           console.error("CRITICAL: Cloud config missing.");
+           // We warn the user, but we return the object so the UI doesn't crash immediately,
+           // although Dashboard will show the warning.
+      }
+      
+      localStorage.setItem(USER_KEY, JSON.stringify(guestUser));
+      return guestUser;
   },
 
   // LOGIN (GOOGLE)
   loginWithGoogle: async (): Promise<User> => {
-      if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת (חסרה קונפיגורציה).");
-      
-      const firebaseUser = await firebaseService.loginWithGoogle();
-      if (!firebaseUser.email) throw new Error("לא התקבל אימייל מגוגל.");
-
-      // Check if user already exists in OUR database
-      let user = await firebaseService.findUserByEmail(firebaseUser.email);
-
-      if (!user) {
-          // New user from Google - Create account automatically
-          user = {
-              id: generateId(),
-              name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-              email: firebaseUser.email,
-              createdAt: Date.now()
-          };
-          await firebaseService.createUser(user);
+      if (!storageService.isCloudEnabled()) {
+          throw new Error("חיבור לענן אינו זמין. בדוק הגדרות.");
       }
 
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
-      return user;
+      try {
+        const firebaseUser = await firebaseService.loginWithGoogle();
+        if (!firebaseUser.email) throw new Error("No email from Google");
+
+        let user = await firebaseService.findUserByEmail(firebaseUser.email);
+        if (!user) {
+            user = {
+                id: generateId(),
+                name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                email: firebaseUser.email,
+                createdAt: Date.now()
+            };
+            await firebaseService.createUser(user);
+        }
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        return user;
+
+      } catch (e) {
+          console.error("Cloud login failed", e);
+          throw e; 
+      }
   },
 
   // REGISTER (With Access Code)
   registerUser: async (name: string, email: string, password?: string, registrationCode?: string): Promise<User> => {
-    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת (חסרה קונפיגורציה).");
-
-    // 1. Validate Access Code
-    if (!registrationCode) throw new Error("נדרש קוד רישום (Registration Code).");
-    const isValidCode = await firebaseService.validateRegistrationCode(registrationCode);
-    if (!isValidCode) {
-        throw new Error("קוד רישום שגוי. אנא פנה למנהל המערכת.");
-    }
-
-    // 2. Check existing
+    if (!storageService.isCloudEnabled()) throw new Error("אין חיבור לענן.");
+    
+    if (!registrationCode) throw new Error("נדרש קוד רישום.");
+    
+    const cloudValid = await firebaseService.validateRegistrationCode(registrationCode);
+    if (!cloudValid) throw new Error("קוד רישום שגוי.");
+    
     const existing = await firebaseService.findUserByEmail(email);
-    if (existing) throw new Error("כתובת האימייל כבר רשומה.");
+    if (existing) throw new Error("המייל כבר קיים במערכת.");
 
     const newUser: User = {
       id: generateId(),
@@ -116,32 +151,31 @@ export const storageService = {
       createdAt: Date.now(),
     };
 
-    // 3. Create
     await firebaseService.createUser(newUser);
+    
     localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     return newUser;
   },
 
   // RESET PASSWORD
   resetPassword: async (email: string, registrationCode: string, newPassword: string): Promise<void> => {
-    if (!storageService.isCloudEnabled()) throw new Error("שגיאת חיבור לשרת (חסרה קונפיגורציה).");
-
-    // 1. Verify Code (Admin Auth)
-    const isValidCode = await firebaseService.validateRegistrationCode(registrationCode);
-    if (!isValidCode) throw new Error("קוד אימות שגוי. לא ניתן לאפס סיסמה ללא הרשאה.");
-
-    // 2. Find User
+    if (!storageService.isCloudEnabled()) throw new Error("אין חיבור לענן.");
+    
+    const isValid = await firebaseService.validateRegistrationCode(registrationCode);
+    if (!isValid) throw new Error("קוד שגוי.");
     const user = await firebaseService.findUserByEmail(email);
-    if (!user) throw new Error("לא נמצא משתמש עם האימייל הזה.");
-
-    // 3. Update
+    if (!user) throw new Error("משתמש לא נמצא.");
     await firebaseService.updatePassword(user.id, newPassword);
   },
 
   logout: async () => {
-    await firebaseService.logout();
+    if (storageService.isCloudEnabled()) {
+        await firebaseService.logout();
+    }
     localStorage.removeItem(USER_KEY);
   },
+
+  // DATA OPERATIONS (MUST BE CLOUD)
 
   addResponse: async (surveyId: string, relationship: RelationshipType, q1: string, q2: string) => {
     const newResponse: FeedbackResponse = {
@@ -156,15 +190,18 @@ export const storageService = {
     if (storageService.isCloudEnabled()) {
       await firebaseService.addResponse(newResponse);
     } else {
-        // Fallback for demo mode - log but don't save to cloud
-        console.warn("Cloud not enabled. Response not saved to DB.", newResponse);
-        throw new Error("אין חיבור לשרת (שמירה בענן נכשלה).");
+        throw new Error("שגיאה קריטית: אין חיבור לענן. המשוב לא יישמר.");
     }
   },
 
   getResponsesForUser: async (userId: string): Promise<FeedbackResponse[]> => {
     if (storageService.isCloudEnabled()) {
-       return await firebaseService.getResponsesForUser(userId);
+       try {
+        return await firebaseService.getResponsesForUser(userId);
+       } catch (e) { 
+           console.error("Cloud fetch failed", e);
+           return [];
+       }
     }
     return [];
   },
@@ -174,7 +211,11 @@ export const storageService = {
         const user = await firebaseService.getUser(userId);
         if (user) return user.name;
     }
-    return ""; 
+    // Only fallback to session if it matches, otherwise we can't identify
+    const currentUser = storageService.getCurrentUser();
+    if (currentUser && currentUser.id === userId) return currentUser.name;
+    
+    return "משתמש"; 
   }
 };
 

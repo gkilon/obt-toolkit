@@ -23,6 +23,12 @@ let auth: Auth | null = null;
 
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
+    // Critical fix: Do not attempt to initialize if config is empty
+    if (!config.apiKey || config.apiKey.length === 0) {
+        console.warn("Firebase init skipped: No API Key provided.");
+        return false;
+    }
+
     try {
       // Check for existing apps using named exports logic
       const apps = getApps();

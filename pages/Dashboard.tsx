@@ -22,10 +22,16 @@ export const Dashboard: React.FC = () => {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [cloudError, setCloudError] = useState(false);
   
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check Cloud Status
+    if (!storageService.isCloudEnabled()) {
+        setCloudError(true);
+    }
+
     const currentUser = storageService.getCurrentUser();
     if (!currentUser) {
       navigate('/');
@@ -34,10 +40,6 @@ export const Dashboard: React.FC = () => {
     setUser(currentUser);
     
     const loadData = async () => {
-        if (!storageService.isCloudEnabled()) {
-             setLoadingData(false);
-             return;
-        }
         setLoadingData(true);
         try {
             const data = await storageService.getResponsesForUser(currentUser.id);
@@ -98,6 +100,21 @@ export const Dashboard: React.FC = () => {
     <Layout>
       <div className="pb-12">
         
+        {/* Critical Cloud Error Banner */}
+        {cloudError && (
+            <div className="bg-rose-600/20 border border-rose-500 text-rose-200 p-4 rounded-xl mb-8 flex items-start gap-3">
+                <span className="text-2xl">⚠️</span>
+                <div>
+                    <h3 className="font-bold">אין חיבור לענן (Firebase)</h3>
+                    <p className="text-sm opacity-90">
+                        המערכת פועלת במצב מקומי בלבד כי חסרים מפתחות התחברות. 
+                        <br/>
+                        <strong>המשמעות:</strong> הקישור האישי שלך לא יעבוד עבור אנשים אחרים והמידע שלהם לא יישמר. יש להגדיר משתני סביבה תקינים.
+                    </p>
+                </div>
+            </div>
+        )}
+
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-8 border-b border-white/5">
           <div>
@@ -106,12 +123,12 @@ export const Dashboard: React.FC = () => {
                 שלום, {user.name}
             </h1>
             <p className="text-slate-400 mt-2 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                סטטוס: פעיל • נאספו {responses.length} משובים
+                <span className={`w-2 h-2 rounded-full ${cloudError ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'}`}></span>
+                סטטוס: {cloudError ? 'מנותק' : 'מחובר לענן'} • נאספו {responses.length} משובים
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-             <Button onClick={copyLink} variant="secondary" className="whitespace-nowrap">
+             <Button onClick={copyLink} variant="secondary" className="whitespace-nowrap" disabled={cloudError}>
                {copied ? '✓ הועתק' : 'העתק קישור לשליחה'}
              </Button>
              <Button onClick={() => { storageService.logout(); navigate('/'); }} variant="ghost">
@@ -134,7 +151,7 @@ export const Dashboard: React.FC = () => {
                 <p className="text-slate-400 max-w-sm mx-auto mb-8 leading-relaxed">
                     כדי להתחיל את תהליך הצמיחה, יש לשלוח את הקישור האישי שלך לאנשים שעובדים איתך.
                 </p>
-                <Button onClick={copyLink} variant="primary">
+                <Button onClick={copyLink} variant="primary" disabled={cloudError}>
                     העתק קישור אישי
                 </Button>
               </div>

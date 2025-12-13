@@ -54,6 +54,7 @@ export const Admin: React.FC = () => {
                             className="dark-input"
                             placeholder="••••••••"
                         />
+                        <p className="text-[10px] text-slate-600 mt-2 text-center">רמז: admin123</p>
                     </div>
                     
                     <Button type="submit" variant="primary" className="w-full">כניסה</Button>
