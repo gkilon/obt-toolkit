@@ -4,6 +4,11 @@ import { storageService } from '../services/storageService';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
 
+// SECURITY SETTING:
+// Set this to 'true' to allow anyone to try the app without registering.
+// Set this to 'false' to force users to have the Registration Code.
+const ALLOW_GUEST_MODE = false;
+
 export const Landing: React.FC = () => {
   const [view, setView] = useState<'login' | 'register' | 'reset'>('login');
   
@@ -11,7 +16,7 @@ export const Landing: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [registrationCode, setRegistrationCode] = useState('OBT-VIP'); 
+  const [registrationCode, setRegistrationCode] = useState(''); 
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,12 +44,16 @@ export const Landing: React.FC = () => {
         navigate('/dashboard');
     } catch (err: any) {
         console.warn("Google login failed, forcing guest mode.");
-        // If Google fails, try Guest mode silently
-        try {
-            await storageService.loginAsGuest();
-            navigate('/dashboard');
-        } catch (e) {
-            setError("התחברות נכשלה.");
+        
+        if (ALLOW_GUEST_MODE) {
+             try {
+                await storageService.loginAsGuest();
+                navigate('/dashboard');
+            } catch (e) {
+                setError("התחברות נכשלה.");
+            }
+        } else {
+             setError("התחברות נכשלה. אנא נסה להירשם עם אימייל וסיסמה.");
         }
     } finally {
         setIsLoading(false);
@@ -65,6 +74,7 @@ export const Landing: React.FC = () => {
     setIsLoading(true);
 
     try {
+      if (offlineMode && !ALLOW_GUEST_MODE) throw new Error("המערכת באופליין וגישת אורחים חסומה.");
       if (offlineMode) throw new Error("המערכת במצב אופליין. ניתן להיכנס כאורח בלבד.");
 
       if (view === 'register') {
@@ -134,7 +144,7 @@ export const Landing: React.FC = () => {
                 
                 {view === 'login' && (
                     <div className="space-y-3">
-                        {/* Google Login - Disabled in offline mode to prevent confusion */}
+                        {/* Google Login */}
                         <button 
                             type="button"
                             onClick={handleGoogleLogin}
@@ -150,14 +160,17 @@ export const Landing: React.FC = () => {
                             <span>כניסה מהירה עם Google</span>
                         </button>
 
-                        <button 
-                            type="button"
-                            onClick={handleGuestLogin}
-                            disabled={isLoading}
-                            className="w-full text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest border border-white/10 hover:bg-white/5 py-3 rounded-xl transition-all flex items-center justify-center gap-2"
-                        >
-                            {offlineMode ? 'כניסה למצב דמו (ללא שמירה)' : 'כניסה לאורחים (מצב הדגמה)'}
-                        </button>
+                        {/* Guest Button - Only shown if ALLOW_GUEST_MODE is true */}
+                        {ALLOW_GUEST_MODE && (
+                            <button 
+                                type="button"
+                                onClick={handleGuestLogin}
+                                disabled={isLoading}
+                                className="w-full text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest border border-white/10 hover:bg-white/5 py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                            >
+                                {offlineMode ? 'כניסה למצב דמו (ללא שמירה)' : 'כניסה לאורחים (מצב הדגמה)'}
+                            </button>
+                        )}
                         
                         {!offlineMode && (
                             <div className="relative flex py-2 items-center">
@@ -206,9 +219,6 @@ export const Landing: React.FC = () => {
                                     placeholder="קוד הצטרפות"
                                     dir="ltr"
                                     />
-                                    <div className="absolute -bottom-5 right-0 w-full text-center">
-                                        <span className="text-[10px] text-slate-500">קוד ברירת מחדל: OBT-VIP</span>
-                                    </div>
                                 </div>
                             </div>
                         )}
