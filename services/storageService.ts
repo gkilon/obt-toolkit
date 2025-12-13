@@ -100,7 +100,7 @@ export const storageService = {
       return guestUser;
   },
 
-  // LOGIN (GOOGLE)
+  // LOGIN (GOOGLE) - RESTRICTED TO EXISTING USERS
   loginWithGoogle: async (): Promise<User> => {
       if (!storageService.isCloudEnabled()) {
           throw new Error("חיבור לענן אינו זמין. עבור למצב אורח.");
@@ -110,16 +110,14 @@ export const storageService = {
         const firebaseUser = await firebaseService.loginWithGoogle();
         if (!firebaseUser.email) throw new Error("No email from Google");
 
+        // SECURITY CHECK: Only allow login if user ALREADY exists
         let user = await firebaseService.findUserByEmail(firebaseUser.email);
+        
         if (!user) {
-            user = {
-                id: generateId(),
-                name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-                email: firebaseUser.email,
-                createdAt: Date.now()
-            };
-            await firebaseService.createUser(user);
+            // Block new users attempting to bypass the code via Google
+            throw new Error("המשתמש אינו קיים. יש להירשם תחילה עם קוד ההצטרפות.");
         }
+
         localStorage.setItem(USER_KEY, JSON.stringify(user));
         return user;
 
