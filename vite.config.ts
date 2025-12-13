@@ -2,11 +2,18 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, (process as any).cwd(), '');
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, '.', '');
+
   return {
     plugins: [react()],
     define: {
-      'process.env': {}, // Polyfill for libs expecting process.env
+      // Vital fix: Do NOT set 'process.env': {} as it shadows specific keys.
+      // Instead, set NODE_ENV manually if needed.
+      'process.env.NODE_ENV': JSON.stringify(mode),
+      
+      // Explicitly map the variables
       'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY),
       'process.env.FIREBASE_API_KEY': JSON.stringify(env.FIREBASE_API_KEY || env.VITE_FIREBASE_API_KEY),
       'process.env.FIREBASE_AUTH_DOMAIN': JSON.stringify(env.FIREBASE_AUTH_DOMAIN || env.VITE_FIREBASE_AUTH_DOMAIN),

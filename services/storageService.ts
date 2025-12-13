@@ -26,6 +26,10 @@ export const storageService = {
   init: () => {
     if (firebaseService.isInitialized()) return;
     
+    // Debug Log
+    console.log("Initializing Storage Service...");
+    console.log("Env Key Check:", FIREBASE_CONFIG.apiKey ? "Exists (starts with " + FIREBASE_CONFIG.apiKey.substring(0, 4) + "...)" : "MISSING");
+
     // Check if config exists
     if (!FIREBASE_CONFIG.apiKey) {
         console.warn("CRITICAL: Missing Firebase API Key. Cloud storage will fail.");
