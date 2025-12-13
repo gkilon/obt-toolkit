@@ -47,7 +47,7 @@ export const Survey: React.FC = () => {
         await storageService.addResponse(userId, relationship, q1, q2);
         setSubmitted(true);
     } catch (err) {
-        setError('שגיאה בשמירה.');
+        setError('שגיאה בשמירה. ייתכן והמערכת באופליין.');
     } finally {
         setIsSending(false);
     }
@@ -66,17 +66,49 @@ export const Survey: React.FC = () => {
   if (submitted) {
     return (
       <Layout>
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-          <div className="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mb-6 text-4xl border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center relative overflow-hidden">
+          {/* Simple CSS Confetti Effect Background */}
+          <style>{`
+            @keyframes confetti-fall {
+              0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+              100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+            }
+            .confetti {
+              position: absolute;
+              width: 10px;
+              height: 10px;
+              background-color: #F97316;
+              animation: confetti-fall 3s linear forwards;
+            }
+          `}</style>
+          {[...Array(20)].map((_, i) => (
+              <div 
+                key={i} 
+                className="confetti"
+                style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `-${Math.random() * 20}%`,
+                    backgroundColor: ['#F97316', '#3B82F6', '#10B981', '#F43F5E'][Math.floor(Math.random() * 4)],
+                    animationDelay: `${Math.random() * 2}s`,
+                    animationDuration: `${2 + Math.random() * 3}s`
+                }}
+              />
+          ))}
+
+          <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full flex items-center justify-center mb-8 text-5xl shadow-[0_0_50px_rgba(16,185,129,0.4)] animate-[bounce_1s_ease-out]">
              ✓
           </div>
-          <h2 className="text-3xl font-heading font-bold text-white mb-4">תודה רבה!</h2>
-          <p className="text-slate-400 text-lg max-w-md mb-8 leading-relaxed">
-                המשוב שלך התקבל בהצלחה ועוזר לנו מאוד. התשובות נשמרות באופן אנונימי לחלוטין.
+          <h2 className="text-4xl font-heading font-bold text-white mb-4 tracking-tight">תודה רבה!</h2>
+          <p className="text-slate-300 text-lg max-w-md mb-10 leading-relaxed">
+                המשוב שלך התקבל בהצלחה. <br/>
+                התשובות עוזרות ל-{userName} לצמוח ולהשתפר.
           </p>
-          <Link to="/">
-              <Button variant="outline">חזרה לדף הבית</Button>
-          </Link>
+          
+          <div className="flex flex-col gap-4 w-full max-w-xs">
+            <Link to="/">
+                <Button variant="outline" className="w-full">חזרה לדף הבית</Button>
+            </Link>
+          </div>
         </div>
       </Layout>
     );
@@ -101,29 +133,32 @@ export const Survey: React.FC = () => {
       <div className="max-w-2xl mx-auto w-full">
         
         <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-heading font-bold text-white mb-3">
-              משוב 360 עבור {userName}
+            <div className="inline-block px-4 py-1 bg-primary-500/10 border border-primary-500/20 rounded-full text-primary-400 text-xs font-bold uppercase tracking-widest mb-4">
+                משוב 360 אנונימי
+            </div>
+            <h1 className="text-3xl md:text-5xl font-heading font-bold text-white mb-4">
+               עבור {userName}
             </h1>
-            <p className="text-slate-400">
-                דיסקרטיות מלאה מובטחת. דעתך חשובה לנו.
+            <p className="text-slate-400 text-lg">
+                דעתך חשובה לנו ועוזרת לייצר שינוי אמיתי.
             </p>
         </div>
 
-        <div className="glass-panel p-8 md:p-12 rounded-2xl relative">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-accent-500"></div>
+        <div className="glass-panel p-8 md:p-12 rounded-3xl relative overflow-hidden border border-white/10 shadow-2xl">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-purple-500 to-accent-500"></div>
             
             <form onSubmit={handleSubmit} className="space-y-12">
                 
                 {/* Relationship */}
                 <div>
-                    <label className="block text-sm font-bold text-primary-400 uppercase tracking-widest mb-3">
+                    <label className="block text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">
                         מה הקשר המקצועי שלך?
                     </label>
-                    <div className="relative">
+                    <div className="relative group">
                         <select 
                             value={relationship}
                             onChange={(e) => setRelationship(e.target.value as RelationshipType)}
-                            className="dark-input appearance-none cursor-pointer"
+                            className="dark-input appearance-none cursor-pointer bg-midnight-800/50 hover:bg-midnight-800 transition-colors py-4 px-5 rounded-xl border-slate-700"
                         >
                             <option value="peer">אני קולגה / עמית</option>
                             <option value="manager">אני מנהל/ת ישיר/ה</option>
@@ -131,49 +166,49 @@ export const Survey: React.FC = () => {
                             <option value="friend">אני חבר/ה</option>
                             <option value="other">ממשק עבודה אחר</option>
                         </select>
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            ▼
+                        <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 group-hover:text-primary-400 transition-colors">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                         </div>
                     </div>
                 </div>
 
                 {/* Q1 */}
-                <div>
-                    <label className="block text-xl font-heading font-medium text-white mb-4 leading-relaxed">
-                        1. מהו <span className="text-primary-400 font-bold border-b-2 border-primary-500/50">הדבר האחד</span> (המרכזי ביותר) שאם ישונה, יקפיץ את האדם הזה קדימה?
+                <div className="space-y-4">
+                    <label className="block text-xl md:text-2xl font-heading font-medium text-white leading-relaxed">
+                        1. מהו <span className="text-primary-400 font-bold decoration-primary-500/30 underline decoration-4 underline-offset-4">הדבר האחד</span> (המרכזי ביותר) שאם ישונה, יקפיץ את האדם הזה קדימה?
                     </label>
                     <textarea
                         required
                         value={q1}
                         onChange={(e) => setQ1(e.target.value)}
-                        rows={3}
-                        className="dark-input min-h-[120px]"
-                        placeholder="כתוב כאן בצורה חופשית..."
+                        rows={4}
+                        className="dark-input min-h-[140px] text-lg focus:ring-2 focus:ring-primary-500/50"
+                        placeholder="נסה/י להיות ספציפי/ת ככל האפשר..."
                     />
                 </div>
 
                 {/* Q2 */}
-                <div>
-                    <label className="block text-xl font-heading font-medium text-white mb-4 leading-relaxed">
+                <div className="space-y-4">
+                    <label className="block text-xl md:text-2xl font-heading font-medium text-white leading-relaxed">
                         2. אילו התנהגויות קיימות כיום מעכבות אותו/ה או סותרות את השינוי הזה?
                     </label>
                     <textarea
                         required
                         value={q2}
                         onChange={(e) => setQ2(e.target.value)}
-                        rows={3}
-                        className="dark-input min-h-[120px]"
-                        placeholder="תן דוגמאות אם אפשר..."
+                        rows={4}
+                        className="dark-input min-h-[140px] text-lg focus:ring-2 focus:ring-primary-500/50"
+                        placeholder="לדוגמה: כשהוא/היא..."
                     />
                 </div>
 
-                <div className="pt-6 text-center">
-                    <Button type="submit" variant="primary" isLoading={isSending} className="w-full md:w-auto min-w-[240px] text-lg py-4 shadow-[0_0_20px_rgba(249,115,22,0.3)]">
+                <div className="pt-8 text-center border-t border-white/5">
+                    <Button type="submit" variant="primary" isLoading={isSending} className="w-full md:w-2/3 text-lg py-4 font-bold shadow-glow hover:shadow-[0_0_40px_rgba(249,115,22,0.5)] transform hover:-translate-y-1 transition-all duration-300">
                         שלח משוב
                     </Button>
-                    <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-500 uppercase tracking-widest">
+                    <div className="mt-6 flex items-center justify-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest opacity-60">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
-                        <span>המידע מוצפן מקצה לקצה</span>
+                        <span>המידע מאובטח ומוצפן</span>
                     </div>
                 </div>
             </form>

@@ -61,7 +61,7 @@ export const Dashboard: React.FC = () => {
       setAnalysis(result);
     } catch (error) {
       console.error(error);
-      alert("שגיאה בניתוח הנתונים.");
+      alert("שגיאה בניתוח הנתונים. וודא שיש מפתח API תקין.");
     } finally {
       setLoadingAnalysis(false);
     }
@@ -144,7 +144,7 @@ export const Dashboard: React.FC = () => {
             
             {responses.length === 0 ? (
               <div className="glass-panel rounded-2xl p-16 text-center border-dashed border-2 border-white/10">
-                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner">
+                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner animate-bounce-slow">
                     🚀
                 </div>
                 <h3 className="text-2xl font-heading font-semibold text-white mb-3">המסע שלך מתחיל כאן</h3>
@@ -211,7 +211,7 @@ export const Dashboard: React.FC = () => {
                             disabled={responses.length === 0}
                             isLoading={loadingAnalysis}
                             variant="primary"
-                            className="w-full shadow-lg"
+                            className={`w-full shadow-lg ${responses.length > 0 ? 'animate-pulse' : ''}`}
                             >
                             צור דוח תובנות
                             </Button>

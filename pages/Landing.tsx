@@ -11,16 +11,24 @@ export const Landing: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // UX Improvement: Auto-fill the default code so user doesn't need to remember it
   const [registrationCode, setRegistrationCode] = useState('OBT-VIP'); 
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  
+  // Connection State
+  const [offlineMode, setOfflineMode] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
     storageService.init();
+    const isConnected = storageService.isCloudEnabled();
+    
+    if (!isConnected) {
+        setOfflineMode(true);
+    }
   }, []);
 
   const handleGoogleLogin = async () => {
@@ -30,10 +38,14 @@ export const Landing: React.FC = () => {
         await storageService.loginWithGoogle();
         navigate('/dashboard');
     } catch (err: any) {
-        // Fallback: If Google connection completely fails, log in as Guest automatically
         console.warn("Google login failed, forcing guest mode.");
-        await storageService.loginAsGuest();
-        navigate('/dashboard');
+        // If Google fails, try Guest mode silently
+        try {
+            await storageService.loginAsGuest();
+            navigate('/dashboard');
+        } catch (e) {
+            setError("התחברות נכשלה.");
+        }
     } finally {
         setIsLoading(false);
     }
@@ -53,6 +65,8 @@ export const Landing: React.FC = () => {
     setIsLoading(true);
 
     try {
+      if (offlineMode) throw new Error("המערכת במצב אופליין. ניתן להיכנס כאורח בלבד.");
+
       if (view === 'register') {
         if (!name || !email || !password || !registrationCode) throw new Error("נא למלא את כל השדות");
         await storageService.registerUser(name, email, password, registrationCode);
@@ -80,8 +94,21 @@ export const Landing: React.FC = () => {
 
   return (
     <Layout>
-      <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12 relative">
         
+        {/* Connection Status Banner */}
+        {offlineMode && (
+             <div className="fixed top-20 left-0 right-0 z-50 flex justify-center px-4">
+                 <div className="bg-amber-900/90 border border-amber-500 text-amber-100 px-6 py-3 rounded-xl shadow-2xl backdrop-blur-xl flex items-center gap-3">
+                     <span className="text-xl">⚠️</span>
+                     <div>
+                         <p className="font-bold text-sm">מצב אופליין (הדגמה)</p>
+                         <p className="text-xs opacity-80">לא זוהה חיבור לענן. הנתונים יישמרו מקומית בלבד.</p>
+                     </div>
+                 </div>
+             </div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-12 relative">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-primary-500/20 rounded-full blur-[50px]"></div>
@@ -105,14 +132,14 @@ export const Landing: React.FC = () => {
 
             <div className="space-y-6">
                 
-                {/* Google Login - Highlighted as the best option */}
                 {view === 'login' && (
                     <div className="space-y-3">
+                        {/* Google Login - Disabled in offline mode to prevent confusion */}
                         <button 
                             type="button"
                             onClick={handleGoogleLogin}
-                            disabled={isLoading}
-                            className="w-full flex items-center justify-center gap-3 bg-white text-slate-900 font-medium py-3 px-4 rounded-xl hover:bg-slate-200 transition-all active:scale-[0.98] group"
+                            disabled={isLoading || offlineMode}
+                            className={`w-full flex items-center justify-center gap-3 bg-white text-slate-900 font-medium py-3 px-4 rounded-xl transition-all active:scale-[0.98] group ${offlineMode ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-200'}`}
                         >
                             <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -127,100 +154,107 @@ export const Landing: React.FC = () => {
                             type="button"
                             onClick={handleGuestLogin}
                             disabled={isLoading}
-                            className="w-full text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest border border-white/10 hover:bg-white/5 py-3 rounded-xl transition-all"
+                            className="w-full text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest border border-white/10 hover:bg-white/5 py-3 rounded-xl transition-all flex items-center justify-center gap-2"
                         >
-                            כניסה לאורחים (מצב הדגמה)
+                            {offlineMode ? 'כניסה למצב דמו (ללא שמירה)' : 'כניסה לאורחים (מצב הדגמה)'}
                         </button>
                         
-                        <div className="relative flex py-2 items-center">
-                            <div className="flex-grow border-t border-white/10"></div>
-                            <span className="flex-shrink-0 mx-3 text-slate-500 text-[10px] uppercase tracking-widest">או עם סיסמה</span>
-                            <div className="flex-grow border-t border-white/10"></div>
-                        </div>
+                        {!offlineMode && (
+                            <div className="relative flex py-2 items-center">
+                                <div className="flex-grow border-t border-white/10"></div>
+                                <span className="flex-shrink-0 mx-3 text-slate-500 text-[10px] uppercase tracking-widest">או עם סיסמה</span>
+                                <div className="flex-grow border-t border-white/10"></div>
+                            </div>
+                        )}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    {view === 'register' && (
-                        <div>
-                            <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="dark-input"
-                            placeholder="שם מלא"
-                            />
-                        </div>
-                    )}
-
-                    <div>
-                        <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="dark-input text-left"
-                        dir="ltr"
-                        placeholder="כתובת אימייל"
-                        />
-                    </div>
-
-                    {(view === 'register' || view === 'reset') && (
-                        <div>
-                            <div className="relative group">
+                {/* Email/Password Form - Only if online */}
+                {!offlineMode && (
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        {view === 'register' && (
+                            <div>
                                 <input
                                 type="text"
-                                value={registrationCode}
-                                onChange={(e) => setRegistrationCode(e.target.value)}
-                                className="dark-input font-mono text-center tracking-widest uppercase text-primary-400 border-primary-500/30 bg-primary-500/5"
-                                placeholder="קוד הצטרפות"
-                                dir="ltr"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="dark-input"
+                                placeholder="שם מלא"
                                 />
-                                <div className="absolute -bottom-5 right-0 w-full text-center">
-                                    <span className="text-[10px] text-slate-500">קוד ברירת מחדל: OBT-VIP</span>
+                            </div>
+                        )}
+
+                        <div>
+                            <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="dark-input text-left"
+                            dir="ltr"
+                            placeholder="כתובת אימייל"
+                            />
+                        </div>
+
+                        {(view === 'register' || view === 'reset') && (
+                            <div>
+                                <div className="relative group">
+                                    <input
+                                    type="text"
+                                    value={registrationCode}
+                                    onChange={(e) => setRegistrationCode(e.target.value)}
+                                    className="dark-input font-mono text-center tracking-widest uppercase text-primary-400 border-primary-500/30 bg-primary-500/5"
+                                    placeholder="קוד הצטרפות"
+                                    dir="ltr"
+                                    />
+                                    <div className="absolute -bottom-5 right-0 w-full text-center">
+                                        <span className="text-[10px] text-slate-500">קוד ברירת מחדל: OBT-VIP</span>
+                                    </div>
                                 </div>
                             </div>
+                        )}
+
+                        <div className={view === 'register' || view === 'reset' ? 'mt-6' : ''}>
+                            <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="dark-input text-left"
+                            dir="ltr"
+                            placeholder={view === 'reset' ? 'סיסמה חדשה' : 'סיסמה'}
+                            />
                         </div>
+
+                        {error && <p className="text-rose-400 text-sm bg-rose-500/10 border border-rose-500/20 p-2 rounded text-center">{error}</p>}
+                        {successMsg && <p className="text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/20 p-2 rounded text-center">{successMsg}</p>}
+
+                        <div className="pt-2">
+                            <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
+                                {view === 'register' ? 'צור חשבון' : view === 'reset' ? 'עדכן' : 'כניסה'}
+                            </Button>
+                        </div>
+                    </form>
+                )}
+            </div>
+
+            {!offlineMode && (
+                <div className="mt-8 pt-6 border-t border-white/5 flex flex-col items-center gap-3 text-sm">
+                    {view === 'login' && (
+                        <>
+                            <button onClick={() => setView('reset')} className="text-slate-400 hover:text-white transition-colors">
+                                שכחתי סיסמה
+                            </button>
+                            <div className="text-slate-500">
+                                אין לך חשבון? <button onClick={() => setView('register')} className="text-primary-400 font-medium hover:text-primary-300 transition-colors">הרשמה</button>
+                            </div>
+                        </>
                     )}
-
-                    <div className={view === 'register' || view === 'reset' ? 'mt-6' : ''}>
-                        <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="dark-input text-left"
-                        dir="ltr"
-                        placeholder={view === 'reset' ? 'סיסמה חדשה' : 'סיסמה'}
-                        />
-                    </div>
-
-                    {error && <p className="text-rose-400 text-sm bg-rose-500/10 border border-rose-500/20 p-2 rounded text-center">{error}</p>}
-                    {successMsg && <p className="text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/20 p-2 rounded text-center">{successMsg}</p>}
-
-                    <div className="pt-2">
-                        <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
-                            {view === 'register' ? 'צור חשבון' : view === 'reset' ? 'עדכן' : 'כניסה'}
-                        </Button>
-                    </div>
-                </form>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-white/5 flex flex-col items-center gap-3 text-sm">
-                {view === 'login' && (
-                    <>
-                        <button onClick={() => setView('reset')} className="text-slate-400 hover:text-white transition-colors">
-                            שכחתי סיסמה
+                    {(view === 'register' || view === 'reset') && (
+                        <button onClick={() => setView('login')} className="text-slate-400 hover:text-white transition-colors">
+                            חזרה לכניסה
                         </button>
-                        <div className="text-slate-500">
-                             אין לך חשבון? <button onClick={() => setView('register')} className="text-primary-400 font-medium hover:text-primary-300 transition-colors">הרשמה</button>
-                        </div>
-                    </>
-                )}
-                {(view === 'register' || view === 'reset') && (
-                    <button onClick={() => setView('login')} className="text-slate-400 hover:text-white transition-colors">
-                        חזרה לכניסה
-                    </button>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
         </div>
         
         <div className="mt-8 opacity-40 hover:opacity-100 transition-opacity">

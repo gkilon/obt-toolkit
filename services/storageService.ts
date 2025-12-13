@@ -26,18 +26,14 @@ export const storageService = {
   init: () => {
     if (firebaseService.isInitialized()) return;
     
-    // Debug Log
-    console.log("Initializing Storage Service...");
-    console.log("Env Key Check:", FIREBASE_CONFIG.apiKey ? "Exists (starts with " + FIREBASE_CONFIG.apiKey.substring(0, 4) + "...)" : "MISSING");
-
-    // Check if config exists
-    if (!FIREBASE_CONFIG.apiKey) {
-        console.warn("CRITICAL: Missing Firebase API Key. Cloud storage will fail.");
-        return;
+    // Debug Log - helps diagnose connection issues
+    if (FIREBASE_CONFIG.apiKey) {
+        console.log("Initializing Storage Service with Key: " + FIREBASE_CONFIG.apiKey.substring(0, 4) + "...");
+        const success = firebaseService.init(FIREBASE_CONFIG);
+        if (!success) console.error("Failed to connect to Firebase Cloud.");
+    } else {
+        console.warn("Storage Init: No API Key found. App will run in Offline/Demo mode.");
     }
-
-    const success = firebaseService.init(FIREBASE_CONFIG);
-    if (!success) console.error("Failed to connect to Firebase Cloud.");
   },
 
   isCloudEnabled: () => firebaseService.isInitialized(),
@@ -64,7 +60,7 @@ export const storageService = {
   // LOGIN (EMAIL)
   login: async (email: string, password?: string): Promise<User> => {
     // Must be cloud based
-    if (!storageService.isCloudEnabled()) throw new Error("אין חיבור לענן.");
+    if (!storageService.isCloudEnabled()) throw new Error("מצב אופליין: לא ניתן להתחבר עם חשבון קיים.");
 
     const user = await firebaseService.findUserByEmail(email);
     if (user && user.password === password) {
@@ -88,7 +84,7 @@ export const storageService = {
           createdAt: Date.now()
       };
 
-      // 3. CRITICAL: Save to Cloud DB so links work for others
+      // 3. Save to Cloud DB so links work for others
       if (storageService.isCloudEnabled()) {
            try {
             await firebaseService.createUser(guestUser);
@@ -97,9 +93,7 @@ export const storageService = {
              throw new Error("שגיאה ביצירת משתמש ענן. אנא בדוק חיבור אינטרנט.");
            }
       } else {
-           console.error("CRITICAL: Cloud config missing.");
-           // We warn the user, but we return the object so the UI doesn't crash immediately,
-           // although Dashboard will show the warning.
+           console.warn("Running in Offline Mode: Guest user created locally only.");
       }
       
       localStorage.setItem(USER_KEY, JSON.stringify(guestUser));
@@ -109,7 +103,7 @@ export const storageService = {
   // LOGIN (GOOGLE)
   loginWithGoogle: async (): Promise<User> => {
       if (!storageService.isCloudEnabled()) {
-          throw new Error("חיבור לענן אינו זמין. בדוק הגדרות.");
+          throw new Error("חיבור לענן אינו זמין. עבור למצב אורח.");
       }
 
       try {
@@ -137,7 +131,7 @@ export const storageService = {
 
   // REGISTER (With Access Code)
   registerUser: async (name: string, email: string, password?: string, registrationCode?: string): Promise<User> => {
-    if (!storageService.isCloudEnabled()) throw new Error("אין חיבור לענן.");
+    if (!storageService.isCloudEnabled()) throw new Error("מצב אופליין: לא ניתן להירשם.");
     
     if (!registrationCode) throw new Error("נדרש קוד רישום.");
     
@@ -179,7 +173,7 @@ export const storageService = {
     localStorage.removeItem(USER_KEY);
   },
 
-  // DATA OPERATIONS (MUST BE CLOUD)
+  // DATA OPERATIONS
 
   addResponse: async (surveyId: string, relationship: RelationshipType, q1: string, q2: string) => {
     const newResponse: FeedbackResponse = {
@@ -194,7 +188,7 @@ export const storageService = {
     if (storageService.isCloudEnabled()) {
       await firebaseService.addResponse(newResponse);
     } else {
-        throw new Error("שגיאה קריטית: אין חיבור לענן. המשוב לא יישמר.");
+        throw new Error("שגיאה: במצב אופליין לא ניתן לשמור תשובות.");
     }
   },
 
@@ -215,7 +209,7 @@ export const storageService = {
         const user = await firebaseService.getUser(userId);
         if (user) return user.name;
     }
-    // Only fallback to session if it matches, otherwise we can't identify
+    // Only fallback to session if it matches
     const currentUser = storageService.getCurrentUser();
     if (currentUser && currentUser.id === userId) return currentUser.name;
     

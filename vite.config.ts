@@ -3,15 +3,16 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
-  const env = loadEnv(mode, '.', '');
+  // Using process.cwd() is safer.
+  const env = loadEnv(mode, process.cwd(), '');
 
   return {
     plugins: [react()],
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),
       
-      // CRITICAL FIX FOR NETLIFY:
-      // Check process.env (System/Netlify vars) FIRST, then env (local .env file)
+      // Robust Environment Variable Injection
+      // We explicitly try to grab from process.env (Server/CI) first, then the loaded .env file
       'process.env.API_KEY': JSON.stringify(process.env.API_KEY || env.API_KEY || ''),
       'process.env.FIREBASE_API_KEY': JSON.stringify(process.env.FIREBASE_API_KEY || env.FIREBASE_API_KEY || ''),
       'process.env.FIREBASE_AUTH_DOMAIN': JSON.stringify(process.env.FIREBASE_AUTH_DOMAIN || env.FIREBASE_AUTH_DOMAIN || ''),
