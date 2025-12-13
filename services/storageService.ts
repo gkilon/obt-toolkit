@@ -6,7 +6,7 @@ import { firebaseService } from './firebaseService';
 // =================================================================
 
 const HARDCODED_FIREBASE_CONFIG: FirebaseConfig = {
-  apiKey: "AIzaSyBrrKJzMEHqnq5mwS8QuKjjPgMv46WRW-I",
+  apiKey: "AIzaSyDgjGk6q8BUieAGCybYdTOBpiUIxm8JXw0",
   authDomain: "obt-ai-360.firebaseapp.com",
   projectId: "obt-ai-360",
   storageBucket: "obt-ai-360.firebasestorage.app",
