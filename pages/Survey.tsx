@@ -59,7 +59,7 @@ export const Survey: React.FC = () => {
       return (
           <Layout>
               <div className="flex justify-center items-center h-[50vh]">
-                 <div className="w-10 h-10 border-4 border-white/10 border-t-primary-500 rounded-full animate-spin"></div>
+                 <div className="w-8 h-8 border-4 border-onyx-700 border-t-bronze-500 rounded-full animate-spin"></div>
               </div>
           </Layout>
       );
@@ -69,39 +69,11 @@ export const Survey: React.FC = () => {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center relative overflow-hidden">
-          {/* Simple CSS Confetti Effect Background */}
-          <style>{`
-            @keyframes confetti-fall {
-              0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
-              100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-            }
-            .confetti {
-              position: absolute;
-              width: 10px;
-              height: 10px;
-              background-color: #F97316;
-              animation: confetti-fall 3s linear forwards;
-            }
-          `}</style>
-          {[...Array(20)].map((_, i) => (
-              <div 
-                key={i} 
-                className="confetti"
-                style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `-${Math.random() * 20}%`,
-                    backgroundColor: ['#F97316', '#3B82F6', '#10B981', '#F43F5E'][Math.floor(Math.random() * 4)],
-                    animationDelay: `${Math.random() * 2}s`,
-                    animationDuration: `${2 + Math.random() * 3}s`
-                }}
-              />
-          ))}
-
-          <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full flex items-center justify-center mb-8 text-5xl shadow-[0_0_50px_rgba(16,185,129,0.4)] animate-[bounce_1s_ease-out]">
+          <div className="w-20 h-20 bg-green-900/30 text-green-500 border border-green-800 rounded-full flex items-center justify-center mb-8 text-4xl">
              ✓
           </div>
-          <h2 className="text-4xl font-heading font-bold text-white mb-4 tracking-tight">תודה רבה!</h2>
-          <p className="text-slate-300 text-lg max-w-md mb-10 leading-relaxed">
+          <h2 className="text-3xl font-heading text-onyx-100 mb-4 tracking-tight">תודה רבה!</h2>
+          <p className="text-onyx-400 text-lg max-w-md mb-10 leading-relaxed">
                 המשוב שלך התקבל בהצלחה. <br/>
                 התשובות יעזרו ל-{userName} לדייק את הדרך לצמיחה.
           </p>
@@ -119,9 +91,9 @@ export const Survey: React.FC = () => {
   if (error) {
       return (
         <Layout>
-            <div className="max-w-md mx-auto mt-12 text-center p-8 glass-panel rounded-xl">
-                <h2 className="text-xl font-bold text-rose-500 mb-2">שגיאה</h2>
-                <p className="text-slate-300 mb-6">{error}</p>
+            <div className="max-w-md mx-auto mt-12 text-center p-8 glass-panel">
+                <h2 className="text-xl font-bold text-red-500 mb-2">שגיאה</h2>
+                <p className="text-onyx-300 mb-6">{error}</p>
                 <Link to="/">
                     <Button variant="secondary">חזרה</Button>
                 </Link>
@@ -135,29 +107,28 @@ export const Survey: React.FC = () => {
       <div className="max-w-2xl mx-auto w-full">
         
         <div className="text-center mb-10">
-            <div className="inline-block px-4 py-1 bg-primary-500/10 border border-primary-500/20 rounded-full text-primary-400 text-xs font-bold uppercase tracking-widest mb-4">
+            <div className="inline-block px-4 py-1 bg-onyx-800 border border-onyx-700 rounded-full text-bronze-400 text-xs font-bold uppercase tracking-widest mb-4">
                 משוב 360 אנונימי
             </div>
-            <h1 className="text-3xl md:text-5xl font-heading font-bold text-white mb-4">
+            <h1 className="text-3xl md:text-5xl font-heading text-onyx-100 mb-4">
                עבור {userName}
             </h1>
-            <p className="text-slate-400 text-lg">
+            <p className="text-onyx-400 text-lg">
                 דעתך חשובה לנו ועוזרת לייצר שינוי אמיתי.
             </p>
         </div>
 
-        <div className="glass-panel p-8 md:p-12 rounded-3xl relative overflow-hidden border border-white/10 shadow-2xl">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-purple-500 to-accent-500"></div>
+        <div className="glass-panel p-8 md:p-12 relative overflow-hidden">
             
             <form onSubmit={handleSubmit} className="space-y-12">
                 
                 {/* Introduction - THE USER GOAL */}
                 {userGoal && (
-                    <div className="bg-primary-900/20 border border-primary-500/30 p-6 rounded-xl relative">
-                         <div className="absolute -top-3 right-4 bg-midnight-900 text-primary-400 px-2 text-xs font-bold uppercase tracking-widest border border-primary-500/30 rounded">
+                    <div className="bg-onyx-900/50 border border-onyx-700 p-6 rounded relative">
+                         <div className="absolute -top-3 right-4 bg-onyx-900 text-bronze-500 px-2 text-xs font-bold uppercase tracking-widest border border-onyx-700 rounded">
                              המטרה ש-{userName} הציב/ה
                          </div>
-                         <p className="text-xl font-medium text-white italic leading-relaxed">
+                         <p className="text-xl font-medium text-onyx-200 italic leading-relaxed">
                              "{userGoal}"
                          </p>
                     </div>
@@ -165,14 +136,14 @@ export const Survey: React.FC = () => {
 
                 {/* Relationship */}
                 <div>
-                    <label className="block text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">
+                    <label className="block text-sm font-bold text-onyx-400 uppercase tracking-widest mb-3">
                         מה הקשר המקצועי שלך?
                     </label>
                     <div className="relative group">
                         <select 
                             value={relationship}
                             onChange={(e) => setRelationship(e.target.value as RelationshipType)}
-                            className="dark-input appearance-none cursor-pointer bg-midnight-800/50 hover:bg-midnight-800 transition-colors py-4 px-5 rounded-xl border-slate-700"
+                            className="dark-input appearance-none cursor-pointer"
                         >
                             <option value="peer">אני קולגה / עמית</option>
                             <option value="manager">אני מנהל/ת ישיר/ה</option>
@@ -180,7 +151,7 @@ export const Survey: React.FC = () => {
                             <option value="friend">אני חבר/ה</option>
                             <option value="other">ממשק עבודה אחר</option>
                         </select>
-                        <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 group-hover:text-primary-400 transition-colors">
+                        <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none text-onyx-500 group-hover:text-bronze-400 transition-colors">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                         </div>
                     </div>
@@ -188,10 +159,10 @@ export const Survey: React.FC = () => {
 
                 {/* Q1 */}
                 <div className="space-y-4">
-                    <label className="block text-xl md:text-2xl font-heading font-medium text-white leading-relaxed">
-                        1. האם לדעתך <span className="text-primary-400 font-bold decoration-primary-500/30 underline decoration-4 underline-offset-4">המטרה שהוצגה</span> תקפיץ אותו/ה מדרגה?
+                    <label className="block text-xl md:text-2xl font-heading font-normal text-onyx-100 leading-relaxed">
+                        1. האם לדעתך <span className="text-bronze-500 font-medium underline decoration-bronze-500/30 underline-offset-4">המטרה שהוצגה</span> תקפיץ אותו/ה מדרגה?
                     </label>
-                    <p className="text-slate-400 text-sm">
+                    <p className="text-onyx-400 text-sm">
                         (האם את/ה רוצה לדייק או להרחיב? ניתן לנסח מחדש את המטרה אם לדעתך נדרש כיוון אחר)
                     </p>
                     <textarea
@@ -199,14 +170,14 @@ export const Survey: React.FC = () => {
                         value={q1}
                         onChange={(e) => setQ1(e.target.value)}
                         rows={4}
-                        className="dark-input min-h-[140px] text-lg focus:ring-2 focus:ring-primary-500/50"
+                        className="dark-input min-h-[140px] text-lg"
                         placeholder="לדעתי המטרה..."
                     />
                 </div>
 
                 {/* Q2 */}
                 <div className="space-y-4">
-                    <label className="block text-xl md:text-2xl font-heading font-medium text-white leading-relaxed">
+                    <label className="block text-xl md:text-2xl font-heading font-normal text-onyx-100 leading-relaxed">
                         2. אילו התנהגויות קיימות כיום מעכבות אותו/ה או סותרות את השינוי הזה?
                     </label>
                     <textarea
@@ -214,16 +185,16 @@ export const Survey: React.FC = () => {
                         value={q2}
                         onChange={(e) => setQ2(e.target.value)}
                         rows={4}
-                        className="dark-input min-h-[140px] text-lg focus:ring-2 focus:ring-primary-500/50"
+                        className="dark-input min-h-[140px] text-lg"
                         placeholder="לדוגמה: כשהוא/היא..."
                     />
                 </div>
 
-                <div className="pt-8 text-center border-t border-white/5">
-                    <Button type="submit" variant="primary" isLoading={isSending} className="w-full md:w-2/3 text-lg py-4 font-bold shadow-glow hover:shadow-[0_0_40px_rgba(249,115,22,0.5)] transform hover:-translate-y-1 transition-all duration-300">
+                <div className="pt-8 text-center border-t border-onyx-700/50">
+                    <Button type="submit" variant="primary" isLoading={isSending} className="w-full md:w-2/3 text-lg py-4">
                         שלח משוב
                     </Button>
-                    <div className="mt-6 flex items-center justify-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest opacity-60">
+                    <div className="mt-6 flex items-center justify-center gap-2 text-[10px] text-onyx-500 uppercase tracking-widest opacity-60">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
                         <span>המידע מאובטח ומוצפן</span>
                     </div>

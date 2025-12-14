@@ -4,9 +4,6 @@ import { storageService } from '../services/storageService';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
 
-// SECURITY SETTING:
-// Set this to 'true' to allow anyone to try the app without registering.
-// Set this to 'false' to force users to have the Registration Code.
 const ALLOW_GUEST_MODE = false;
 
 export const Landing: React.FC = () => {
@@ -85,10 +82,10 @@ export const Landing: React.FC = () => {
         {/* Connection Status Banner */}
         {offlineMode && (
              <div className="fixed top-20 left-0 right-0 z-50 flex justify-center px-4">
-                 <div className="bg-amber-900/90 border border-amber-500 text-amber-100 px-6 py-3 rounded-xl shadow-2xl backdrop-blur-xl flex items-center gap-3">
+                 <div className="bg-bronze-900/90 border border-bronze-500 text-bronze-100 px-6 py-3 rounded shadow-lg backdrop-blur-xl flex items-center gap-3">
                      <span className="text-xl">⚠️</span>
                      <div>
-                         <p className="font-bold text-sm">מצב אופליין (הדגמה)</p>
+                         <p className="font-medium text-sm">מצב אופליין (הדגמה)</p>
                          <p className="text-xs opacity-80">לא זוהה חיבור לענן. הנתונים יישמרו מקומית בלבד.</p>
                      </div>
                  </div>
@@ -96,47 +93,39 @@ export const Landing: React.FC = () => {
         )}
 
         {/* Header */}
-        <div className="text-center mb-12 relative">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-primary-500/20 rounded-full blur-[50px]"></div>
-            <h1 className="relative text-5xl md:text-6xl font-heading font-bold text-white mb-4 tracking-tight">
-                One Big <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600">Thing</span>
+        <div className="text-center mb-10">
+            <h1 className="text-4xl md:text-5xl font-heading font-normal text-onyx-100 mb-4 tracking-tight">
+                One Big <span className="text-bronze-500 font-medium">Thing</span>
             </h1>
-            <p className="relative text-lg text-slate-400 max-w-md mx-auto leading-relaxed">
+            <p className="text-lg text-onyx-400 max-w-md mx-auto leading-relaxed">
                פלטפורמת 360° חכמה לזיהוי מנוע הצמיחה המרכזי שלך.
             </p>
         </div>
 
-        {/* Glass Card */}
-        <div className="glass-panel w-full max-w-[420px] p-8 md:p-10 rounded-2xl relative overflow-hidden">
+        {/* Card */}
+        <div className="glass-panel w-full max-w-[400px]">
             
-            <div className="mb-8 text-center">
-                <h2 className="text-2xl font-heading font-semibold text-white">
+            <div className="mb-8 text-center border-b border-onyx-700/50 pb-6">
+                <h2 className="text-xl font-heading text-onyx-100">
                     {view === 'register' ? 'הצטרפות למערכת' : view === 'reset' ? 'שחזור גישה' : 'כניסה למנויים'}
                 </h2>
-                {view === 'login' && <p className="text-xs text-slate-500 mt-2">התחבר כדי לראות את המשובים שלך</p>}
+                {view === 'login' && <p className="text-xs text-onyx-500 mt-2">התחבר כדי לראות את המשובים שלך</p>}
             </div>
 
             <div className="space-y-6">
                 
-                {view === 'login' && (
-                    <div className="space-y-3">
-                        {/* Google Button REMOVED for security */}
-                        
-                        {/* Guest Button - Only shown if ALLOW_GUEST_MODE is true */}
-                        {ALLOW_GUEST_MODE && (
-                            <button 
-                                type="button"
-                                onClick={handleGuestLogin}
-                                disabled={isLoading}
-                                className="w-full text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest border border-white/10 hover:bg-white/5 py-3 rounded-xl transition-all flex items-center justify-center gap-2"
-                            >
-                                {offlineMode ? 'כניסה למצב דמו (ללא שמירה)' : 'כניסה לאורחים (מצב הדגמה)'}
-                            </button>
-                        )}
-                    </div>
+                {view === 'login' && ALLOW_GUEST_MODE && (
+                    <button 
+                        type="button"
+                        onClick={handleGuestLogin}
+                        disabled={isLoading}
+                        className="w-full text-xs font-bold text-onyx-400 hover:text-onyx-100 uppercase tracking-widest border border-onyx-700 hover:bg-onyx-700 py-3 rounded transition-all"
+                    >
+                        {offlineMode ? 'כניסה למצב דמו' : 'כניסה לאורחים'}
+                    </button>
                 )}
 
-                {/* Email/Password Form - Only if online */}
+                {/* Email/Password Form */}
                 {!offlineMode && (
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {view === 'register' && (
@@ -169,15 +158,12 @@ export const Landing: React.FC = () => {
                                     type="text"
                                     value={registrationCode}
                                     onChange={(e) => setRegistrationCode(e.target.value)}
-                                    className="dark-input font-mono text-center tracking-widest uppercase text-primary-400 border-primary-500/30 bg-primary-500/5"
+                                    className="dark-input font-mono text-center tracking-widest uppercase text-bronze-400 border-bronze-500/30 bg-bronze-900/10 focus:border-bronze-500"
                                     placeholder="קוד הצטרפות"
                                     dir="ltr"
                                     />
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-500">
-                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                                    </div>
                                 </div>
-                                <p className="text-[10px] text-slate-500 mt-1 mr-1">נדרש קוד אירגוני לפתיחת משתמש</p>
+                                <p className="text-[10px] text-onyx-500 mt-1 mr-1">נדרש קוד אירגוני לפתיחת משתמש</p>
                             </div>
                         )}
 
@@ -192,8 +178,8 @@ export const Landing: React.FC = () => {
                             />
                         </div>
 
-                        {error && <p className="text-rose-400 text-sm bg-rose-500/10 border border-rose-500/20 p-2 rounded text-center animate-pulse">{error}</p>}
-                        {successMsg && <p className="text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/20 p-2 rounded text-center">{successMsg}</p>}
+                        {error && <p className="text-red-400 text-sm bg-red-900/20 border border-red-900/30 p-2 rounded text-center">{error}</p>}
+                        {successMsg && <p className="text-green-400 text-sm bg-green-900/20 border border-green-900/30 p-2 rounded text-center">{successMsg}</p>}
 
                         <div className="pt-2">
                             <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
@@ -205,19 +191,19 @@ export const Landing: React.FC = () => {
             </div>
 
             {!offlineMode && (
-                <div className="mt-8 pt-6 border-t border-white/5 flex flex-col items-center gap-3 text-sm">
+                <div className="mt-8 pt-6 border-t border-onyx-700/50 flex flex-col items-center gap-3 text-sm">
                     {view === 'login' && (
                         <>
-                            <button onClick={() => setView('reset')} className="text-slate-400 hover:text-white transition-colors">
+                            <button onClick={() => setView('reset')} className="text-onyx-500 hover:text-onyx-300 transition-colors text-xs">
                                 שכחתי סיסמה
                             </button>
-                            <div className="text-slate-500">
-                                אין לך חשבון? <button onClick={() => setView('register')} className="text-primary-400 font-medium hover:text-primary-300 transition-colors">הרשמה</button>
+                            <div className="text-onyx-400">
+                                אין לך חשבון? <button onClick={() => setView('register')} className="text-bronze-500 font-medium hover:text-bronze-400 transition-colors">הרשמה</button>
                             </div>
                         </>
                     )}
                     {(view === 'register' || view === 'reset') && (
-                        <button onClick={() => setView('login')} className="text-slate-400 hover:text-white transition-colors">
+                        <button onClick={() => setView('login')} className="text-onyx-400 hover:text-onyx-200 transition-colors">
                             חזרה לכניסה
                         </button>
                     )}
@@ -226,7 +212,7 @@ export const Landing: React.FC = () => {
         </div>
         
         <div className="mt-8 opacity-40 hover:opacity-100 transition-opacity">
-            <Link to="/admin" className="text-xs text-slate-500 uppercase tracking-widest hover:text-white">Admin Access</Link>
+            <Link to="/admin" className="text-[10px] text-onyx-600 uppercase tracking-widest hover:text-onyx-300">Admin Access</Link>
         </div>
       </div>
     </Layout>
