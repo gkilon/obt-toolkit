@@ -230,7 +230,7 @@ export const Dashboard: React.FC = () => {
                 )}
                 
                 <Button onClick={copyLink} variant="primary" disabled={cloudError || !user.userGoal} className={!user.userGoal ? 'opacity-50 grayscale' : ''}>
-                    העתק קישור אישי
+                    {copied ? '✓ הקישור הועתק!' : 'העתק קישור אישי'}
                 </Button>
               </div>
             ) : (
