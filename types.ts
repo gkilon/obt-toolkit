@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   password?: string;
+  userGoal?: string; // The goal defined by the user for the survey context
   createdAt: number;
 }
 
@@ -12,7 +13,7 @@ export interface FeedbackResponse {
   id: string;
   surveyId: string; // Linked to User.id
   relationship: RelationshipType; // New field
-  q1_change: string; // "What is the one thing..."
+  q1_change: string; // "Refinement of the goal..."
   q2_actions: string; // "What actions contradict..."
   timestamp: number;
 }

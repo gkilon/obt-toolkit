@@ -126,6 +126,21 @@ export const storageService = {
     return newUser;
   },
 
+  // UPDATE USER GOAL
+  updateUserGoal: async (userId: string, goal: string): Promise<void> => {
+      // 1. Update Local Storage
+      const currentUser = storageService.getCurrentUser();
+      if (currentUser && currentUser.id === userId) {
+          const updatedUser = { ...currentUser, userGoal: goal };
+          localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+      }
+
+      // 2. Update Cloud
+      if (storageService.isCloudEnabled()) {
+          await firebaseService.updateUserGoal(userId, goal);
+      }
+  },
+
   // RESET PASSWORD
   resetPassword: async (email: string, registrationCode: string, newPassword: string): Promise<void> => {
     if (!storageService.isCloudEnabled()) throw new Error("אין חיבור לענן.");
@@ -175,16 +190,16 @@ export const storageService = {
     return [];
   },
 
-  getUserNameById: async (userId: string): Promise<string> => {
+  getUserDataById: async (userId: string): Promise<{name: string, userGoal?: string}> => {
     if (storageService.isCloudEnabled()) {
         const user = await firebaseService.getUser(userId);
-        if (user) return user.name;
+        if (user) return { name: user.name, userGoal: user.userGoal };
     }
     // Only fallback to session if it matches
     const currentUser = storageService.getCurrentUser();
-    if (currentUser && currentUser.id === userId) return currentUser.name;
+    if (currentUser && currentUser.id === userId) return { name: currentUser.name, userGoal: currentUser.userGoal };
     
-    return "משתמש"; 
+    return { name: "משתמש" }; 
   }
 };
 

@@ -8,6 +8,7 @@ import { RelationshipType } from '../types';
 export const Survey: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const [userName, setUserName] = useState<string>('');
+  const [userGoal, setUserGoal] = useState<string>('');
   
   // Form State
   const [relationship, setRelationship] = useState<RelationshipType>('peer');
@@ -24,9 +25,10 @@ export const Survey: React.FC = () => {
         setIsLoadingUser(true);
         if (userId) {
             try {
-                const name = await storageService.getUserNameById(userId);
-                if (name) {
-                    setUserName(name);
+                const userData = await storageService.getUserDataById(userId);
+                if (userData && userData.name) {
+                    setUserName(userData.name);
+                    setUserGoal(userData.userGoal || '');
                 } else {
                     setError('הקישור אינו תקין.');
                 }
@@ -101,7 +103,7 @@ export const Survey: React.FC = () => {
           <h2 className="text-4xl font-heading font-bold text-white mb-4 tracking-tight">תודה רבה!</h2>
           <p className="text-slate-300 text-lg max-w-md mb-10 leading-relaxed">
                 המשוב שלך התקבל בהצלחה. <br/>
-                התשובות עוזרות ל-{userName} לצמוח ולהשתפר.
+                התשובות יעזרו ל-{userName} לדייק את הדרך לצמיחה.
           </p>
           
           <div className="flex flex-col gap-4 w-full max-w-xs">
@@ -149,6 +151,18 @@ export const Survey: React.FC = () => {
             
             <form onSubmit={handleSubmit} className="space-y-12">
                 
+                {/* Introduction - THE USER GOAL */}
+                {userGoal && (
+                    <div className="bg-primary-900/20 border border-primary-500/30 p-6 rounded-xl relative">
+                         <div className="absolute -top-3 right-4 bg-midnight-900 text-primary-400 px-2 text-xs font-bold uppercase tracking-widest border border-primary-500/30 rounded">
+                             המטרה ש-{userName} הציב/ה
+                         </div>
+                         <p className="text-xl font-medium text-white italic leading-relaxed">
+                             "{userGoal}"
+                         </p>
+                    </div>
+                )}
+
                 {/* Relationship */}
                 <div>
                     <label className="block text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">
@@ -175,15 +189,18 @@ export const Survey: React.FC = () => {
                 {/* Q1 */}
                 <div className="space-y-4">
                     <label className="block text-xl md:text-2xl font-heading font-medium text-white leading-relaxed">
-                        1. מהו <span className="text-primary-400 font-bold decoration-primary-500/30 underline decoration-4 underline-offset-4">הדבר האחד</span> (המרכזי ביותר) שאם ישונה, יקפיץ את האדם הזה קדימה?
+                        1. האם לדעתך <span className="text-primary-400 font-bold decoration-primary-500/30 underline decoration-4 underline-offset-4">המטרה שהוצגה</span> תקפיץ אותו/ה מדרגה?
                     </label>
+                    <p className="text-slate-400 text-sm">
+                        (האם את/ה רוצה לדייק או להרחיב? ניתן לנסח מחדש את המטרה אם לדעתך נדרש כיוון אחר)
+                    </p>
                     <textarea
                         required
                         value={q1}
                         onChange={(e) => setQ1(e.target.value)}
                         rows={4}
                         className="dark-input min-h-[140px] text-lg focus:ring-2 focus:ring-primary-500/50"
-                        placeholder="נסה/י להיות ספציפי/ת ככל האפשר..."
+                        placeholder="לדעתי המטרה..."
                     />
                 </div>
 

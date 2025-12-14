@@ -19,6 +19,12 @@ export const Dashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [responses, setResponses] = useState<FeedbackResponse[]>([]);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  
+  // Goal State
+  const [goal, setGoal] = useState('');
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [isSavingGoal, setIsSavingGoal] = useState(false);
+
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -38,7 +44,13 @@ export const Dashboard: React.FC = () => {
       return;
     }
     setUser(currentUser);
+    setGoal(currentUser.userGoal || '');
     
+    // Auto-open edit mode if no goal is set
+    if (!currentUser.userGoal) {
+        setIsEditingGoal(true);
+    }
+
     const loadData = async () => {
         setLoadingData(true);
         try {
@@ -53,11 +65,27 @@ export const Dashboard: React.FC = () => {
     loadData();
   }, [navigate]);
 
+  const handleSaveGoal = async () => {
+      if (!user) return;
+      if (!goal.trim()) return;
+
+      setIsSavingGoal(true);
+      try {
+          await storageService.updateUserGoal(user.id, goal);
+          setUser({ ...user, userGoal: goal });
+          setIsEditingGoal(false);
+      } catch (e) {
+          alert('שגיאה בשמירת המטרה');
+      } finally {
+          setIsSavingGoal(false);
+      }
+  };
+
   const handleAnalyze = async () => {
     if (responses.length === 0) return;
     setLoadingAnalysis(true);
     try {
-      const result = await analyzeFeedback(responses);
+      const result = await analyzeFeedback(responses, user?.userGoal);
       setAnalysis(result);
     } catch (error) {
       console.error(error);
@@ -69,6 +97,12 @@ export const Dashboard: React.FC = () => {
 
   const copyLink = () => {
     if (!user) return;
+    if (!user.userGoal) {
+        alert("יש להגדיר את מטרת הצמיחה שלך לפני שיתוף השאלון.");
+        setIsEditingGoal(true);
+        return;
+    }
+
     const baseUrl = window.location.href.split('#')[0];
     const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const url = `${cleanBase}/#/survey/${user.id}`;
@@ -128,9 +162,6 @@ export const Dashboard: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-             <Button onClick={copyLink} variant="secondary" className="whitespace-nowrap" disabled={cloudError}>
-               {copied ? '✓ הועתק' : 'העתק קישור לשליחה'}
-             </Button>
              <Button onClick={() => { storageService.logout(); navigate('/'); }} variant="ghost">
                 יציאה
              </Button>
@@ -140,23 +171,77 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Main Content (Responses) */}
-          <div className="lg:col-span-8 space-y-10">
+          <div className="lg:col-span-8 space-y-8">
             
+            {/* GOAL SETTING SECTION */}
+            <div className="glass-panel p-6 rounded-2xl border border-primary-500/20 bg-primary-900/10">
+                <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 className="text-lg font-heading font-bold text-white flex items-center gap-2">
+                            <span className="text-primary-500">🎯</span> מטרת הצמיחה שלי
+                        </h3>
+                        <p className="text-slate-400 text-sm mt-1">
+                            זו ההצהרה שתוצג למשיבים בתחילת השאלון.
+                        </p>
+                    </div>
+                    {!isEditingGoal && (
+                        <button onClick={() => setIsEditingGoal(true)} className="text-primary-400 hover:text-white text-sm underline">
+                            ערוך
+                        </button>
+                    )}
+                </div>
+
+                {isEditingGoal ? (
+                    <div className="space-y-4">
+                        <textarea
+                            value={goal}
+                            onChange={(e) => setGoal(e.target.value)}
+                            className="dark-input w-full min-h-[100px]"
+                            placeholder="דוגמה: אני רוצה להפוך למנהל אסטרטגי יותר ופחות לעסוק בפרטים הקטנים..."
+                        />
+                        <div className="flex gap-3">
+                            <Button onClick={handleSaveGoal} isLoading={isSavingGoal} className="py-2 px-4 text-xs">שמור מטרה</Button>
+                            <button onClick={() => { setIsEditingGoal(false); setGoal(user.userGoal || ''); }} className="text-slate-500 hover:text-white text-xs">ביטול</button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-midnight-900/50 p-4 rounded-xl border border-white/5">
+                        <p className="text-lg font-medium text-white italic">"{goal}"</p>
+                    </div>
+                )}
+            </div>
+
+            {/* RESPONSES SECTION */}
             {responses.length === 0 ? (
-              <div className="glass-panel rounded-2xl p-16 text-center border-dashed border-2 border-white/10">
+              <div className="glass-panel rounded-2xl p-16 text-center border-dashed border-2 border-white/10 mt-8">
                 <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner animate-bounce-slow">
                     🚀
                 </div>
                 <h3 className="text-2xl font-heading font-semibold text-white mb-3">המסע שלך מתחיל כאן</h3>
-                <p className="text-slate-400 max-w-sm mx-auto mb-8 leading-relaxed">
-                    כדי להתחיל את תהליך הצמיחה, יש לשלוח את הקישור האישי שלך לאנשים שעובדים איתך.
-                </p>
-                <Button onClick={copyLink} variant="primary" disabled={cloudError}>
+                
+                {!user.userGoal ? (
+                     <p className="text-rose-400 max-w-sm mx-auto mb-8 font-bold bg-rose-500/10 p-2 rounded">
+                        שלב 1: עליך להגדיר את מטרת הצמיחה שלך בתיבה למעלה.
+                    </p>
+                ) : (
+                    <p className="text-slate-400 max-w-sm mx-auto mb-8 leading-relaxed">
+                        כעת יש לשלוח את הקישור לאנשים שעובדים איתך כדי לקבל פידבק על המטרה שהצבת.
+                    </p>
+                )}
+                
+                <Button onClick={copyLink} variant="primary" disabled={cloudError || !user.userGoal} className={!user.userGoal ? 'opacity-50 grayscale' : ''}>
                     העתק קישור אישי
                 </Button>
               </div>
             ) : (
-              <div className="space-y-12">
+              <div className="space-y-12 mt-8">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-bold text-white">המשובים שהתקבלו</h3>
+                    <Button onClick={copyLink} variant="secondary" className="whitespace-nowrap text-xs" disabled={cloudError}>
+                        {copied ? '✓ הועתק' : 'העתק קישור לעוד אנשים'}
+                    </Button>
+                </div>
+
                 {Object.entries(groupedResponses).map(([rel, items]) => (
                    <div key={rel}>
                        <h3 className="text-lg font-bold text-primary-400 mb-5 flex items-center gap-3 uppercase tracking-wider">
@@ -170,11 +255,11 @@ export const Dashboard: React.FC = () => {
                                 <div key={resp.id} className="glass-panel p-6 rounded-xl hover:bg-white/5 transition-colors group border-l-4 border-l-transparent hover:border-l-primary-500">
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div>
-                                            <div className="text-[10px] font-bold text-primary-500 uppercase tracking-widest mb-2">הדבר האחד לשינוי</div>
+                                            <div className="text-[10px] font-bold text-primary-500 uppercase tracking-widest mb-2">דיוק המטרה</div>
                                             <p className="text-slate-100 text-lg leading-relaxed">{resp.q1_change}</p>
                                         </div>
                                         <div className="md:border-r md:border-white/10 md:pr-6">
-                                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">התנהגויות מעכבות</div>
+                                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">חסמים והתנהגויות</div>
                                             <p className="text-slate-400 text-sm italic">"{resp.q2_actions}"</p>
                                         </div>
                                     </div>
@@ -204,7 +289,7 @@ export const Dashboard: React.FC = () => {
                         {!analysis ? (
                         <div className="text-center py-8">
                             <p className="text-slate-400 mb-8 text-sm leading-relaxed">
-                            המערכת תסרוק את כל המשובים ותזקק עבורך את התובנה המדויקת ביותר לצמיחה.
+                            המערכת תבדוק האם המטרה שלך ("{user.userGoal ? (user.userGoal.length > 20 ? user.userGoal.substring(0,20)+'...' : user.userGoal) : '...'}") תואמת את מה שהסביבה רואה.
                             </p>
                             <Button 
                             onClick={handleAnalyze} 
@@ -219,12 +304,12 @@ export const Dashboard: React.FC = () => {
                         ) : (
                         <div className="space-y-6 animate-fade-in-up">
                             <div>
-                                <h4 className="text-[10px] font-bold text-primary-400 uppercase tracking-widest mb-3">התובנה המרכזית</h4>
+                                <h4 className="text-[10px] font-bold text-primary-400 uppercase tracking-widest mb-3">האם המטרה מדויקת?</h4>
                                 <p className="text-white font-medium text-lg leading-relaxed">{analysis.summary}</p>
                             </div>
                             
                             <div className="bg-white/5 p-4 rounded-xl">
-                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">נושאים חוזרים</h4>
+                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">נושאים שעלו</h4>
                                 <ul className="space-y-2">
                                     {analysis.keyThemes.map((theme, i) => (
                                     <li key={i} className="text-sm text-slate-300 flex items-start gap-2">

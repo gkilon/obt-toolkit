@@ -178,6 +178,17 @@ export const firebaseService = {
     }
   },
 
+  updateUserGoal: async (userId: string, goal: string): Promise<void> => {
+    if (!db) throw new Error("Database disconnected");
+    try {
+        const userRef = doc(db, "users", userId);
+        await updateDoc(userRef, { userGoal: goal });
+    } catch (e) {
+        console.error("User goal update failed", e);
+        throw new Error("עדכון מטרה נכשל.");
+    }
+  },
+
   getUser: async (userId: string): Promise<User | null> => {
     if (!db) return null;
     try {
