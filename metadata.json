@@ -1,5 +1,5 @@
 {
-  "name": "OBT AI 360",
-  "description": "A 360-degree feedback tool focusing on the 'One Big Thing' to change, powered by Gemini AI for synthesis.",
+  "name": "OBT - Personal Development Map",
+  "description": "A digital workspace for the OBT personal development framework, featuring a 4-column layout with AI assistance.",
   "requestFramePermissions": []
 }
