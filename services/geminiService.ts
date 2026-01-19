@@ -20,14 +20,17 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
   }));
 
   const prompt = `
-    נל משוב 360 עבור מנהל.
-    מטרה: "${userGoal || 'לא הוגדרה'}"
-    משובים: ${JSON.stringify(rawData)}
+    משימה: ניתוח פסיכולוגי-ארגוני של משוב 360.
     
-    דרישות:
-    1. הכל בעברית.
-    2. זהה את ה-One Big Thing (התובנה המרכזית).
-    3. החזר JSON תקין בלבד.
+    נתונים:
+    - המטרה המוצהרת של המנהל/ת: "${userGoal || 'לא הוגדרה'}"
+    - משובים מהסביבה: ${JSON.stringify(rawData)}
+    
+    הנחיות קריטיות לשפה ועיצוב טקסט:
+    1. כתוב בעברית רהוטה ומקצועית בלבד.
+    2. אל תערבב מילים באנגלית בתוך משפטים בעברית. אם יש מושג מקצועי קריטי באנגלית, שים אותו בסוגריים בסוף המשפט או בשדה נפרד.
+    3. זהה את ה-"One Big Thing" - הפעולה האחת שתייצר את האימפקט הגדול ביותר.
+    4. בצע ניתוח מעמיק של "הצל" (Shadow) - התנהגויות שמעכבות את הצמיחה.
   `;
 
   try {
@@ -35,7 +38,7 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
       model: 'gemini-3-flash-preview', 
       contents: prompt,
       config: {
-        systemInstruction: `אתה פסיכולוג ארגוני. השב ב-JSON בעברית בלבד.`,
+        systemInstruction: `אתה פסיכולוג ארגוני בכיר. תפקידך לזקק אמת מתוך משובים. השב תמיד במבנה JSON תקין. וודא שהטקסט בעברית זורם מימין לשמאל ללא קטעי אנגלית באמצע משפט.`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

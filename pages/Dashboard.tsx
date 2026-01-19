@@ -43,24 +43,24 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     if (loadingAnalysis) {
       const messages = lang === 'he' ? [
-        "קורא את המשובים בעיון...",
-        "מזהה דפוסים נסתרים...",
-        "מגבש אסטרטגיית פריצת דרך...",
-        "מזקק את ה-One Big Thing...",
-        "מכין את הדוח הסופי..."
+        "סורק את זירת המשוב...",
+        "מזהה דפוסים התנהגותיים...",
+        "מזקק תובנות ניהוליות...",
+        "מגבש את ה-One Big Thing...",
+        "מלטש את הדוח הסופי..."
       ] : [
-        "Analyzing feedbacks...",
-        "Identifying patterns...",
-        "Crafting breakthrough strategy...",
-        "Synthesizing the One Big Thing...",
-        "Finalizing your report..."
+        "Scanning feedback arena...",
+        "Identifying behavioral patterns...",
+        "Synthesizing insights...",
+        "Crafting the One Big Thing...",
+        "Finalizing the report..."
       ];
       let i = 0;
       setLoadingMessage(messages[0]);
       const interval = setInterval(() => {
         i = (i + 1) % messages.length;
         setLoadingMessage(messages[i]);
-      }, 3500);
+      }, 3000);
       return () => clearInterval(interval);
     }
   }, [loadingAnalysis, lang]);
@@ -79,7 +79,7 @@ export const Dashboard: React.FC = () => {
       const result = await analyzeFeedback(responses, user?.userGoal);
       setAnalysis(result);
     } catch (error) {
-      alert(lang === 'he' ? "הניתוח נתקל בשגיאה. אנא נסה שוב." : "Analysis failed. Please try again.");
+      alert(lang === 'he' ? "הניתוח נכשל. נסה שוב." : "Analysis failed.");
     } finally {
       setLoadingAnalysis(false);
     }
@@ -100,17 +100,17 @@ export const Dashboard: React.FC = () => {
     <Layout>
       <div className="pb-24">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-8 border-b border-onyx-800">
-          <div>
-            <span className="text-bronze-500 font-bold tracking-widest text-[10px] uppercase mb-2 block">מרכז בקרה אישי</span>
-            <h1 className="text-4xl font-heading text-white">{t.dashboardTitle}, {user.name}</h1>
-            <p className="text-onyx-400 mt-2">{t.feedbacksCollected}: <span className="text-bronze-500 font-bold">{responses.length}</span></p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-8 border-b border-white/5">
+          <div className="space-y-1">
+            <span className="text-amber-600 font-bold tracking-widest text-[10px] uppercase block">לוח בקרה אישי</span>
+            <h1 className="text-4xl font-bold text-white tracking-tight">{t.dashboardTitle}, {user.name}</h1>
+            <p className="text-white/40 text-sm">סה"כ משובים שהתקבלו: <span className="text-amber-500 font-bold">{responses.length}</span></p>
           </div>
-          <div className="flex gap-4">
-            <Button onClick={copyLink} variant="outline" className="rounded-full border-bronze-500/30 text-bronze-500">
+          <div className="flex gap-3">
+            <Button onClick={copyLink} variant="outline" className="rounded-lg py-2.5">
               {copied ? t.linkCopied : t.copyLink}
             </Button>
-            <Button onClick={() => { storageService.logout(); navigate('/'); }} variant="ghost" className="text-onyx-500">
+            <Button onClick={() => { storageService.logout(); navigate('/'); }} variant="ghost" className="text-white/30 hover:text-white">
               {t.logout}
             </Button>
           </div>
@@ -118,160 +118,179 @@ export const Dashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* Left Column: Context & Responses */}
+          {/* Left Column: Input & Feedback List */}
           <div className="lg:col-span-4 space-y-8">
-            <div className="glass-panel p-6 border-r-4 border-r-bronze-500/50">
+            <div className="glass-panel p-6 border-l-4 border-l-amber-600">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xs font-bold text-onyx-400 uppercase tracking-tighter">🎯 {t.myGoal}</h3>
-                    <button onClick={() => setIsEditingGoal(true)} className="text-bronze-500 text-[10px] uppercase hover:underline">{t.edit}</button>
+                    <h3 className="text-xs font-bold text-white/40 uppercase tracking-tighter">המטרה שלי</h3>
+                    <button onClick={() => setIsEditingGoal(true)} className="text-amber-600 text-[10px] uppercase hover:underline">עריכה</button>
                 </div>
                 {isEditingGoal ? (
                     <div className="space-y-4">
-                        <textarea value={goal} onChange={(e) => setGoal(e.target.value)} className="dark-input w-full text-sm p-4 rounded-lg" rows={4} placeholder={t.goalHint} />
+                        <textarea value={goal} onChange={(e) => setGoal(e.target.value)} className="dark-input w-full text-sm" rows={4} />
                         <div className="flex gap-2">
-                            <Button onClick={handleSaveGoal} className="px-4 py-1.5 text-xs bg-bronze-600">שמור מטרה</Button>
-                            <button onClick={() => setIsEditingGoal(false)} className="text-onyx-500 text-xs">ביטול</button>
+                            <Button onClick={handleSaveGoal} className="px-4 py-2 text-xs">שמור</Button>
+                            <button onClick={() => setIsEditingGoal(false)} className="text-white/40 text-xs">ביטול</button>
                         </div>
                     </div>
                 ) : (
-                    <p className="text-lg font-light leading-relaxed text-onyx-200">"{goal || 'תאר את השינוי שאתה רוצה לחולל...'}"</p>
+                    <p className="text-lg font-light leading-relaxed text-white/90">"{goal || 'מהו השינוי האחד שאתה רוצה להשיג?'}"</p>
                 )}
             </div>
 
             <div className="space-y-4">
-                <h3 className="text-[10px] font-bold text-onyx-500 uppercase tracking-widest px-2">משובים שהתקבלו</h3>
-                {responses.length === 0 && <p className="text-onyx-600 text-sm italic px-2">ממתין למשובים ראשונים...</p>}
-                {responses.map(r => (
-                    <div key={r.id} className="glass-panel p-4 bg-onyx-800/20 hover:bg-onyx-800/40 transition-colors border-bronze-500/10">
-                        <p className="text-[9px] text-bronze-500 font-bold mb-2 uppercase tracking-tighter">{translations[lang][r.relationship] || r.relationship}</p>
-                        <p className="text-onyx-200 text-sm mb-3">"{r.q1_change}"</p>
-                        <div className="h-px bg-onyx-700/30 w-full mb-3"></div>
-                        <p className="text-onyx-500 text-xs italic">"{r.q2_actions}"</p>
-                    </div>
-                ))}
+                <h3 className="text-[10px] font-bold text-white/20 uppercase tracking-widest px-2">משובים גולמיים</h3>
+                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                  {responses.length === 0 && <p className="text-white/20 text-sm italic p-4 text-center glass-panel">ממתין למשיבים...</p>}
+                  {responses.map(r => (
+                      <div key={r.id} className="glass-panel p-4 border-white/5 hover:border-white/10 transition-all group">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-[9px] text-amber-600 font-bold uppercase tracking-tighter">{translations[lang][r.relationship] || r.relationship}</span>
+                            <span className="text-[9px] text-white/10 uppercase">#{r.id.slice(-4)}</span>
+                          </div>
+                          <p className="text-white/70 text-sm mb-3 font-light leading-snug">"{r.q1_change}"</p>
+                          <div className="h-px bg-white/5 w-full mb-3"></div>
+                          <p className="text-white/40 text-[11px] italic">"{r.q2_actions}"</p>
+                      </div>
+                  ))}
+                </div>
             </div>
           </div>
 
-          {/* Right Column: AI Analysis */}
+          {/* Right Column: AI Analysis Report */}
           <div className="lg:col-span-8">
             {!analysis ? (
-                <div className="glass-panel min-h-[450px] flex flex-col items-center justify-center text-center p-12 border-dashed border-2 border-onyx-700">
+                <div className="glass-panel min-h-[500px] flex flex-col items-center justify-center text-center p-12">
                     {loadingAnalysis ? (
                         <div className="space-y-8">
                             <div className="relative w-24 h-24 mx-auto">
-                              <div className="absolute inset-0 border-4 border-bronze-500/10 rounded-full"></div>
-                              <div className="absolute inset-0 border-4 border-bronze-500 rounded-full border-t-transparent animate-spin"></div>
+                              <div className="absolute inset-0 border-4 border-amber-600/10 rounded-full"></div>
+                              <div className="absolute inset-0 border-4 border-amber-600 rounded-full border-t-transparent animate-spin"></div>
                             </div>
                             <div className="space-y-2">
-                              <p className="text-2xl font-heading text-bronze-400 animate-pulse">{loadingMessage}</p>
-                              <p className="text-onyx-600 text-xs">הניתוח לוקח בדרך כלל 15-20 שניות</p>
+                              <p className="text-2xl font-light text-white animate-pulse">{loadingMessage}</p>
+                              <p className="text-white/20 text-xs">אנחנו מזקקים את התובנות שלך...</p>
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-8">
-                            <div className="w-20 h-20 bg-bronze-500/10 rounded-full flex items-center justify-center mx-auto text-bronze-500 shadow-xl shadow-bronze-500/5">
+                        <div className="space-y-8 max-w-md">
+                            <div className="w-20 h-20 bg-amber-600/10 rounded-full flex items-center justify-center mx-auto text-amber-600 shadow-2xl shadow-amber-600/20">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="M2 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="M12 22v-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M22 12h-4"/><path d="m19.07 4.93-2.83 2.83"/></svg>
                             </div>
                             <div>
-                                <h2 className="text-2xl font-heading text-white mb-2">מוכן לניתוח ה-AI?</h2>
-                                <p className="text-onyx-500 max-w-sm mx-auto text-sm leading-relaxed">
-                                    המערכת תסרוק את כל המשובים ותבנה עבורך מפת דרכים אסטרטגית המבוססת על פסיכולוגיה ארגונית.
+                                <h2 className="text-3xl font-bold text-white mb-4">מוכן לזיקוק התובנות?</h2>
+                                <p className="text-white/40 text-sm leading-relaxed">
+                                    ה-AI ינתח את כל המשובים ויגבש עבורך דוח מנהלים עמוק הכולל את ה-One Big Thing שיביא אותך לשלב הבא.
                                 </p>
                             </div>
-                            <Button onClick={handleAnalyze} className="px-10 py-4 rounded-full bg-bronze-600 hover:bg-bronze-500 shadow-2xl shadow-bronze-500/20" disabled={responses.length < 1}>
+                            <Button onClick={handleAnalyze} className="w-full py-5 text-xl" disabled={responses.length < 1}>
                                 {t.generateReport}
                             </Button>
                         </div>
                     )}
                 </div>
             ) : (
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                    {/* Main Synthesis Card */}
-                    <div className="glass-panel p-8 bg-gradient-to-br from-onyx-800 to-onyx-900 border-bronze-500/20">
-                        <div className="flex flex-col md:flex-row items-center gap-8 mb-8 border-b border-onyx-700/50 pb-8">
-                            <div className="relative w-32 h-32 flex-shrink-0">
-                                <svg className="w-full h-full transform -rotate-90">
-                                    <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-onyx-800" />
-                                    <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={364.4} strokeDashoffset={364.4 - (364.4 * analysis.goalPrecision.score) / 100} className="text-bronze-500" strokeLinecap="round" />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-3xl font-heading font-bold text-white">{analysis.goalPrecision.score}%</span>
-                                    <span className="text-[10px] uppercase text-onyx-500 tracking-tighter">דיוק מטרה</span>
-                                </div>
-                            </div>
-                            <div>
-                                <h2 className="text-2xl font-heading text-white mb-3">סיכום מנהלים אסטרטגי</h2>
-                                <p className="text-onyx-300 leading-relaxed text-lg font-light italic">"{analysis.executiveSummary}"</p>
-                            </div>
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+                    
+                    {/* The One Big Thing - Hero Card */}
+                    <div className="glass-panel p-10 bg-gradient-to-br from-onyx-800 to-onyx-950 border-amber-600/30 relative overflow-hidden group shadow-[0_0_50px_-12px_rgba(194,84,0,0.3)]">
+                        <div className="absolute top-0 right-0 p-6 text-amber-600/5 group-hover:text-amber-600/10 transition-all duration-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
                         </div>
-
-                        <div className="bg-bronze-500/10 p-6 rounded-xl border border-bronze-500/20 mb-8 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-3 text-bronze-500/10 group-hover:text-bronze-500/20 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="M2 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="M12 22v-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M22 12h-4"/><path d="m19.07 4.93-2.83 2.83"/></svg>
+                        
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="px-3 py-1 bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full">Primary Insight</span>
+                                <div className="h-px flex-1 bg-white/5"></div>
                             </div>
-                            <h3 className="text-lg font-heading text-bronze-400 mb-4 flex items-center gap-3">
-                                <span className="bg-bronze-500 text-onyx-950 p-1.5 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>
-                                The One Big Thing - פריצת הדרך
-                            </h3>
-                            <p className="text-xl font-light text-white leading-relaxed relative z-10">{analysis.theOneBigThing}</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                             <div className="space-y-4">
-                                <h4 className="text-[10px] font-black text-onyx-500 uppercase tracking-widest border-r-2 border-onyx-700 pr-3">ביקורת והכוונה</h4>
-                                <p className="text-sm text-onyx-400">{analysis.goalPrecision.critique}</p>
-                             </div>
-                             <div className="space-y-4">
-                                <h4 className="text-[10px] font-black text-bronze-500 uppercase tracking-widest border-r-2 border-bronze-500/30 pr-3">מטרה מזוקקת לעתיד</h4>
-                                <p className="text-md font-medium text-white p-4 bg-onyx-950/40 rounded-lg border border-onyx-700/50">"{analysis.goalPrecision.refinedGoal}"</p>
-                             </div>
+                            
+                            <h2 className="text-amber-500 text-sm font-bold uppercase tracking-[0.2em] mb-4">The One Big Thing</h2>
+                            <p className="text-4xl font-bold text-white leading-tight mb-8 max-w-2xl">{analysis.theOneBigThing}</p>
+                            
+                            <div className="p-6 bg-white/5 rounded-2xl border border-white/5 italic text-white/50 text-lg font-light leading-relaxed">
+                              "{analysis.executiveSummary}"
+                            </div>
                         </div>
                     </div>
 
-                    {/* Insights Grid */}
+                    {/* Secondary Insights Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="glass-panel p-6 border-onyx-700/30">
-                            <h4 className="text-[10px] font-bold text-onyx-500 uppercase tracking-widest mb-4">הזדמנויות מרכזיות</h4>
-                            <ul className="space-y-3">
+                        <div className="glass-panel p-8 space-y-4">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">הזדמנויות ואימפקט</h4>
+                            </div>
+                            <ul className="space-y-4">
                                 {analysis.question1Analysis.opportunities.map((opt, i) => (
-                                    <li key={i} className="flex gap-3 text-sm text-onyx-200">
-                                        <span className="text-bronze-500 font-bold">•</span> {opt}
+                                    <li key={i} className="flex gap-4 text-white/80 leading-snug">
+                                        <span className="text-amber-600 font-bold">#</span> {opt}
                                     </li>
                                 ))}
                             </ul>
                         </div>
-                        <div className="glass-panel p-6 border-onyx-700/30">
-                            <h4 className="text-[10px] font-bold text-onyx-500 uppercase tracking-widest mb-4">דפוסים מעכבים (The Shadow)</h4>
-                            <p className="text-sm text-onyx-300 leading-relaxed italic mb-4">"{analysis.question2Analysis.psychologicalPatterns}"</p>
-                            <div className="flex flex-wrap gap-2">
+                        
+                        <div className="glass-panel p-8 space-y-4 border-red-900/10">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">התנהגויות מעכבות</h4>
+                            </div>
+                            <p className="text-white/80 italic font-light leading-relaxed">"{analysis.question2Analysis.psychologicalPatterns}"</p>
+                            <div className="flex flex-wrap gap-2 pt-2">
                                 {analysis.question2Analysis.blockers.map((b, i) => (
-                                    <span key={i} className="px-2 py-1 bg-onyx-700/40 text-onyx-300 text-[10px] rounded uppercase border border-onyx-600/50">{b}</span>
+                                    <span key={i} className="px-3 py-1 bg-white/5 text-white/40 text-[10px] rounded-full uppercase border border-white/5">{b}</span>
                                 ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Strategic Goal Refinement */}
+                    <div className="glass-panel p-8 border-white/10 flex flex-col md:flex-row gap-10 items-center">
+                        <div className="relative w-24 h-24 flex-shrink-0">
+                            <svg className="w-full h-full transform -rotate-90">
+                                <circle cx="48" cy="48" r="42" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/5" />
+                                <circle cx="48" cy="48" r="42" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray={263.8} strokeDashoffset={263.8 - (263.8 * analysis.goalPrecision.score) / 100} className="text-amber-600" strokeLinecap="round" />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-2xl font-bold text-white">{analysis.goalPrecision.score}%</span>
+                                <span className="text-[8px] uppercase text-white/30">Match</span>
+                            </div>
+                        </div>
+                        <div className="flex-1 space-y-4">
+                            <div>
+                                <h4 className="text-[10px] font-bold text-amber-600 uppercase mb-1">דיוק המטרה</h4>
+                                <p className="text-white/60 text-sm">{analysis.goalPrecision.critique}</p>
+                            </div>
+                            <div className="p-4 bg-amber-600/5 rounded-xl border border-amber-600/10">
+                                <h4 className="text-[10px] font-bold text-white/30 uppercase mb-2">ניסוח מחדש מומלץ:</h4>
+                                <p className="text-white font-medium italic">"{analysis.goalPrecision.refinedGoal}"</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Action Plan */}
                     <div className="space-y-6">
-                        <h4 className="text-[10px] font-bold text-onyx-600 uppercase tracking-widest px-2">תוכנית פעולה אופרטיבית</h4>
+                        <div className="flex items-center gap-4 px-2">
+                          <h3 className="text-xl font-bold text-white">תוכנית פעולה אסטרטגית</h3>
+                          <div className="h-px flex-1 bg-white/5"></div>
+                        </div>
                         <div className="grid grid-cols-1 gap-4">
                             {analysis.actionPlan.map((step, i) => (
-                                <div key={i} className="glass-panel flex gap-6 items-start hover:border-bronze-500/40 transition-all group p-5">
-                                    <div className="w-12 h-12 rounded-xl bg-onyx-700/50 flex items-center justify-center text-white font-black group-hover:bg-bronze-600 group-hover:text-onyx-950 transition-all duration-500 shadow-inner">0{i+1}</div>
-                                    <div className="flex-1">
-                                        <h5 className="font-heading text-lg text-white mb-1 group-hover:text-bronze-400 transition-colors">{step.title}</h5>
-                                        <p className="text-sm text-onyx-400 leading-relaxed">{step.content}</p>
+                                <div key={i} className="glass-panel flex gap-8 items-start hover:border-amber-600/40 transition-all p-6 group">
+                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 font-black group-hover:bg-amber-600 group-hover:text-white transition-all duration-300">0{i+1}</div>
+                                    <div className="space-y-1">
+                                        <h5 className="text-lg font-bold text-white group-hover:text-amber-500 transition-colors">{step.title}</h5>
+                                        <p className="text-white/50 text-sm leading-relaxed max-w-3xl">{step.content}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="flex flex-col items-center gap-4 pt-12 border-t border-onyx-800/50">
-                        <Button onClick={() => exportToWord(user, analysis, responses)} variant="outline" className="px-12 py-4 rounded-full border-onyx-700 hover:border-bronze-500/40 text-onyx-300">
+                    <div className="flex flex-col items-center gap-6 pt-16">
+                        <Button onClick={() => exportToWord(user, analysis, responses)} variant="outline" className="px-10 py-4 text-white/60 hover:text-white border-white/10">
                           {t.downloadWord}
                         </Button>
-                        <p className="text-[10px] text-onyx-600 uppercase tracking-widest">דוח זה מוגן וזמין להורדה בפורמט וורד</p>
+                        <p className="text-[10px] text-white/20 uppercase tracking-[0.3em]">Confidential Executive Report • Generated by OBT AI</p>
                     </div>
                 </div>
             )}
