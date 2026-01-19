@@ -1,52 +1,33 @@
+
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OBT 360 | משוב וצמיחה</title>
+    <title>OBT 360 | One Big Thing</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;500;700;900&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;500;700;800;900&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
               sans: ['"Heebo"', 'sans-serif'],
-              heading: ['"Rubik"', 'sans-serif'],
+              heading: ['"Heebo"', 'sans-serif'],
             },
             colors: {
-              // Onyx Palette (Slate-based from provided HTML)
               onyx: {
-                50: '#f8fafc',
-                100: '#f1f5f9',
-                200: '#e2e8f0',
-                300: '#cbd5e1',
-                400: '#94a3b8',
-                500: '#64748b',
-                600: '#475569',
-                700: '#334155',
-                800: '#1e293b',
-                900: '#0f172a',
-                950: '#020617',
+                950: '#0a0d14', // כחול-כהה עמוק כמו בתמונה
+                900: '#11151f',
+                800: '#1a1f2e',
+                700: '#252b3d',
               },
-              // Bronze Palette (Amber-based from provided HTML)
-              bronze: {
-                50: '#fffbeb',
-                100: '#fef3c7',
-                200: '#fde68a',
-                300: '#fcd34d',
-                400: '#fbbf24',
-                500: '#f59e0b',
-                600: '#d97706',
-                700: '#b45309',
-                800: '#92400e',
-                900: '#78350f',
+              amber: {
+                600: '#c25400', // כתום תפוז עמוק
+                500: '#e66a00', // כתום בהיר יותר ל-hover
               }
-            },
-            backgroundImage: {
-              'noise': "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.03%22/%3E%3C/svg%3E')",
             }
           }
         }
@@ -54,67 +35,72 @@
     </script>
     <style>
       body {
-        background-color: #0f172a; /* onyx-900 */
-        color: #e2e8f0; /* onyx-200 */
+        background-color: #0a0d14;
+        color: #f0f0f0;
         font-family: 'Heebo', sans-serif;
-        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
         overflow-x: hidden;
       }
       
-      h1, h2, h3, h4, h5, h6 {
-        font-family: 'Rubik', sans-serif;
-        color: #f1f5f9; /* onyx-100 */
-        letter-spacing: 0.025em; /* tracking-wide */
+      /* Noise Texture Overlay - עדין מאוד */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.02%22/%3E%3C/svg%3E');
+        pointer-events: none;
+        z-index: 999;
+        opacity: 0.4;
       }
 
-      /* Card/Container */
       .glass-panel {
-        background-color: #1e293b; /* onyx-800 */
-        border: 1px solid rgba(51, 65, 85, 0.6); /* onyx-700 / 60% */
-        border-radius: 0.75rem; /* rounded-xl (matched to prompt) */
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-        padding: 1.5rem;
+        background: rgba(30, 37, 56, 0.4);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 1.25rem;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
       }
 
-      /* Input/Textarea */
       .dark-input {
+        background: rgba(15, 20, 32, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
         width: 100%;
-        background-color: rgba(2, 6, 23, 0.3); /* onyx-950 / 30% */
-        border: 1px solid rgba(51, 65, 85, 0.5); /* onyx-700 / 50% */
-        border-radius: 0.5rem;
-        padding: 1rem;
-        color: #e2e8f0; /* onyx-200 */
-        transition: all 0.2s ease-in-out;
-        font-size: 1rem;
-        outline: none;
+        transition: all 0.2s ease;
       }
-      
+
       .dark-input:focus {
-        border-color: rgba(245, 158, 11, 0.5); /* bronze-500 / 50% */
-        box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
+        border-color: rgba(230, 106, 0, 0.5);
+        outline: none;
+        background: rgba(15, 20, 32, 0.8);
       }
-      
-      .dark-input::placeholder {
-        color: #64748b; /* onyx-500 */
+
+      .btn-primary {
+        background-color: #c25400;
+        color: white;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 15px rgba(194, 84, 0, 0.2);
       }
-      
-      select.dark-input option {
-        background-color: #1e293b; /* onyx-800 */
-        color: #f1f5f9;
+
+      .btn-primary:hover {
+        background-color: #e66a00;
+        transform: translateY(-1px);
       }
 
       ::-webkit-scrollbar {
         width: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #0f172a;
+        background: #0a0d14;
       }
       ::-webkit-scrollbar-thumb {
-        background: #334155;
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #475569;
+        background: #1f2535;
+        border-radius: 10px;
       }
     </style>
   <script type="importmap">

@@ -1,11 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
 import { translations } from '../translations';
-
-const ALLOW_GUEST_MODE = false;
 
 export const Landing: React.FC = () => {
   const [lang, setLang] = useState<'he' | 'en'>(() => (localStorage.getItem('obt_lang') as 'he' | 'en') || 'he');
@@ -26,15 +25,8 @@ export const Landing: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [offlineMode, setOfflineMode] = useState(false);
 
   const navigate = useNavigate();
-
-  useEffect(() => {
-    storageService.init();
-    const isConnected = storageService.isCloudEnabled();
-    if (!isConnected) setOfflineMode(true);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +35,6 @@ export const Landing: React.FC = () => {
     setIsLoading(true);
 
     try {
-      if (offlineMode && !ALLOW_GUEST_MODE) throw new Error(lang === 'he' ? "המערכת באופליין" : "System offline");
       if (view === 'register') {
         await storageService.registerUser(name, email, password, registrationCode);
         navigate('/dashboard');
@@ -64,68 +55,69 @@ export const Landing: React.FC = () => {
 
   return (
     <Layout>
-      <div className="flex flex-col items-center justify-center py-12 relative">
-        <div className="text-center mb-10">
-            <h1 className="text-4xl md:text-5xl font-heading font-normal text-onyx-100 mb-4 tracking-tight">
-                One Big <span className="text-bronze-500 font-medium">Thing</span>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] py-12">
+        <div className="text-center mb-12">
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">
+                One Big <span className="text-[#e66a00]">Thing</span>
             </h1>
-            <p className="text-lg text-onyx-400 max-w-md mx-auto leading-relaxed">
+            <p className="text-xl text-white/60 max-w-xl mx-auto leading-relaxed">
                {t.subtitle}
             </p>
         </div>
 
-        <div className="glass-panel w-full max-w-[400px]">
-            <div className="mb-8 text-center border-b border-onyx-700/50 pb-6">
-                <h2 className="text-xl font-heading text-onyx-100">
-                    {view === 'register' ? t.register : view === 'reset' ? t.reset : t.login}
+        <div className="glass-panel w-full max-w-[460px] p-10">
+            <div className="mb-10 text-center">
+                <h2 className="text-2xl font-medium text-white">
+                    {view === 'register' ? 'צור חשבון חדש' : view === 'reset' ? t.reset : 'Member Login'}
                 </h2>
+                <div className="h-px bg-white/10 w-full mt-6"></div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
                 {view === 'register' && (
                     <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="dark-input" placeholder={t.fullName} />
                 )}
+                
                 <input 
                   type="email" 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
-                  className={`dark-input ${lang === 'he' ? 'text-right' : 'text-left'}`} 
-                  placeholder={t.email} 
+                  className="dark-input" 
+                  placeholder="Email Address" 
                   dir="ltr"
                 />
+                
                 {(view === 'register' || view === 'reset') && (
-                    <div>
-                        <input type="text" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="dark-input uppercase" placeholder={t.regCode} />
-                        <p className="text-[10px] text-onyx-500 mt-1">{t.regCodeHint}</p>
-                    </div>
+                    <input type="text" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="dark-input uppercase" placeholder="Registration Code" />
                 )}
+                
                 <input 
                   type="password" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
-                  className={`dark-input ${lang === 'he' ? 'text-right' : 'text-left'}`} 
-                  placeholder={t.password} 
+                  className="dark-input" 
+                  placeholder="Password" 
                   dir="ltr"
                 />
                 
-                {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-                {successMsg && <p className="text-green-400 text-sm text-center">{successMsg}</p>}
+                {error && <p className="text-red-400 text-sm text-center font-light">{error}</p>}
+                {successMsg && <p className="text-green-400 text-sm text-center font-light">{successMsg}</p>}
 
-                <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
-                    {view === 'register' ? t.registerBtn : view === 'reset' ? t.save : t.loginBtn}
+                <Button type="submit" variant="primary" className="w-full text-lg py-4" isLoading={isLoading}>
+                    {view === 'register' ? t.registerBtn : view === 'reset' ? t.save : 'Login'}
                 </Button>
             </form>
 
-            <div className="mt-8 pt-6 border-t border-onyx-700/50 flex flex-col items-center gap-3 text-sm">
+            <div className="mt-10 flex flex-col items-center gap-4 text-sm font-light">
                 {view === 'login' ? (
                     <>
-                        <button onClick={() => setView('reset')} className="text-onyx-500 text-xs">{t.forgotPassword}</button>
-                        <div className="text-onyx-400">
-                            {t.noAccount} <button onClick={() => setView('register')} className="text-bronze-500 font-medium">{t.registerBtn}</button>
+                        <button onClick={() => setView('reset')} className="text-white/40 hover:text-white transition-colors">Forgot Password</button>
+                        <div className="text-white/40 mt-2">
+                            Don't have an account? <button onClick={() => setView('register')} className="text-[#e66a00] font-medium hover:underline">Create Account</button>
                         </div>
                     </>
                 ) : (
-                    <button onClick={() => setView('login')} className="text-onyx-400">{t.backToLogin}</button>
+                    <button onClick={() => setView('login')} className="text-white/40 hover:text-white transition-colors">Back to Login</button>
                 )}
             </div>
         </div>
