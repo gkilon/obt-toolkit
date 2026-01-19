@@ -20,14 +20,15 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
   }));
 
   const prompt = `
-    Analyze 360 feedback for an executive. 
-    Goal: "${userGoal || 'Not defined'}"
-    Feedbacks: ${JSON.stringify(rawData)}
+    משימה: זיקוק תובנות ממשוב 360 עבור מנהל/ת.
+    מטרה נוכחית: "${userGoal || 'לא הוגדרה'}"
+    משובים: ${JSON.stringify(rawData)}
     
-    Provide the analysis in BOTH Hebrew and English for every text field.
-    The Hebrew must be fluent and professional (right-to-left).
-    The English must be high-level executive terminology.
-    Focus on "The One Big Thing" - the single most impactful change.
+    הנחיות חשובות לטון ולשפה:
+    1. השתמש בשפה פשוטה, ברורה ובגובה העיניים. בלי "מילים גבוהות" מדי של יועצים.
+    2. הצג את ה-One Big Thing כ**הצעה למחשבה** (Suggested direction) ולא כתשובה סופית. השתמש בניסוחים כמו "נראה ש...", "נקודה למחשבה שעולה היא...", "אולי כדאי לשקול...".
+    3. כתוב בעברית נקייה ללא ערבוב אנגלית.
+    4. בצע ניתוח של פערים בין המטרה שהמנהל הציב לבין מה שהסביבה רואה.
   `;
 
   try {
@@ -35,7 +36,7 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
       model: 'gemini-3-flash-preview', 
       contents: prompt,
       config: {
-        systemInstruction: `You are an elite organizational psychologist. Respond with a JSON object containing dual-language analysis. Ensure Hebrew and English fields are clearly separated in the schema.`,
+        systemInstruction: `אתה מלווה מנהלים שמאמין שהתשובה נמצאת אצלם. תפקידך להציע זווית ראייה חדשה מתוך המשובים. דבר בפשטות ובידידותיות. השב ב-JSON בלבד.`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -96,6 +97,6 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
     return JSON.parse(response.text) as AnalysisResult;
   } catch (error) {
     console.error("Gemini Error:", error);
-    throw new Error("Analysis failed. Please try again.");
+    throw new Error("משהו השתבש בניתוח. כדאי לנסות שוב.");
   }
 };

@@ -43,17 +43,17 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     if (loadingAnalysis) {
       const messages = lang === 'he' ? [
-        "סורק את זירת המשוב...",
-        "מזהה דפוסים התנהגותיים...",
-        "מזקק תובנות ניהוליות...",
-        "מגבש את ה-One Big Thing...",
-        "מלטש את הדוח הסופי..."
+        "מקשיב למשובים...",
+        "מחפש דפוסים חוזרים...",
+        "מזקק כיווני מחשבה...",
+        "מנסח הצעה לפעולה אחת משמעותית...",
+        "מכין לך את הדוח..."
       ] : [
-        "Scanning feedback arena...",
-        "Identifying behavioral patterns...",
-        "Synthesizing insights...",
-        "Crafting the One Big Thing...",
-        "Finalizing the report..."
+        "Listening to feedback...",
+        "Looking for patterns...",
+        "Synthesizing thoughts...",
+        "Drafting a suggestion for growth...",
+        "Preparing your report..."
       ];
       let i = 0;
       setLoadingMessage(messages[0]);
@@ -103,7 +103,7 @@ export const Dashboard: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-8 border-b border-white/5">
           <div className="space-y-1">
             <span className="text-amber-600 font-bold tracking-widest text-[10px] uppercase block">
-                {lang === 'he' ? 'לוח בקרה אישי' : 'PERSONAL DASHBOARD'}
+                {lang === 'he' ? 'מרחב הצמיחה האישי' : 'PERSONAL GROWTH SPACE'}
             </span>
             <h1 className="text-4xl font-bold text-white tracking-tight">{t.dashboardTitle}, {user.name}</h1>
             <p className="text-white/40 text-sm">{t.feedbacksCollected}: <span className="text-amber-500 font-bold">{responses.length}</span></p>
@@ -141,10 +141,10 @@ export const Dashboard: React.FC = () => {
 
             <div className="space-y-4">
                 <h3 className="text-[10px] font-bold text-white/20 uppercase tracking-widest px-2">
-                    {lang === 'he' ? 'משובים גולמיים' : 'RAW FEEDBACK'}
+                    {lang === 'he' ? 'מה אמרו עליך?' : 'WHAT THEY SAID'}
                 </h3>
                 <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                  {responses.length === 0 && <p className="text-white/20 text-sm italic p-4 text-center glass-panel">Waiting for responses...</p>}
+                  {responses.length === 0 && <p className="text-white/20 text-sm italic p-4 text-center glass-panel">ממתין למשיבים...</p>}
                   {responses.map(r => (
                       <div key={r.id} className="glass-panel p-4 border-white/5 hover:border-white/10 transition-all group">
                           <div className="flex justify-between items-start mb-2">
@@ -176,16 +176,16 @@ export const Dashboard: React.FC = () => {
                     ) : (
                         <div className="space-y-8 max-w-md">
                             <div className="w-20 h-20 bg-amber-600/10 rounded-full flex items-center justify-center mx-auto text-amber-600 shadow-2xl shadow-amber-600/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="M2 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="M12 22v-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M22 12h-4"/><path d="m19.07 4.93-2.83 2.83"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="M2 12h4"/><path d="m4.93 19.07 2.83-2.647"/><path d="M12 22v-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M22 12h-4"/><path d="m19.07 4.93-2.83 2.83"/></svg>
                             </div>
                             <div>
-                                <h2 className="text-3xl font-bold text-white mb-4">{lang === 'he' ? 'מוכן לזיקוק התובנות?' : 'Ready for Insights?'}</h2>
+                                <h2 className="text-3xl font-bold text-white mb-4">{lang === 'he' ? 'זמן לגלות תובנות' : 'Time for Insights'}</h2>
                                 <p className="text-white/40 text-sm leading-relaxed">
-                                    {lang === 'he' ? 'ה-AI ינתח את כל המשובים ויגבש עבורך דוח מנהלים עמוק הכולל את ה-One Big Thing שיביא אותך לשלב הבא.' : 'AI will scan all feedbacks and synthesize a deep executive report including the One Big Thing for your growth.'}
+                                    {lang === 'he' ? 'המערכת תעזור לך לראות את המשובים מזווית חדשה ותציע כיוון לפעולה אחת משמעותית.' : 'AI will help you see the feedback from a new perspective and suggest one meaningful action direction.'}
                                 </p>
                             </div>
                             <Button onClick={handleAnalyze} className="w-full py-5 text-xl" disabled={responses.length < 1}>
-                                {t.generateReport}
+                                {lang === 'he' ? 'סכם לי את התובנות' : 'Show me insights'}
                             </Button>
                         </div>
                     )}
@@ -200,11 +200,13 @@ export const Dashboard: React.FC = () => {
                         
                         <div className="relative z-10">
                             <div className="flex items-center gap-3 mb-6">
-                                <span className="px-3 py-1 bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full">Primary Insight</span>
+                                <span className="px-3 py-1 bg-amber-600/20 text-amber-500 text-[10px] font-black uppercase tracking-widest rounded-full">
+                                    {lang === 'he' ? 'הצעה לכיוון מרכזי' : 'SUGGESTED DIRECTION'}
+                                </span>
                                 <div className="h-px flex-1 bg-white/5"></div>
                             </div>
                             
-                            <h2 className="text-amber-500 text-sm font-bold uppercase tracking-[0.2em] mb-4">The One Big Thing</h2>
+                            <h2 className="text-amber-500 text-sm font-bold uppercase tracking-[0.2em] mb-4">The Suggested One Big Thing</h2>
                             <p className="text-4xl font-bold text-white leading-tight mb-8 max-w-2xl">
                                 {lang === 'he' ? analysis.theOneBigThing_he : analysis.theOneBigThing_en}
                             </p>
@@ -212,6 +214,10 @@ export const Dashboard: React.FC = () => {
                             <div className="p-6 bg-white/5 rounded-2xl border border-white/5 italic text-white/50 text-lg font-light leading-relaxed">
                               "{lang === 'he' ? analysis.executiveSummary_he : analysis.executiveSummary_en}"
                             </div>
+                            
+                            <p className="mt-6 text-[11px] text-white/30 uppercase tracking-widest text-center">
+                                {lang === 'he' ? '* זוהי הצעה המבוססת על ניתוח המשובים בלבד. הבחירה הסופית היא שלך.' : '* This is a suggestion based on feedback analysis. The final choice is yours.'}
+                            </p>
                         </div>
                     </div>
 
@@ -220,7 +226,7 @@ export const Dashboard: React.FC = () => {
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
                                 <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">
-                                    {lang === 'he' ? 'הזדמנויות ואימפקט' : 'OPPORTUNITIES & IMPACT'}
+                                    {lang === 'he' ? 'נקודות חוזק ואימפקט' : 'STRENGTHS & IMPACT'}
                                 </h4>
                             </div>
                             <ul className="space-y-4">
@@ -236,7 +242,7 @@ export const Dashboard: React.FC = () => {
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="w-2 h-2 rounded-full bg-red-500"></div>
                                 <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">
-                                    {lang === 'he' ? 'התנהגויות מעכבות' : 'BLOCKING BEHAVIORS'}
+                                    {lang === 'he' ? 'דברים שכדאי לשים לב אליהם' : 'THINGS TO NOTICE'}
                                 </h4>
                             </div>
                             <p className="text-white/80 italic font-light leading-relaxed">
@@ -264,7 +270,7 @@ export const Dashboard: React.FC = () => {
                         <div className="flex-1 space-y-4">
                             <div>
                                 <h4 className="text-[10px] font-bold text-amber-600 uppercase mb-1">
-                                    {lang === 'he' ? 'דיוק המטרה' : 'GOAL ALIGNMENT'}
+                                    {lang === 'he' ? 'מיקוד המטרה' : 'GOAL FOCUS'}
                                 </h4>
                                 <p className="text-white/60 text-sm">
                                     {lang === 'he' ? analysis.goalPrecision.critique_he : analysis.goalPrecision.critique_en}
@@ -272,7 +278,7 @@ export const Dashboard: React.FC = () => {
                             </div>
                             <div className="p-4 bg-amber-600/5 rounded-xl border border-amber-600/10">
                                 <h4 className="text-[10px] font-bold text-white/30 uppercase mb-2">
-                                    {lang === 'he' ? 'ניסוח מחדש מומלץ:' : 'REFINED STATEMENT:'}
+                                    {lang === 'he' ? 'אולי כדאי לנסח את זה כך:' : 'MAYBE FRAME IT THIS WAY:'}
                                 </h4>
                                 <p className="text-white font-medium italic">
                                     "{lang === 'he' ? analysis.goalPrecision.refinedGoal_he : analysis.goalPrecision.refinedGoal_en}"
@@ -284,7 +290,7 @@ export const Dashboard: React.FC = () => {
                     <div className="space-y-6">
                         <div className="flex items-center gap-4 px-2">
                           <h3 className="text-xl font-bold text-white">
-                              {lang === 'he' ? 'תוכנית פעולה אסטרטגית' : 'STRATEGIC ACTION PLAN'}
+                              {lang === 'he' ? 'רעיונות לפעולה' : 'IDEAS FOR ACTION'}
                           </h3>
                           <div className="h-px flex-1 bg-white/5"></div>
                         </div>
@@ -309,7 +315,7 @@ export const Dashboard: React.FC = () => {
                         <Button onClick={() => exportToWord(user, analysis, responses)} variant="outline" className="px-10 py-4 text-white/60 hover:text-white border-white/10">
                           {t.downloadWord}
                         </Button>
-                        <p className="text-[10px] text-white/20 uppercase tracking-[0.3em]">Confidential Executive Report • Generated by OBT AI</p>
+                        <p className="text-[10px] text-white/20 uppercase tracking-[0.3em]">Self-Growth Report • Guided by OBT AI</p>
                     </div>
                 </div>
             )}
