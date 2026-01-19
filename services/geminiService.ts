@@ -20,15 +20,17 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
   }));
 
   const prompt = `
-    משימה: זיקוק תובנות ממשוב 360 עבור מנהל/ת.
-    מטרה נוכחית: "${userGoal || 'לא הוגדרה'}"
-    משובים: ${JSON.stringify(rawData)}
+    משימה: עזור למנהל/ת להבין מה הסביבה אומרת עליו/ה.
+    מטרה שהציב המנהל: "${userGoal || 'לא הוגדרה'}"
+    משובים גולמיים: ${JSON.stringify(rawData)}
     
-    הנחיות חשובות לטון ולשפה:
-    1. השתמש בשפה פשוטה, ברורה ובגובה העיניים. בלי "מילים גבוהות" מדי של יועצים.
-    2. הצג את ה-One Big Thing כ**הצעה למחשבה** (Suggested direction) ולא כתשובה סופית. השתמש בניסוחים כמו "נראה ש...", "נקודה למחשבה שעולה היא...", "אולי כדאי לשקול...".
-    3. כתוב בעברית נקייה ללא ערבוב אנגלית.
-    4. בצע ניתוח של פערים בין המטרה שהמנהל הציב לבין מה שהסביבה רואה.
+    כללים חשובים:
+    1. שפה: עברית פשוטה, חמה, לא מתנשאת. בלי מונחים פסיכולוגיים כבדים.
+    2. תפיסה: הכל בגדר הצעה. המשתמש הוא המומחה לחיים שלו.
+    3. מבנה:
+       - הצעה ל-One Big Thing (OBT) מרכזי.
+       - הצעה ל-OBT חלופי (זווית אחרת לגמרי שאפשר לראות מהנתונים).
+       - הסבר קצר למה המטרה המקורית שלו טובה או איפה היא קצת מפספסת.
   `;
 
   try {
@@ -36,7 +38,7 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
       model: 'gemini-3-flash-preview', 
       contents: prompt,
       config: {
-        systemInstruction: `אתה מלווה מנהלים שמאמין שהתשובה נמצאת אצלם. תפקידך להציע זווית ראייה חדשה מתוך המשובים. דבר בפשטות ובידידותיות. השב ב-JSON בלבד.`,
+        systemInstruction: `אתה חבר חכם ומלווה צמיחה. התפקיד שלך הוא להגיש את האמת בצורה רכה ומעוררת מחשבה. תמיד תציע שתי דרכים שונות להסתכל על הדברים. השב ב-JSON תקין בלבד.`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -56,6 +58,8 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
             executiveSummary_en: { type: Type.STRING },
             theOneBigThing_he: { type: Type.STRING },
             theOneBigThing_en: { type: Type.STRING },
+            alternativeOBT_he: { type: Type.STRING },
+            alternativeOBT_en: { type: Type.STRING },
             question1Analysis: {
                 type: Type.OBJECT,
                 properties: {
@@ -88,7 +92,7 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
                 }
             }
           },
-          required: ["goalPrecision", "executiveSummary_he", "executiveSummary_en", "theOneBigThing_he", "theOneBigThing_en", "question1Analysis", "question2Analysis", "actionPlan"],
+          required: ["goalPrecision", "executiveSummary_he", "executiveSummary_en", "theOneBigThing_he", "theOneBigThing_en", "alternativeOBT_he", "alternativeOBT_en", "question1Analysis", "question2Analysis", "actionPlan"],
         },
       },
     });
@@ -97,6 +101,6 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
     return JSON.parse(response.text) as AnalysisResult;
   } catch (error) {
     console.error("Gemini Error:", error);
-    throw new Error("משהו השתבש בניתוח. כדאי לנסות שוב.");
+    throw new Error("משהו לא עבד בניתוח. כדאי לנסות שוב עוד רגע.");
   }
 };

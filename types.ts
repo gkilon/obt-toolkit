@@ -38,6 +38,8 @@ export interface AnalysisResult {
   executiveSummary_en: string;
   theOneBigThing_he: string;
   theOneBigThing_en: string;
+  alternativeOBT_he: string;
+  alternativeOBT_en: string;
   question1Analysis: {
     opportunities_he: string[];
     opportunities_en: string[];

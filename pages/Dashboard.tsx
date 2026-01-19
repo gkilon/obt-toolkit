@@ -44,16 +44,14 @@ export const Dashboard: React.FC = () => {
     if (loadingAnalysis) {
       const messages = lang === 'he' ? [
         "מקשיב למשובים...",
-        "מחפש דפוסים חוזרים...",
         "מזקק כיווני מחשבה...",
-        "מנסח הצעה לפעולה אחת משמעותית...",
-        "מכין לך את הדוח..."
+        "בונה לך כמה אפשרויות...",
+        "מכין את הדוח..."
       ] : [
-        "Listening to feedback...",
-        "Looking for patterns...",
-        "Synthesizing thoughts...",
-        "Drafting a suggestion for growth...",
-        "Preparing your report..."
+        "Processing feedback...",
+        "Identifying themes...",
+        "Building multiple perspectives...",
+        "Finalizing..."
       ];
       let i = 0;
       setLoadingMessage(messages[0]);
@@ -79,7 +77,7 @@ export const Dashboard: React.FC = () => {
       const result = await analyzeFeedback(responses, user?.userGoal);
       setAnalysis(result);
     } catch (error) {
-      alert(lang === 'he' ? "הניתוח נכשל. נסה שוב." : "Analysis failed.");
+      alert(lang === 'he' ? "משהו השתבש. נסה שוב." : "Analysis failed.");
     } finally {
       setLoadingAnalysis(false);
     }
@@ -99,7 +97,6 @@ export const Dashboard: React.FC = () => {
   return (
     <Layout>
       <div className="pb-24">
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-8 border-b border-white/5">
           <div className="space-y-1">
             <span className="text-amber-600 font-bold tracking-widest text-[10px] uppercase block">
@@ -141,7 +138,7 @@ export const Dashboard: React.FC = () => {
 
             <div className="space-y-4">
                 <h3 className="text-[10px] font-bold text-white/20 uppercase tracking-widest px-2">
-                    {lang === 'he' ? 'מה אמרו עליך?' : 'WHAT THEY SAID'}
+                    {lang === 'he' ? 'מה עלה במשוב?' : 'FEEDBACK SUMMARY'}
                 </h3>
                 <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                   {responses.length === 0 && <p className="text-white/20 text-sm italic p-4 text-center glass-panel">ממתין למשיבים...</p>}
@@ -179,13 +176,13 @@ export const Dashboard: React.FC = () => {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="M2 12h4"/><path d="m4.93 19.07 2.83-2.647"/><path d="M12 22v-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M22 12h-4"/><path d="m19.07 4.93-2.83 2.83"/></svg>
                             </div>
                             <div>
-                                <h2 className="text-3xl font-bold text-white mb-4">{lang === 'he' ? 'זמן לגלות תובנות' : 'Time for Insights'}</h2>
+                                <h2 className="text-3xl font-bold text-white mb-4">{lang === 'he' ? 'מוכן לזקק תובנות?' : 'Ready to refine?'}</h2>
                                 <p className="text-white/40 text-sm leading-relaxed">
-                                    {lang === 'he' ? 'המערכת תעזור לך לראות את המשובים מזווית חדשה ותציע כיוון לפעולה אחת משמעותית.' : 'AI will help you see the feedback from a new perspective and suggest one meaningful action direction.'}
+                                    {lang === 'he' ? 'המערכת תעזור לך לראות את המשובים מזווית חדשה ותציע כיווני מחשבה לצמיחה.' : 'The system will help you see feedback from a new angle and suggest growth paths.'}
                                 </p>
                             </div>
                             <Button onClick={handleAnalyze} className="w-full py-5 text-xl" disabled={responses.length < 1}>
-                                {lang === 'he' ? 'סכם לי את התובנות' : 'Show me insights'}
+                                {lang === 'he' ? 'זקק לי את המשוב' : 'Refine feedback'}
                             </Button>
                         </div>
                     )}
@@ -194,19 +191,15 @@ export const Dashboard: React.FC = () => {
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
                     
                     <div className="glass-panel p-10 bg-gradient-to-br from-onyx-800 to-onyx-950 border-amber-600/30 relative overflow-hidden group shadow-[0_0_50px_-12px_rgba(194,84,0,0.3)]">
-                        <div className="absolute top-0 right-0 p-6 text-amber-600/5 group-hover:text-amber-600/10 transition-all duration-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-                        </div>
-                        
                         <div className="relative z-10">
                             <div className="flex items-center gap-3 mb-6">
                                 <span className="px-3 py-1 bg-amber-600/20 text-amber-500 text-[10px] font-black uppercase tracking-widest rounded-full">
-                                    {lang === 'he' ? 'הצעה לכיוון מרכזי' : 'SUGGESTED DIRECTION'}
+                                    {lang === 'he' ? 'כיוון מרכזי אפשרי' : 'PRIMARY SUGGESTION'}
                                 </span>
                                 <div className="h-px flex-1 bg-white/5"></div>
                             </div>
                             
-                            <h2 className="text-amber-500 text-sm font-bold uppercase tracking-[0.2em] mb-4">The Suggested One Big Thing</h2>
+                            <h2 className="text-amber-500 text-sm font-bold uppercase tracking-[0.2em] mb-4">Suggested OBT</h2>
                             <p className="text-4xl font-bold text-white leading-tight mb-8 max-w-2xl">
                                 {lang === 'he' ? analysis.theOneBigThing_he : analysis.theOneBigThing_en}
                             </p>
@@ -214,10 +207,6 @@ export const Dashboard: React.FC = () => {
                             <div className="p-6 bg-white/5 rounded-2xl border border-white/5 italic text-white/50 text-lg font-light leading-relaxed">
                               "{lang === 'he' ? analysis.executiveSummary_he : analysis.executiveSummary_en}"
                             </div>
-                            
-                            <p className="mt-6 text-[11px] text-white/30 uppercase tracking-widest text-center">
-                                {lang === 'he' ? '* זוהי הצעה המבוססת על ניתוח המשובים בלבד. הבחירה הסופית היא שלך.' : '* This is a suggestion based on feedback analysis. The final choice is yours.'}
-                            </p>
                         </div>
                     </div>
 
@@ -242,17 +231,12 @@ export const Dashboard: React.FC = () => {
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="w-2 h-2 rounded-full bg-red-500"></div>
                                 <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">
-                                    {lang === 'he' ? 'דברים שכדאי לשים לב אליהם' : 'THINGS TO NOTICE'}
+                                    {lang === 'he' ? 'ממה כדאי להיזהר?' : 'WATCH OUT FOR'}
                                 </h4>
                             </div>
                             <p className="text-white/80 italic font-light leading-relaxed">
                                 "{lang === 'he' ? analysis.question2Analysis.psychologicalPatterns_he : analysis.question2Analysis.psychologicalPatterns_en}"
                             </p>
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                {(lang === 'he' ? analysis.question2Analysis.blockers_he : analysis.question2Analysis.blockers_en).map((b, i) => (
-                                    <span key={i} className="px-3 py-1 bg-white/5 text-white/40 text-[10px] rounded-full uppercase border border-white/5">{b}</span>
-                                ))}
-                            </div>
                         </div>
                     </div>
 
@@ -270,16 +254,13 @@ export const Dashboard: React.FC = () => {
                         <div className="flex-1 space-y-4">
                             <div>
                                 <h4 className="text-[10px] font-bold text-amber-600 uppercase mb-1">
-                                    {lang === 'he' ? 'מיקוד המטרה' : 'GOAL FOCUS'}
+                                    {lang === 'he' ? 'מיקוד המטרה שלך' : 'GOAL FOCUS'}
                                 </h4>
                                 <p className="text-white/60 text-sm">
                                     {lang === 'he' ? analysis.goalPrecision.critique_he : analysis.goalPrecision.critique_en}
                                 </p>
                             </div>
                             <div className="p-4 bg-amber-600/5 rounded-xl border border-amber-600/10">
-                                <h4 className="text-[10px] font-bold text-white/30 uppercase mb-2">
-                                    {lang === 'he' ? 'אולי כדאי לנסח את זה כך:' : 'MAYBE FRAME IT THIS WAY:'}
-                                </h4>
                                 <p className="text-white font-medium italic">
                                     "{lang === 'he' ? analysis.goalPrecision.refinedGoal_he : analysis.goalPrecision.refinedGoal_en}"
                                 </p>
@@ -287,22 +268,34 @@ export const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Alternative OBT Section */}
+                    <div className="glass-panel p-8 border-dashed border-white/10 bg-white/[0.02]">
+                        <div className="flex items-center gap-3 mb-4">
+                            <span className="text-white/20 text-xs font-bold uppercase tracking-widest">
+                                {lang === 'he' ? 'זווית ראייה חלופית' : 'ALTERNATIVE ANGLE'}
+                            </span>
+                        </div>
+                        <h4 className="text-lg font-bold text-white/80 mb-2">OBT אפשרי נוסף:</h4>
+                        <p className="text-white/60 italic">
+                            {lang === 'he' ? analysis.alternativeOBT_he : analysis.alternativeOBT_en}
+                        </p>
+                    </div>
+
                     <div className="space-y-6">
                         <div className="flex items-center gap-4 px-2">
                           <h3 className="text-xl font-bold text-white">
-                              {lang === 'he' ? 'רעיונות לפעולה' : 'IDEAS FOR ACTION'}
+                              {lang === 'he' ? 'רעיונות לצעדים הבאים' : 'IDEAS FOR ACTION'}
                           </h3>
-                          <div className="h-px flex-1 bg-white/5"></div>
                         </div>
                         <div className="grid grid-cols-1 gap-4">
                             {analysis.actionPlan.map((step, i) => (
-                                <div key={i} className="glass-panel flex gap-8 items-start hover:border-amber-600/40 transition-all p-6 group">
-                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 font-black group-hover:bg-amber-600 group-hover:text-white transition-all duration-300">0{i+1}</div>
+                                <div key={i} className="glass-panel flex gap-8 items-start p-6 group">
+                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 font-black">0{i+1}</div>
                                     <div className="space-y-1">
-                                        <h5 className="text-lg font-bold text-white group-hover:text-amber-500 transition-colors">
+                                        <h5 className="text-lg font-bold text-white">
                                             {lang === 'he' ? step.title_he : step.title_en}
                                         </h5>
-                                        <p className="text-white/50 text-sm leading-relaxed max-w-3xl">
+                                        <p className="text-white/50 text-sm leading-relaxed">
                                             {lang === 'he' ? step.content_he : step.content_en}
                                         </p>
                                     </div>
@@ -311,11 +304,13 @@ export const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex flex-col items-center gap-6 pt-16">
-                        <Button onClick={() => exportToWord(user, analysis, responses)} variant="outline" className="px-10 py-4 text-white/60 hover:text-white border-white/10">
+                    <div className="flex flex-col items-center gap-6 pt-16 border-t border-white/5">
+                        <p className="text-[11px] text-white/30 text-center max-w-lg">
+                            {lang === 'he' ? 'הדוח הוכן בעזרת AI כדי לשקף לך דפוסים שעלו מהמשובים. בסופו של דבר, אתה זה שמכיר הכי טוב את המציאות שלך - הבחירה במה להתמקד היא בידיים שלך.' : 'This report was prepared by AI to reflect patterns from your feedback. Ultimately, you know your reality best - the choice of focus is yours.'}
+                        </p>
+                        <Button onClick={() => exportToWord(user, analysis, responses)} variant="outline" className="px-10 py-4">
                           {t.downloadWord}
                         </Button>
-                        <p className="text-[10px] text-white/20 uppercase tracking-[0.3em]">Self-Growth Report • Guided by OBT AI</p>
                     </div>
                 </div>
             )}
