@@ -48,22 +48,24 @@ export const exportToWord = async (
                 bidirectional: true,
                 spacing: { after: 100 }
             }),
+            // FIX: Property 'summary' does not exist on type 'AnalysisResult'. Changed to 'executiveSummary'
             new Paragraph({
-                text: analysis.summary,
+                text: analysis.executiveSummary,
                 bidirectional: true,
                 spacing: { after: 300 }
             }),
             // Group Analysis
-            ...(analysis.groupAnalysis ? [
+            // FIX: Property 'groupAnalysis' does not exist on type 'AnalysisResult'. Changed to 'groupPerspectives'
+            ...(analysis.groupPerspectives ? [
                  new Paragraph({
                     children: [new TextRun({ text: "תובנות לפי קבוצות:", bold: true, size: 24, rightToLeft: true })],
                     bidirectional: true,
                     spacing: { before: 200, after: 100 }
                 }),
-                ...Object.entries(analysis.groupAnalysis).map(([key, val]) => new Paragraph({
+                ...Object.entries(analysis.groupPerspectives).map(([key, val]) => new Paragraph({
                     children: [
                         new TextRun({ text: `${relationshipLabels[key] || key}: `, bold: true }),
-                        new TextRun({ text: val })
+                        new TextRun({ text: val as string })
                     ],
                     bidirectional: true,
                     bullet: { level: 0 }
@@ -71,15 +73,24 @@ export const exportToWord = async (
             ] : []),
             new Paragraph({
                 children: [
-                    new TextRun({ text: "המלצה לפעולה:", bold: true, size: 28, rightToLeft: true }),
+                    new TextRun({ text: "תכנית פעולה:", bold: true, size: 28, rightToLeft: true }),
                 ],
                 bidirectional: true,
                 spacing: { before: 300 }
             }),
+            // FIX: Property 'actionableAdvice' does not exist on type 'AnalysisResult'. Using 'theOneBigThing' or first action plan item.
             new Paragraph({
-                text: analysis.actionableAdvice,
+                text: analysis.theOneBigThing,
                 bidirectional: true,
             }),
+            ...analysis.actionPlan.map(step => new Paragraph({
+                children: [
+                    new TextRun({ text: `${step.title}: `, bold: true }),
+                    new TextRun({ text: step.content })
+                ],
+                bidirectional: true,
+                bullet: { level: 0 }
+            })),
             new Paragraph({ text: "", spacing: { after: 600 } }) // Spacer
         ] : []),
 

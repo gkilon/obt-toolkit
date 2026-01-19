@@ -1,10 +1,8 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, FeedbackResponse } from "../types";
 import { translations } from "../translations";
 
 const getClient = () => {
-  // Use named parameter for apiKey and ensure it comes from process.env.API_KEY
   const apiKey = process.env.API_KEY;
   if (!apiKey) throw new Error("API Key not found");
   return new GoogleGenAI({ apiKey });
@@ -14,68 +12,102 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
   if (responses.length === 0) throw new Error("No responses to analyze");
   
   const lang = (localStorage.getItem('obt_lang') as 'he' | 'en') || 'he';
-  const t = translations[lang];
   const ai = getClient();
   
-  const formattedData = responses.map(r => ({
-      relationship: r.relationship,
-      feedbackOnGoal: r.q1_change,
+  const rawData = responses.map(r => ({
+      role: r.relationship,
+      impact: r.q1_change,
       contradictions: r.q2_actions
   }));
 
-  const goalContext = userGoal 
-    ? `The user defined their growth goal as: "${userGoal}".`
-    : `The user did NOT define a specific goal.`;
-
   const prompt = `
-    Role: Senior Organizational Psychologist.
-    Context: ${goalContext}
-    Language: Please provide the entire response in ${lang === 'he' ? 'Hebrew' : 'English'}.
+    Role: Senior Executive Coach & Behavioral Psychologist.
+    Task: Synthesize a high-stakes 360 feedback report.
     
-    Data: ${JSON.stringify(formattedData)}
+    Context:
+    The individual's stated growth goal: "${userGoal || 'Not specified'}"
+    The collective feedback data: ${JSON.stringify(rawData)}
     
-    Task:
-    1. Analyze if the environment agrees with the goal.
-    2. Identify the "One Big Thing" for breakthrough.
-    3. Spot recurring limiting behaviors.
-    4. provide a summary, key themes, and actionable advice.
+    Instructions:
+    1. Analysis Level: Extremely deep. Look for the "Golden Thread" connecting the feedbacks.
+    2. Precision Check: Evaluate if the individual's goal is truly the highest leverage point or if the feedback suggests a deeper, more urgent "One Big Thing".
+    3. Output Language: ${lang === 'he' ? 'Hebrew' : 'English'}.
+    4. Quality: Use high-end professional vocabulary (Executive level).
+    
+    Expected Structure:
+    - goalPrecision: Score (0-100) and a sophisticated critique of how aligned the goal is with external reality.
+    - executiveSummary: A narrative synthesis of the situation.
+    - question1Analysis: Key opportunities and alignment.
+    - question2Analysis: Critical blockers and unconscious psychological patterns discovered.
+    - theOneBigThing: The single, most powerful shift this person must make.
+    - actionPlan: 3-5 high-resolution strategic steps.
   `;
 
   try {
-    // Using gemini-3-pro-preview for complex reasoning task
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
-        systemInstruction: t.aiSystemInstruction,
+        systemInstruction: `You are an elite organizational psychologist. You provide world-class, deep, and actionable 360 feedback synthesis in JSON format.`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            summary: { type: Type.STRING },
-            keyThemes: { type: Type.ARRAY, items: { type: Type.STRING } },
-            actionableAdvice: { type: Type.STRING },
-            groupAnalysis: {
+            goalPrecision: {
+                type: Type.OBJECT,
+                properties: {
+                    score: { type: Type.NUMBER },
+                    critique: { type: Type.STRING },
+                    refinedGoal: { type: Type.STRING }
+                },
+                required: ["score", "critique", "refinedGoal"]
+            },
+            executiveSummary: { type: Type.STRING },
+            question1Analysis: {
+                type: Type.OBJECT,
+                properties: {
+                    opportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    alignmentLevel: { type: Type.STRING }
+                },
+                required: ["opportunities", "alignmentLevel"]
+            },
+            question2Analysis: {
+                type: Type.OBJECT,
+                properties: {
+                    blockers: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    psychologicalPatterns: { type: Type.STRING }
+                },
+                required: ["blockers", "psychologicalPatterns"]
+            },
+            theOneBigThing: { type: Type.STRING },
+            actionPlan: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        content: { type: Type.STRING }
+                    }
+                }
+            },
+            groupPerspectives: {
                 type: Type.OBJECT,
                 properties: {
                     "manager": { type: Type.STRING },
                     "peer": { type: Type.STRING },
                     "subordinate": { type: Type.STRING },
-                    "friend": { type: Type.STRING },
                     "other": { type: Type.STRING }
                 }
             }
           },
-          required: ["summary", "keyThemes", "actionableAdvice", "groupAnalysis"],
+          required: ["goalPrecision", "executiveSummary", "question1Analysis", "question2Analysis", "theOneBigThing", "actionPlan", "groupPerspectives"],
         },
       },
     });
 
-    // Access .text property directly (not a method)
-    const text = response.text || '{}';
-    return JSON.parse(text.trim()) as AnalysisResult;
+    return JSON.parse(response.text || '{}') as AnalysisResult;
   } catch (error) {
-    console.error("Gemini Error:", error);
-    throw new Error("Failed to analyze feedback.");
+    console.error("Gemini Synthesis Error:", error);
+    throw new Error("Analysis synthesis failed.");
   }
 };

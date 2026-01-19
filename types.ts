@@ -3,7 +3,7 @@ export interface User {
   name: string;
   email: string;
   password?: string;
-  userGoal?: string; // The goal defined by the user for the survey context
+  userGoal?: string; 
   createdAt: number;
 }
 
@@ -11,18 +11,36 @@ export type RelationshipType = 'manager' | 'peer' | 'subordinate' | 'friend' | '
 
 export interface FeedbackResponse {
   id: string;
-  surveyId: string; // Linked to User.id
-  relationship: RelationshipType; // New field
-  q1_change: string; // "Refinement of the goal..."
-  q2_actions: string; // "What actions contradict..."
+  surveyId: string;
+  relationship: RelationshipType;
+  q1_change: string;
+  q2_actions: string;
   timestamp: number;
 }
 
+export interface DeepInsight {
+  title: string;
+  content: string;
+}
+
 export interface AnalysisResult {
-  summary: string;
-  keyThemes: string[];
-  actionableAdvice: string;
-  groupAnalysis: Record<string, string>; // New field for segment analysis
+  goalPrecision: {
+    score: number; // 1-100
+    critique: string;
+    refinedGoal: string;
+  };
+  executiveSummary: string;
+  question1Analysis: {
+    opportunities: string[];
+    alignmentLevel: string;
+  };
+  question2Analysis: {
+    blockers: string[];
+    psychologicalPatterns: string;
+  };
+  theOneBigThing: string;
+  actionPlan: DeepInsight[];
+  groupPerspectives: Record<string, string>;
 }
 
 export interface FirebaseConfig {

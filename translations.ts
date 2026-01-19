@@ -24,15 +24,15 @@ export const translations = {
     feedbacksCollected: 'משובים נאספו',
     logout: 'יציאה',
     myGoal: 'מטרת הצמיחה שלי',
-    goalHint: 'זו ההצהרה שתוצג למשיבים בתחילת השאלון.',
+    goalHint: 'תאר את השינוי המשמעותי ביותר שאתה רוצה לחולל השנה...',
     edit: 'ערוך',
     save: 'שמור',
     cancel: 'ביטול',
     copyLink: 'העתק קישור אישי',
     linkCopied: '✓ הועתק',
     aiAnalysis: 'ניתוח AI',
-    generateReport: 'צור דוח תובנות',
-    downloadWord: 'הורד כקובץ Word',
+    generateReport: 'הפק דוח מנהלים עמוק',
+    downloadWord: 'ייצוא דוח מלא (DOCX)',
     q1Label: '1. האם לדעתך המטרה שהוצגה תקפיץ אותו/ה מדרגה?',
     q2Label: '2. אילו התנהגויות קיימות כיום מעכבות אותו/ה או סותרות את השינוי הזה?',
     relationship: 'מה הקשר המקצועי שלך?',
@@ -44,7 +44,7 @@ export const translations = {
     other: 'אחר',
     thankYou: 'תודה רבה!',
     surveySuccess: 'המשוב שלך התקבל בהצלחה.',
-    aiSystemInstruction: 'You are an expert organizational psychologist. Respond in Hebrew.'
+    aiSystemInstruction: 'You are an elite executive growth consultant. Your tone is deep, analytical, and highly professional. Analyze 360 feedback to find the "blind spots".'
   },
   en: {
     dir: 'ltr',
@@ -71,15 +71,15 @@ export const translations = {
     feedbacksCollected: 'Feedbacks collected',
     logout: 'Logout',
     myGoal: 'My Growth Goal',
-    goalHint: 'This statement will be shown to respondents.',
+    goalHint: 'Describe the most significant change you want to achieve this year...',
     edit: 'Edit',
     save: 'Save',
     cancel: 'Cancel',
     copyLink: 'Copy Personal Link',
     linkCopied: '✓ Copied',
     aiAnalysis: 'AI Analysis',
-    generateReport: 'Generate Insights',
-    downloadWord: 'Download Word Doc',
+    generateReport: 'Generate Executive Synthesis',
+    downloadWord: 'Export Full Report (DOCX)',
     q1Label: '1. Do you think the proposed goal will take them to the next level?',
     q2Label: '2. Which current behaviors hinder or contradict this change?',
     relationship: 'What is your professional relationship?',
@@ -91,6 +91,6 @@ export const translations = {
     other: 'Other',
     thankYou: 'Thank You!',
     surveySuccess: 'Your feedback was received successfully.',
-    aiSystemInstruction: 'You are an expert organizational psychologist. Respond in English.'
+    aiSystemInstruction: 'You are an elite executive growth consultant. Your tone is deep, analytical, and highly professional. Analyze 360 feedback to find the "blind spots".'
   }
 };
