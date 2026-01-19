@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -19,28 +20,36 @@ export interface FeedbackResponse {
 }
 
 export interface DeepInsight {
-  title: string;
-  content: string;
+  title_he: string;
+  title_en: string;
+  content_he: string;
+  content_en: string;
 }
 
 export interface AnalysisResult {
   goalPrecision: {
-    score: number; // 1-100
-    critique: string;
-    refinedGoal: string;
+    score: number;
+    critique_he: string;
+    critique_en: string;
+    refinedGoal_he: string;
+    refinedGoal_en: string;
   };
-  executiveSummary: string;
+  executiveSummary_he: string;
+  executiveSummary_en: string;
+  theOneBigThing_he: string;
+  theOneBigThing_en: string;
   question1Analysis: {
-    opportunities: string[];
-    alignmentLevel: string;
+    opportunities_he: string[];
+    opportunities_en: string[];
+    alignmentLevel?: string;
   };
   question2Analysis: {
-    blockers: string[];
-    psychologicalPatterns: string;
+    blockers_he: string[];
+    blockers_en: string[];
+    psychologicalPatterns_he: string;
+    psychologicalPatterns_en: string;
   };
-  theOneBigThing: string;
   actionPlan: DeepInsight[];
-  groupPerspectives: Record<string, string>;
 }
 
 export interface FirebaseConfig {
@@ -51,11 +60,4 @@ export interface FirebaseConfig {
   messagingSenderId: string;
   appId: string;
   measurementId?: string;
-}
-
-export enum AppRoute {
-  HOME = '/',
-  DASHBOARD = '/dashboard',
-  SURVEY = '/survey/:userId',
-  ADMIN = '/admin'
 }

@@ -20,17 +20,14 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
   }));
 
   const prompt = `
-    משימה: ניתוח פסיכולוגי-ארגוני של משוב 360.
+    Analyze 360 feedback for an executive. 
+    Goal: "${userGoal || 'Not defined'}"
+    Feedbacks: ${JSON.stringify(rawData)}
     
-    נתונים:
-    - המטרה המוצהרת של המנהל/ת: "${userGoal || 'לא הוגדרה'}"
-    - משובים מהסביבה: ${JSON.stringify(rawData)}
-    
-    הנחיות קריטיות לשפה ועיצוב טקסט:
-    1. כתוב בעברית רהוטה ומקצועית בלבד.
-    2. אל תערבב מילים באנגלית בתוך משפטים בעברית. אם יש מושג מקצועי קריטי באנגלית, שים אותו בסוגריים בסוף המשפט או בשדה נפרד.
-    3. זהה את ה-"One Big Thing" - הפעולה האחת שתייצר את האימפקט הגדול ביותר.
-    4. בצע ניתוח מעמיק של "הצל" (Shadow) - התנהגויות שמעכבות את הצמיחה.
+    Provide the analysis in BOTH Hebrew and English for every text field.
+    The Hebrew must be fluent and professional (right-to-left).
+    The English must be high-level executive terminology.
+    Focus on "The One Big Thing" - the single most impactful change.
   `;
 
   try {
@@ -38,7 +35,7 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
       model: 'gemini-3-flash-preview', 
       contents: prompt,
       config: {
-        systemInstruction: `אתה פסיכולוג ארגוני בכיר. תפקידך לזקק אמת מתוך משובים. השב תמיד במבנה JSON תקין. וודא שהטקסט בעברית זורם מימין לשמאל ללא קטעי אנגלית באמצע משפט.`,
+        systemInstruction: `You are an elite organizational psychologist. Respond with a JSON object containing dual-language analysis. Ensure Hebrew and English fields are clearly separated in the schema.`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -47,42 +44,50 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
                 type: Type.OBJECT,
                 properties: {
                     score: { type: Type.NUMBER },
-                    critique: { type: Type.STRING },
-                    refinedGoal: { type: Type.STRING }
+                    critique_he: { type: Type.STRING },
+                    critique_en: { type: Type.STRING },
+                    refinedGoal_he: { type: Type.STRING },
+                    refinedGoal_en: { type: Type.STRING }
                 },
-                required: ["score", "critique", "refinedGoal"]
+                required: ["score", "critique_he", "critique_en", "refinedGoal_he", "refinedGoal_en"]
             },
-            executiveSummary: { type: Type.STRING },
-            theOneBigThing: { type: Type.STRING },
+            executiveSummary_he: { type: Type.STRING },
+            executiveSummary_en: { type: Type.STRING },
+            theOneBigThing_he: { type: Type.STRING },
+            theOneBigThing_en: { type: Type.STRING },
             question1Analysis: {
                 type: Type.OBJECT,
                 properties: {
-                    opportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    alignmentLevel: { type: Type.STRING }
+                    opportunities_he: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    opportunities_en: { type: Type.ARRAY, items: { type: Type.STRING } }
                 },
-                required: ["opportunities", "alignmentLevel"]
+                required: ["opportunities_he", "opportunities_en"]
             },
             question2Analysis: {
                 type: Type.OBJECT,
                 properties: {
-                    blockers: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    psychologicalPatterns: { type: Type.STRING }
+                    blockers_he: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    blockers_en: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    psychologicalPatterns_he: { type: Type.STRING },
+                    psychologicalPatterns_en: { type: Type.STRING }
                 },
-                required: ["blockers", "psychologicalPatterns"]
+                required: ["blockers_he", "blockers_en", "psychologicalPatterns_he", "psychologicalPatterns_en"]
             },
             actionPlan: {
                 type: Type.ARRAY,
                 items: {
                     type: Type.OBJECT,
                     properties: {
-                        title: { type: Type.STRING },
-                        content: { type: Type.STRING }
+                        title_he: { type: Type.STRING },
+                        title_en: { type: Type.STRING },
+                        content_he: { type: Type.STRING },
+                        content_en: { type: Type.STRING }
                     },
-                    required: ["title", "content"]
+                    required: ["title_he", "title_en", "content_he", "content_en"]
                 }
             }
           },
-          required: ["goalPrecision", "executiveSummary", "theOneBigThing", "question1Analysis", "question2Analysis", "actionPlan"],
+          required: ["goalPrecision", "executiveSummary_he", "executiveSummary_en", "theOneBigThing_he", "theOneBigThing_en", "question1Analysis", "question2Analysis", "actionPlan"],
         },
       },
     });
@@ -91,6 +96,6 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
     return JSON.parse(response.text) as AnalysisResult;
   } catch (error) {
     console.error("Gemini Error:", error);
-    throw new Error("הניתוח נכשל. נסה שוב.");
+    throw new Error("Analysis failed. Please try again.");
   }
 };

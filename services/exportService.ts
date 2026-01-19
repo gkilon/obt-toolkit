@@ -48,29 +48,16 @@ export const exportToWord = async (
                 bidirectional: true,
                 spacing: { after: 100 }
             }),
-            // FIX: Property 'summary' does not exist on type 'AnalysisResult'. Changed to 'executiveSummary'
+            // Fixed: Using language-specific field executiveSummary_he
             new Paragraph({
-                text: analysis.executiveSummary,
+                text: analysis.executiveSummary_he,
                 bidirectional: true,
                 spacing: { after: 300 }
             }),
-            // Group Analysis
-            // FIX: Property 'groupAnalysis' does not exist on type 'AnalysisResult'. Changed to 'groupPerspectives'
-            ...(analysis.groupPerspectives ? [
-                 new Paragraph({
-                    children: [new TextRun({ text: "תובנות לפי קבוצות:", bold: true, size: 24, rightToLeft: true })],
-                    bidirectional: true,
-                    spacing: { before: 200, after: 100 }
-                }),
-                ...Object.entries(analysis.groupPerspectives).map(([key, val]) => new Paragraph({
-                    children: [
-                        new TextRun({ text: `${relationshipLabels[key] || key}: `, bold: true }),
-                        new TextRun({ text: val as string })
-                    ],
-                    bidirectional: true,
-                    bullet: { level: 0 }
-                }))
-            ] : []),
+            // Note: groupPerspectives does not exist on AnalysisResult, 
+            // but question1Analysis and question2Analysis do. 
+            // We'll skip groupPerspectives since it's not in the type definition.
+            
             new Paragraph({
                 children: [
                     new TextRun({ text: "תכנית פעולה:", bold: true, size: 28, rightToLeft: true }),
@@ -78,15 +65,16 @@ export const exportToWord = async (
                 bidirectional: true,
                 spacing: { before: 300 }
             }),
-            // FIX: Property 'actionableAdvice' does not exist on type 'AnalysisResult'. Using 'theOneBigThing' or first action plan item.
+            // Fixed: Using language-specific field theOneBigThing_he
             new Paragraph({
-                text: analysis.theOneBigThing,
+                text: analysis.theOneBigThing_he,
                 bidirectional: true,
             }),
+            // Fixed: Using language-specific fields from DeepInsight
             ...analysis.actionPlan.map(step => new Paragraph({
                 children: [
-                    new TextRun({ text: `${step.title}: `, bold: true }),
-                    new TextRun({ text: step.content })
+                    new TextRun({ text: `${step.title_he}: `, bold: true }),
+                    new TextRun({ text: step.content_he })
                 ],
                 bidirectional: true,
                 bullet: { level: 0 }

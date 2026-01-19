@@ -102,9 +102,11 @@ export const Dashboard: React.FC = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pb-8 border-b border-white/5">
           <div className="space-y-1">
-            <span className="text-amber-600 font-bold tracking-widest text-[10px] uppercase block">לוח בקרה אישי</span>
+            <span className="text-amber-600 font-bold tracking-widest text-[10px] uppercase block">
+                {lang === 'he' ? 'לוח בקרה אישי' : 'PERSONAL DASHBOARD'}
+            </span>
             <h1 className="text-4xl font-bold text-white tracking-tight">{t.dashboardTitle}, {user.name}</h1>
-            <p className="text-white/40 text-sm">סה"כ משובים שהתקבלו: <span className="text-amber-500 font-bold">{responses.length}</span></p>
+            <p className="text-white/40 text-sm">{t.feedbacksCollected}: <span className="text-amber-500 font-bold">{responses.length}</span></p>
           </div>
           <div className="flex gap-3">
             <Button onClick={copyLink} variant="outline" className="rounded-lg py-2.5">
@@ -118,30 +120,31 @@ export const Dashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* Left Column: Input & Feedback List */}
           <div className="lg:col-span-4 space-y-8">
             <div className="glass-panel p-6 border-l-4 border-l-amber-600">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xs font-bold text-white/40 uppercase tracking-tighter">המטרה שלי</h3>
-                    <button onClick={() => setIsEditingGoal(true)} className="text-amber-600 text-[10px] uppercase hover:underline">עריכה</button>
+                    <h3 className="text-xs font-bold text-white/40 uppercase tracking-tighter">{t.myGoal}</h3>
+                    <button onClick={() => setIsEditingGoal(true)} className="text-amber-600 text-[10px] uppercase hover:underline">{t.edit}</button>
                 </div>
                 {isEditingGoal ? (
                     <div className="space-y-4">
                         <textarea value={goal} onChange={(e) => setGoal(e.target.value)} className="dark-input w-full text-sm" rows={4} />
                         <div className="flex gap-2">
-                            <Button onClick={handleSaveGoal} className="px-4 py-2 text-xs">שמור</Button>
-                            <button onClick={() => setIsEditingGoal(false)} className="text-white/40 text-xs">ביטול</button>
+                            <Button onClick={handleSaveGoal} className="px-4 py-2 text-xs">{t.save}</Button>
+                            <button onClick={() => setIsEditingGoal(false)} className="text-white/40 text-xs">{t.cancel}</button>
                         </div>
                     </div>
                 ) : (
-                    <p className="text-lg font-light leading-relaxed text-white/90">"{goal || 'מהו השינוי האחד שאתה רוצה להשיג?'}"</p>
+                    <p className="text-lg font-light leading-relaxed text-white/90">"{goal || t.goalHint}"</p>
                 )}
             </div>
 
             <div className="space-y-4">
-                <h3 className="text-[10px] font-bold text-white/20 uppercase tracking-widest px-2">משובים גולמיים</h3>
+                <h3 className="text-[10px] font-bold text-white/20 uppercase tracking-widest px-2">
+                    {lang === 'he' ? 'משובים גולמיים' : 'RAW FEEDBACK'}
+                </h3>
                 <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                  {responses.length === 0 && <p className="text-white/20 text-sm italic p-4 text-center glass-panel">ממתין למשיבים...</p>}
+                  {responses.length === 0 && <p className="text-white/20 text-sm italic p-4 text-center glass-panel">Waiting for responses...</p>}
                   {responses.map(r => (
                       <div key={r.id} className="glass-panel p-4 border-white/5 hover:border-white/10 transition-all group">
                           <div className="flex justify-between items-start mb-2">
@@ -157,7 +160,6 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column: AI Analysis Report */}
           <div className="lg:col-span-8">
             {!analysis ? (
                 <div className="glass-panel min-h-[500px] flex flex-col items-center justify-center text-center p-12">
@@ -169,7 +171,6 @@ export const Dashboard: React.FC = () => {
                             </div>
                             <div className="space-y-2">
                               <p className="text-2xl font-light text-white animate-pulse">{loadingMessage}</p>
-                              <p className="text-white/20 text-xs">אנחנו מזקקים את התובנות שלך...</p>
                             </div>
                         </div>
                     ) : (
@@ -178,9 +179,9 @@ export const Dashboard: React.FC = () => {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="M2 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="M12 22v-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M22 12h-4"/><path d="m19.07 4.93-2.83 2.83"/></svg>
                             </div>
                             <div>
-                                <h2 className="text-3xl font-bold text-white mb-4">מוכן לזיקוק התובנות?</h2>
+                                <h2 className="text-3xl font-bold text-white mb-4">{lang === 'he' ? 'מוכן לזיקוק התובנות?' : 'Ready for Insights?'}</h2>
                                 <p className="text-white/40 text-sm leading-relaxed">
-                                    ה-AI ינתח את כל המשובים ויגבש עבורך דוח מנהלים עמוק הכולל את ה-One Big Thing שיביא אותך לשלב הבא.
+                                    {lang === 'he' ? 'ה-AI ינתח את כל המשובים ויגבש עבורך דוח מנהלים עמוק הכולל את ה-One Big Thing שיביא אותך לשלב הבא.' : 'AI will scan all feedbacks and synthesize a deep executive report including the One Big Thing for your growth.'}
                                 </p>
                             </div>
                             <Button onClick={handleAnalyze} className="w-full py-5 text-xl" disabled={responses.length < 1}>
@@ -192,7 +193,6 @@ export const Dashboard: React.FC = () => {
             ) : (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
                     
-                    {/* The One Big Thing - Hero Card */}
                     <div className="glass-panel p-10 bg-gradient-to-br from-onyx-800 to-onyx-950 border-amber-600/30 relative overflow-hidden group shadow-[0_0_50px_-12px_rgba(194,84,0,0.3)]">
                         <div className="absolute top-0 right-0 p-6 text-amber-600/5 group-hover:text-amber-600/10 transition-all duration-700">
                             <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
@@ -205,23 +205,26 @@ export const Dashboard: React.FC = () => {
                             </div>
                             
                             <h2 className="text-amber-500 text-sm font-bold uppercase tracking-[0.2em] mb-4">The One Big Thing</h2>
-                            <p className="text-4xl font-bold text-white leading-tight mb-8 max-w-2xl">{analysis.theOneBigThing}</p>
+                            <p className="text-4xl font-bold text-white leading-tight mb-8 max-w-2xl">
+                                {lang === 'he' ? analysis.theOneBigThing_he : analysis.theOneBigThing_en}
+                            </p>
                             
                             <div className="p-6 bg-white/5 rounded-2xl border border-white/5 italic text-white/50 text-lg font-light leading-relaxed">
-                              "{analysis.executiveSummary}"
+                              "{lang === 'he' ? analysis.executiveSummary_he : analysis.executiveSummary_en}"
                             </div>
                         </div>
                     </div>
 
-                    {/* Secondary Insights Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="glass-panel p-8 space-y-4">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">הזדמנויות ואימפקט</h4>
+                                <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">
+                                    {lang === 'he' ? 'הזדמנויות ואימפקט' : 'OPPORTUNITIES & IMPACT'}
+                                </h4>
                             </div>
                             <ul className="space-y-4">
-                                {analysis.question1Analysis.opportunities.map((opt, i) => (
+                                {(lang === 'he' ? analysis.question1Analysis.opportunities_he : analysis.question1Analysis.opportunities_en).map((opt, i) => (
                                     <li key={i} className="flex gap-4 text-white/80 leading-snug">
                                         <span className="text-amber-600 font-bold">#</span> {opt}
                                     </li>
@@ -232,18 +235,21 @@ export const Dashboard: React.FC = () => {
                         <div className="glass-panel p-8 space-y-4 border-red-900/10">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">התנהגויות מעכבות</h4>
+                                <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">
+                                    {lang === 'he' ? 'התנהגויות מעכבות' : 'BLOCKING BEHAVIORS'}
+                                </h4>
                             </div>
-                            <p className="text-white/80 italic font-light leading-relaxed">"{analysis.question2Analysis.psychologicalPatterns}"</p>
+                            <p className="text-white/80 italic font-light leading-relaxed">
+                                "{lang === 'he' ? analysis.question2Analysis.psychologicalPatterns_he : analysis.question2Analysis.psychologicalPatterns_en}"
+                            </p>
                             <div className="flex flex-wrap gap-2 pt-2">
-                                {analysis.question2Analysis.blockers.map((b, i) => (
+                                {(lang === 'he' ? analysis.question2Analysis.blockers_he : analysis.question2Analysis.blockers_en).map((b, i) => (
                                     <span key={i} className="px-3 py-1 bg-white/5 text-white/40 text-[10px] rounded-full uppercase border border-white/5">{b}</span>
                                 ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* Strategic Goal Refinement */}
                     <div className="glass-panel p-8 border-white/10 flex flex-col md:flex-row gap-10 items-center">
                         <div className="relative w-24 h-24 flex-shrink-0">
                             <svg className="w-full h-full transform -rotate-90">
@@ -257,20 +263,29 @@ export const Dashboard: React.FC = () => {
                         </div>
                         <div className="flex-1 space-y-4">
                             <div>
-                                <h4 className="text-[10px] font-bold text-amber-600 uppercase mb-1">דיוק המטרה</h4>
-                                <p className="text-white/60 text-sm">{analysis.goalPrecision.critique}</p>
+                                <h4 className="text-[10px] font-bold text-amber-600 uppercase mb-1">
+                                    {lang === 'he' ? 'דיוק המטרה' : 'GOAL ALIGNMENT'}
+                                </h4>
+                                <p className="text-white/60 text-sm">
+                                    {lang === 'he' ? analysis.goalPrecision.critique_he : analysis.goalPrecision.critique_en}
+                                </p>
                             </div>
                             <div className="p-4 bg-amber-600/5 rounded-xl border border-amber-600/10">
-                                <h4 className="text-[10px] font-bold text-white/30 uppercase mb-2">ניסוח מחדש מומלץ:</h4>
-                                <p className="text-white font-medium italic">"{analysis.goalPrecision.refinedGoal}"</p>
+                                <h4 className="text-[10px] font-bold text-white/30 uppercase mb-2">
+                                    {lang === 'he' ? 'ניסוח מחדש מומלץ:' : 'REFINED STATEMENT:'}
+                                </h4>
+                                <p className="text-white font-medium italic">
+                                    "{lang === 'he' ? analysis.goalPrecision.refinedGoal_he : analysis.goalPrecision.refinedGoal_en}"
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Action Plan */}
                     <div className="space-y-6">
                         <div className="flex items-center gap-4 px-2">
-                          <h3 className="text-xl font-bold text-white">תוכנית פעולה אסטרטגית</h3>
+                          <h3 className="text-xl font-bold text-white">
+                              {lang === 'he' ? 'תוכנית פעולה אסטרטגית' : 'STRATEGIC ACTION PLAN'}
+                          </h3>
                           <div className="h-px flex-1 bg-white/5"></div>
                         </div>
                         <div className="grid grid-cols-1 gap-4">
@@ -278,8 +293,12 @@ export const Dashboard: React.FC = () => {
                                 <div key={i} className="glass-panel flex gap-8 items-start hover:border-amber-600/40 transition-all p-6 group">
                                     <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 font-black group-hover:bg-amber-600 group-hover:text-white transition-all duration-300">0{i+1}</div>
                                     <div className="space-y-1">
-                                        <h5 className="text-lg font-bold text-white group-hover:text-amber-500 transition-colors">{step.title}</h5>
-                                        <p className="text-white/50 text-sm leading-relaxed max-w-3xl">{step.content}</p>
+                                        <h5 className="text-lg font-bold text-white group-hover:text-amber-500 transition-colors">
+                                            {lang === 'he' ? step.title_he : step.title_en}
+                                        </h5>
+                                        <p className="text-white/50 text-sm leading-relaxed max-w-3xl">
+                                            {lang === 'he' ? step.content_he : step.content_en}
+                                        </p>
                                     </div>
                                 </div>
                             ))}
