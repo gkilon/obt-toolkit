@@ -4,7 +4,7 @@ import { AnalysisResult, FeedbackResponse, SurveyQuestion } from "../types";
 
 const getClient = () => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API Key not found");
+  if (!apiKey) throw new Error("API Key (process.env.API_KEY) missing. Please check your environment variables.");
   return new GoogleGenAI({ apiKey });
 };
 
@@ -13,41 +13,47 @@ export const analyzeFeedback = async (
   userGoal?: string,
   questions: SurveyQuestion[] = []
 ): Promise<AnalysisResult> => {
-  if (responses.length === 0) throw new Error("No responses to analyze");
+  if (responses.length === 0) throw new Error("לא נמצאו תשובות לניתוח.");
   
   const ai = getClient();
   
-  // Format data for AI: mapping IDs to labels
+  // הכנת המידע ל-AI: מיפוי תשובות לשאלות והצמדת סוג השאלה
   const dataForAI = responses.map(r => ({
-      role: r.relationship,
-      answers: r.answers.map(a => {
+      relationship: r.relationship,
+      feedback: r.answers.map(a => {
         const q = questions.find(question => question.id === a.questionId);
         return {
-          question_text: q?.text_he || 'שאלה',
-          question_type: q?.type || 'general',
+          question: q?.text_he || 'שאלה כללית',
+          type: q?.type || 'general',
           answer: a.text
         };
       })
   }));
 
   const prompt = `
-    משימה: ניתוח משוב 360 דינמי.
-    מטרה שהציב המנהל: "${userGoal || 'לא הוגדרה'}"
-    שאלות ותשובות שנאספו: ${JSON.stringify(dataForAI)}
+    משימה: אתה יועץ פיתוח מנהיגות בכיר. עליך לנתח משוב 360 עבור מנהל.
+    המטרה שהמנהל הציב לעצמו: "${userGoal || 'לא הוגדרה מטרה ספציפית'}"
+    
+    נתוני המשוב (בפורמט JSON):
+    ${JSON.stringify(dataForAI, null, 2)}
     
     הנחיות לניתוח:
-    1. זהה את התשובות לשאלות מסוג "goal" כדי להבין אם המטרה שהציב המנהל אכן נתפסת כחשובה.
-    2. זהה את התשובות לשאלות מסוג "blocker" כדי לזקק את הדברים שמעכבים אותו.
-    3. התייחס לשאלות מסוג "general" כמידע משלים לחיזוק התובנות.
-    4. כתוב פשוט, חברי, ומקדם צמיחה. הצג הכל כהצעה.
+    1. קרא את כל התשובות. חפש תבניות שחוזרות על עצמן.
+    2. "The One Big Thing": זהה את השינוי האחד והמשמעותי ביותר (המנוע המרכזי) שישנה את כל התמונה עבור המנהל הזה.
+    3. נתח את הדיוק של המטרה המקורית מול מה שאנשים אומרים בשטח.
+    4. בודד חסמים (Blockers) - התנהגויות ספציפיות שמעכבות אותו.
+    5. בנה תוכנית פעולה של 3 צעדים פרקטיים.
+    
+    חשוב: ענה בעברית רהוטה ומקצועית.
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', 
+      model: 'gemini-3-pro-preview', // שימוש ב-Pro לניתוח עמוק יותר
       contents: prompt,
       config: {
-        systemInstruction: `אתה חבר חכם ומלווה צמיחה. ענה ב-JSON בלבד הכולל את כל השדות המוגדרים בסכימה.`,
+        systemInstruction: `אתה מומחה לניתוח משוב 360. עליך להחזיר תשובה בפורמט JSON תקין בלבד, על פי הסכימה המדויקת שסופקה. אל תוסיף טקסט לפני או אחרי ה-JSON.`,
+        thinkingConfig: { thinkingBudget: 4000 }, // מאפשר ל-AI "לחשוב" לפני מתן תשובה סופית
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -55,7 +61,7 @@ export const analyzeFeedback = async (
             goalPrecision: {
                 type: Type.OBJECT,
                 properties: {
-                    score: { type: Type.NUMBER },
+                    score: { type: Type.NUMBER, description: "ציון בין 1-10 למידת הדיוק של המטרה המקורית" },
                     critique_he: { type: Type.STRING },
                     critique_en: { type: Type.STRING },
                     refinedGoal_he: { type: Type.STRING },
@@ -106,10 +112,18 @@ export const analyzeFeedback = async (
       },
     });
 
-    if (!response.text) throw new Error("Empty response");
-    return JSON.parse(response.text) as AnalysisResult;
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    throw new Error("משהו לא עבד בניתוח.");
+    if (!response.text) {
+      console.error("Gemini returned empty text response");
+      throw new Error("ה-AI לא הצליח לייצר תשובה. נסה שוב בעוד רגע.");
+    }
+
+    const cleanJson = response.text.trim();
+    return JSON.parse(cleanJson) as AnalysisResult;
+  } catch (error: any) {
+    console.error("Gemini Service Detailed Error:", error);
+    if (error.message?.includes("API_KEY")) {
+      throw new Error("מפתח ה-API חסר או לא תקין.");
+    }
+    throw new Error(`תקלה בניתוח הנתונים: ${error.message || "שגיאה לא ידועה"}`);
   }
 };

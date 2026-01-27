@@ -26,6 +26,7 @@ export const Dashboard: React.FC = () => {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'responses' | 'settings'>('overview');
   const [feedbackMsg, setFeedbackMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const t = translations[lang];
 
@@ -58,7 +59,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (loadingAnalysis) {
-      const messages = lang === 'he' ? ["מקשיב למשובים...", "מזקק כיווני מחשבה...", "מכין את הדוח..."] : ["Processing...", "Synthesizing...", "Finalizing..."];
+      const messages = lang === 'he' ? ["מקשיב למשובים...", "מזהה דפוסים...", "מזקק תובנות...", "מכין את הדוח..."] : ["Listening to feedback...", "Identifying patterns...", "Synthesizing insights...", "Finalizing report..."];
       let i = 0;
       setLoadingMessage(messages[0]);
       const interval = setInterval(() => {
@@ -117,11 +118,13 @@ export const Dashboard: React.FC = () => {
   const handleAnalyze = async () => {
     if (responses.length === 0) return;
     setLoadingAnalysis(true);
+    setErrorMsg('');
     try {
       const result = await analyzeFeedback(responses, user?.userGoal, questions);
       setAnalysis(result);
-    } catch (error) {
-      alert("הניתוח נכשל.");
+    } catch (error: any) {
+      console.error("Analysis Error:", error);
+      setErrorMsg(error.message || "משהו לא עבד בניתוח המשוב. נסה שוב.");
     } finally {
       setLoadingAnalysis(false);
     }
@@ -222,6 +225,13 @@ export const Dashboard: React.FC = () => {
                                 </div>
                                 <h2 className="text-3xl font-bold text-white">מוכן לנתח את המשוב?</h2>
                                 <p className="text-white/40">ה-AI יזקק עבורך את "הדבר האחד" שיעשה את ההבדל.</p>
+                                
+                                {errorMsg && (
+                                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm">
+                                    {errorMsg}
+                                  </div>
+                                )}
+
                                 <Button onClick={handleAnalyze} className="w-full py-5 text-xl" disabled={responses.length < 1}>
                                     זקק לי את המשוב
                                 </Button>
@@ -239,6 +249,7 @@ export const Dashboard: React.FC = () => {
                         
                         <div className="flex justify-center pt-8">
                           <Button onClick={() => exportToWord(user, analysis, responses)} variant="outline">ייצוא דוח מלא (Word)</Button>
+                          <Button onClick={() => setAnalysis(null)} variant="ghost" className="text-white/20 ml-4">ניתוח מחדש</Button>
                         </div>
                     </div>
                 )}
