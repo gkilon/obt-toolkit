@@ -45,11 +45,9 @@ export const firebaseService = {
 
     if (!fbUser.email) throw new Error("No email returned from Google");
 
-    // בדוק אם המשתמש כבר קיים ב-Firestore
     let user = await firebaseService.findUserByEmail(fbUser.email);
     
     if (!user) {
-      // אם משתמש חדש, צור רשומה (כאן אנחנו מאפשרים גוגל ללא קוד רישום כקיצור דרך)
       user = {
         id: fbUser.uid,
         name: fbUser.displayName || "משתמש גוגל",
@@ -79,7 +77,6 @@ export const firebaseService = {
     await updateDoc(doc(db, "users", user.id), { password: newPassword });
   },
 
-  // --- Survey Config ---
   getSurveyQuestions: async (userId?: string): Promise<SurveyQuestion[]> => {
     if (!db) return [];
     
@@ -102,20 +99,8 @@ export const firebaseService = {
         return snap.data().questions as SurveyQuestion[];
       }
       return [
-        { 
-          id: 'q1', 
-          text_he: 'מהו לדעתך הדבר האחד שהוא/היא צריכים לשנות כדי להגיע לרמה הבאה?', 
-          text_en: 'What is the one thing they should change to reach the next level?', 
-          type: 'goal', 
-          required: true 
-        },
-        { 
-          id: 'q2', 
-          text_he: 'אילו התנהגויות מעכבות אותו/ה כיום?', 
-          text_en: 'Which behaviors currently hinder them?', 
-          type: 'blocker', 
-          required: true 
-        }
+        { id: 'q1', text_he: 'מהו לדעתך הדבר האחד שהוא/היא צריכים לשנות כדי להגיע לרמה הבאה?', text_en: 'What is the one thing they should change to reach the next level?', type: 'goal', required: true },
+        { id: 'q2', text_he: 'אילו התנהגויות מעכבות אותו/ה כיום?', text_en: 'Which behaviors currently hinder them?', type: 'blocker', required: true }
       ];
     } catch (e) {
       return [];
@@ -133,7 +118,6 @@ export const firebaseService = {
     await updateDoc(doc(db, "users", userId), { customQuestions: questions });
   },
 
-  // --- Registration Code ---
   validateRegistrationCode: async (codeToCheck: string): Promise<boolean> => {
     if (!db) return false;
     const configRef = doc(db, "settings", "config");
@@ -148,7 +132,6 @@ export const firebaseService = {
     await setDoc(configRef, { registrationCode: newCode }, { merge: true });
   },
 
-  // --- User Operations ---
   createUser: async (user: User): Promise<void> => {
     if (!db) throw new Error("Database not connected");
     await setDoc(doc(db, "users", user.id), user);
@@ -172,7 +155,6 @@ export const firebaseService = {
     return snap.empty ? null : snap.docs[0].data() as User;
   },
 
-  // --- Response Operations ---
   addResponse: async (response: FeedbackResponse): Promise<void> => {
     if (!db) throw new Error("Database not connected");
     await setDoc(doc(db, "responses", response.id), response);
@@ -180,10 +162,26 @@ export const firebaseService = {
 
   getResponsesForUser: async (userId: string): Promise<FeedbackResponse[]> => {
     if (!db) return [];
-    const q = query(collection(db, "responses"), where("surveyId", "==", userId));
-    const snap = await getDocs(q);
-    const results: FeedbackResponse[] = [];
-    snap.forEach(doc => results.push(doc.data() as FeedbackResponse));
-    return results.sort((a, b) => b.timestamp - a.timestamp);
+    try {
+      const q = query(collection(db, "responses"), where("surveyId", "==", userId));
+      const snap = await getDocs(q);
+      const results: FeedbackResponse[] = [];
+      
+      snap.forEach(docSnap => {
+        const data = docSnap.data();
+        // הגנה: וודא שהנתונים קיימים ושיש תשובות
+        if (data && data.answers) {
+          results.push({
+            ...data,
+            id: docSnap.id // תמיד השתמש ב-ID של המסמך כמזהה הייחודי
+          } as FeedbackResponse);
+        }
+      });
+      
+      return results.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    } catch (e) {
+      console.error("Error fetching responses:", e);
+      return [];
+    }
   }
 };
