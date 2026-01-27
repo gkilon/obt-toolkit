@@ -29,21 +29,18 @@ export const analyzeFeedback = async (
   }));
 
   const prompt = `
-    ROLE: You are a World-Class Executive Coach and Leadership Strategist (Think McKinsey/HBS style).
-    CONTEXT: You are analyzing 360-degree feedback for a leader.
-    USER'S SELF-DEFINED GOAL: "${userGoal || 'Not specified'}"
+    ROLE: You are an Elite Executive Strategy Consultant.
+    TASK: Synthesize 360-degree feedback to find the "One Big Thing" for growth.
+    USER GOAL: "${userGoal || 'Not specified'}"
+    DATA: ${JSON.stringify(dataForAI)}
     
-    RAW DATA:
-    ${JSON.stringify(dataForAI, null, 2)}
+    REQUIRED ANALYSIS:
+    1. GOAL VALIDATION: Score 1-10 alignment between their goal and reality. Provide a "Power Goal".
+    2. THE ONE BIG THING: The single psychological or behavioral shift needed.
+    3. BLIND SPOTS: Hidden patterns others see.
+    4. PSYCHOLOGICAL PATTERNS: The internal "narrative" holding them back.
     
-    YOUR MISSION:
-    1. VALIDATE THE GOAL: Is the user's goal actually what they need based on the feedback?
-    2. THE ONE BIG THING: Identify the single most transformative shift that will unlock their next level.
-    3. BLIND SPOTS: Reveal what others see that the leader is missing.
-    4. ALTERNATIVE GOALS: Propose a "Power Goal" if the current one is misaligned.
-    5. PSYCHOLOGICAL PATTERNS: Identify underlying narratives.
-    
-    OUTPUT: Hebrew (Professional Elite style).
+    OUTPUT: Valid JSON only. Languages: Provide both Hebrew and English for all fields.
   `;
 
   try {
@@ -51,8 +48,8 @@ export const analyzeFeedback = async (
       model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
-        systemInstruction: "You provide elite executive analysis. You must return ONLY valid JSON matching the schema.",
-        thinkingConfig: { thinkingBudget: 4000 },
+        systemInstruction: "You are a high-level leadership analyst. Return ONLY a JSON object. Be direct, profound, and sharp. Do not include introductory text.",
+        thinkingConfig: { thinkingBudget: 2000 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -66,7 +63,7 @@ export const analyzeFeedback = async (
                     refinedGoal_he: { type: Type.STRING },
                     refinedGoal_en: { type: Type.STRING }
                 },
-                required: ["score", "critique_he", "refinedGoal_he"]
+                required: ["score", "critique_he", "critique_en", "refinedGoal_he", "refinedGoal_en"]
             },
             executiveSummary_he: { type: Type.STRING },
             executiveSummary_en: { type: Type.STRING },
@@ -103,7 +100,7 @@ export const analyzeFeedback = async (
                 }
             }
           },
-          required: ["goalPrecision", "executiveSummary_he", "theOneBigThing_he", "question1Analysis", "question2Analysis", "actionPlan"],
+          required: ["goalPrecision", "executiveSummary_he", "executiveSummary_en", "theOneBigThing_he", "theOneBigThing_en", "question1Analysis", "question2Analysis", "actionPlan"],
         },
       },
     });
@@ -111,6 +108,6 @@ export const analyzeFeedback = async (
     return JSON.parse(response.text.trim()) as AnalysisResult;
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    throw new Error("Analysis failed. Ensure you have high-quality feedback.");
+    throw new Error("Analysis failed. Please try again with more data.");
   }
 };

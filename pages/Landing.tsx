@@ -44,7 +44,7 @@ export const Landing: React.FC = () => {
         navigate('/dashboard');
       } else if (view === 'reset') {
         await storageService.resetPassword(email, registrationCode, password);
-        setSuccessMsg(lang === 'he' ? "הסיסמה עודכנה" : "Password updated");
+        setSuccessMsg(t.adminSuccess);
         setTimeout(() => setView('login'), 2000);
       }
     } catch (err: any) {
@@ -82,7 +82,7 @@ export const Landing: React.FC = () => {
         <div className="glass-panel w-full max-w-[460px] p-10">
             <div className="mb-10 text-center">
                 <h2 className="text-2xl font-medium text-white">
-                    {view === 'register' ? 'צור חשבון חדש' : view === 'reset' ? t.reset : 'Member Login'}
+                    {view === 'register' ? t.registerTitle : view === 'reset' ? t.resetTitle : t.loginTitle}
                 </h2>
                 <div className="h-px bg-white/10 w-full mt-6"></div>
             </div>
@@ -100,12 +100,12 @@ export const Landing: React.FC = () => {
                     <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
                   </svg>
                 )}
-                <span>Continue with Google</span>
+                <span>{t.googleLogin}</span>
               </button>
               
               <div className="relative flex items-center justify-center my-8">
                 <div className="flex-grow border-t border-white/10"></div>
-                <span className="flex-shrink mx-4 text-white/20 text-xs uppercase font-bold tracking-widest">or email</span>
+                <span className="flex-shrink mx-4 text-white/20 text-xs uppercase font-bold tracking-widest">{t.orEmail}</span>
                 <div className="flex-grow border-t border-white/10"></div>
               </div>
             </div>
@@ -120,12 +120,12 @@ export const Landing: React.FC = () => {
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
                   className="dark-input" 
-                  placeholder="Email Address" 
+                  placeholder={t.email} 
                   dir="ltr"
                 />
                 
                 {(view === 'register' || view === 'reset') && (
-                    <input type="text" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="dark-input uppercase" placeholder="Registration Code" />
+                    <input type="text" value={registrationCode} onChange={(e) => setRegistrationCode(e.target.value)} className="dark-input uppercase" placeholder={t.regCode} />
                 )}
                 
                 <input 
@@ -133,7 +133,7 @@ export const Landing: React.FC = () => {
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
                   className="dark-input" 
-                  placeholder="Password" 
+                  placeholder={t.password} 
                   dir="ltr"
                 />
                 
@@ -141,20 +141,20 @@ export const Landing: React.FC = () => {
                 {successMsg && <p className="text-green-400 text-sm text-center font-light">{successMsg}</p>}
 
                 <Button type="submit" variant="primary" className="w-full text-lg py-4" isLoading={isLoading}>
-                    {view === 'register' ? t.registerBtn : view === 'reset' ? t.save : 'Login'}
+                    {view === 'register' ? t.registerBtn : view === 'reset' ? t.save : t.loginBtn}
                 </Button>
             </form>
 
             <div className="mt-10 flex flex-col items-center gap-4 text-sm font-light">
                 {view === 'login' ? (
                     <>
-                        <button onClick={() => setView('reset')} className="text-white/40 hover:text-white transition-colors">Forgot Password</button>
+                        <button onClick={() => setView('reset')} className="text-white/40 hover:text-white transition-colors">{t.forgotPassword}</button>
                         <div className="text-white/40 mt-2">
-                            Don't have an account? <button onClick={() => setView('register')} className="text-[#e66a00] font-medium hover:underline">Create Account</button>
+                            {t.noAccount} <button onClick={() => setView('register')} className="text-[#e66a00] font-medium hover:underline">{t.registerBtn}</button>
                         </div>
                     </>
                 ) : (
-                    <button onClick={() => setView('login')} className="text-white/40 hover:text-white transition-colors">Back to Login</button>
+                    <button onClick={() => setView('login')} className="text-white/40 hover:text-white transition-colors">{t.backToLogin}</button>
                 )}
             </div>
         </div>

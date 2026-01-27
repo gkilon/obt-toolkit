@@ -59,7 +59,7 @@ export const Survey: React.FC = () => {
       await storageService.addResponse(userId, relationship, formattedAnswers);
       setSubmitted(true);
     } catch (err) {
-      alert("Submission error");
+      alert(t.submissionError);
     } finally {
       setIsSending(false);
     }
@@ -114,7 +114,7 @@ export const Survey: React.FC = () => {
               {questions.map((q) => (
                 <div key={q.id} className="space-y-4">
                     <label className="block text-xl font-medium leading-relaxed">
-                      {lang === 'he' ? q.text_he : q.text_en || q.text_he}
+                      {lang === 'he' ? q.text_he : q.text_en}
                       {q.required && <span className="text-amber-600 mx-2">*</span>}
                     </label>
                     <textarea 

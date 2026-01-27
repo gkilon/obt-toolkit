@@ -55,7 +55,7 @@ export const Dashboard: React.FC = () => {
       const interval = setInterval(() => {
         i = (i + 1) % messages.length;
         setLoadingMessage(messages[i]);
-      }, 3500);
+      }, 3000);
       return () => clearInterval(interval);
     }
   }, [loadingAnalysis, lang]);
@@ -102,7 +102,7 @@ export const Dashboard: React.FC = () => {
       <div className="pb-24">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-8 border-b border-white/5">
           <div className="space-y-1">
-            <span className="text-amber-600 font-bold tracking-widest text-[10px] uppercase block">Elite Performance Workspace</span>
+            <span className="text-amber-600 font-bold tracking-widest text-[10px] uppercase block">{t.workspaceLabel}</span>
             <h1 className="text-4xl font-bold text-white tracking-tight">{t.dashboardTitle}, {user.name}</h1>
             <p className="text-white/40 text-sm">{t.feedbacksCollected}: <span className="text-amber-500 font-bold">{responses?.length || 0}</span></p>
           </div>
@@ -153,10 +153,10 @@ export const Dashboard: React.FC = () => {
                       <div className="text-3xl font-bold text-white">{analysis.goalPrecision.score}/10</div>
                       <div className="text-xs text-white/40">{t.alignmentLevel}</div>
                     </div>
-                    <p className="text-sm text-white/70 leading-relaxed mb-4">{lang === 'he' ? analysis.goalPrecision.critique_he : analysis.goalPrecision.critique_en || analysis.goalPrecision.critique_he}</p>
+                    <p className="text-sm text-white/70 leading-relaxed mb-4">{lang === 'he' ? analysis.goalPrecision.critique_he : analysis.goalPrecision.critique_en}</p>
                     <div className="pt-4 border-t border-white/10">
                       <span className="text-[10px] font-bold text-blue-400 uppercase">{t.powerGoal}:</span>
-                      <p className="text-md font-bold text-white mt-1">"{lang === 'he' ? analysis.goalPrecision.refinedGoal_he : analysis.goalPrecision.refinedGoal_en || analysis.goalPrecision.refinedGoal_he}"</p>
+                      <p className="text-md font-bold text-white mt-1">"{lang === 'he' ? analysis.goalPrecision.refinedGoal_he : analysis.goalPrecision.refinedGoal_en}"</p>
                     </div>
                   </div>
                 )}
@@ -178,7 +178,7 @@ export const Dashboard: React.FC = () => {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
                                 </div>
                                 <h2 className="text-3xl font-bold text-white">{t.generateReport}</h2>
-                                <p className="text-white/40">The AI will analyze all {responses.length} responses to reveal blind spots.</p>
+                                <p className="text-white/40">{lang === 'he' ? `ה-AI ינתח את כל ${responses.length} המשובים כדי לחשוף את הנקודות העיוורות שלך.` : `AI will analyze all ${responses.length} feedbacks to reveal your blind spots.`}</p>
                                 {errorMsg && <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm">{errorMsg}</div>}
                                 <Button onClick={handleAnalyze} className="w-full py-5 text-xl" disabled={responses.length < 1}>{t.generateReport}</Button>
                             </div>
@@ -189,21 +189,21 @@ export const Dashboard: React.FC = () => {
                         <div className="glass-panel p-10 bg-gradient-to-br from-onyx-800 to-onyx-950 border-amber-600/30 relative overflow-hidden">
                             <span className="px-3 py-1 bg-amber-600/20 text-amber-500 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 inline-block">{t.strategicSynthesis}</span>
                             <h2 className="text-amber-500 text-sm font-bold uppercase tracking-[0.2em] mb-4">{t.obtTitle}</h2>
-                            <p className="text-4xl font-bold text-white leading-tight mb-8">{lang === 'he' ? analysis.theOneBigThing_he : analysis.theOneBigThing_en || analysis.theOneBigThing_he}</p>
+                            <p className="text-4xl font-bold text-white leading-tight mb-8">{lang === 'he' ? analysis.theOneBigThing_he : analysis.theOneBigThing_en}</p>
                             <div className="p-6 bg-white/5 rounded-2xl italic text-white/70 text-lg leading-relaxed">
-                              "{lang === 'he' ? analysis.executiveSummary_he : analysis.executiveSummary_en || analysis.executiveSummary_he}"
+                              "{lang === 'he' ? analysis.executiveSummary_he : analysis.executiveSummary_en}"
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                            <div className="glass-panel p-6 space-y-4">
                               <h4 className="text-xs font-bold text-amber-600 uppercase">{t.psychologicalPatterns}</h4>
-                              <p className="text-sm text-white/60 leading-relaxed">{lang === 'he' ? analysis.question2Analysis?.psychologicalPatterns_he : analysis.question2Analysis?.psychologicalPatterns_en || analysis.question2Analysis?.psychologicalPatterns_he}</p>
+                              <p className="text-sm text-white/60 leading-relaxed">{lang === 'he' ? analysis.question2Analysis?.psychologicalPatterns_he : analysis.question2Analysis?.psychologicalPatterns_en}</p>
                            </div>
                            <div className="glass-panel p-6 space-y-4">
                               <h4 className="text-xs font-bold text-amber-600 uppercase">{t.missedOpportunities}</h4>
                               <ul className="space-y-2">
-                                {(lang === 'he' ? analysis.question1Analysis?.opportunities_he : (analysis.question1Analysis?.opportunities_en || analysis.question1Analysis?.opportunities_he) || []).map((o: string, i: number) => (
+                                {(lang === 'he' ? analysis.question1Analysis?.opportunities_he : analysis.question1Analysis?.opportunities_en).map((o: string, i: number) => (
                                   <li key={i} className="text-sm text-white/80 flex gap-2"><span className="text-amber-600">•</span> {o}</li>
                                 ))}
                               </ul>
@@ -234,7 +234,7 @@ export const Dashboard: React.FC = () => {
                               const q = questions.find(qu => qu.id === a.questionId);
                               return (
                                 <div key={a.questionId} className="space-y-2">
-                                  <p className="text-[10px] text-white/20 uppercase font-bold">{lang === 'he' ? q?.text_he : q?.text_en || q?.text_he}</p>
+                                  <p className="text-[10px] text-white/20 uppercase font-bold">{lang === 'he' ? q?.text_he : q?.text_en}</p>
                                   <p className="text-white/80 text-sm font-light leading-relaxed">"{a.text}"</p>
                                 </div>
                               );
@@ -250,9 +250,9 @@ export const Dashboard: React.FC = () => {
             <div className="lg:col-span-12 glass-panel p-8 space-y-8">
                 <div className="border-b border-white/5 pb-4">
                   <h2 className="text-xl font-bold text-amber-600">{t.settingsTab}</h2>
-                  <p className="text-xs text-white/30">Admin portal is required for survey modification</p>
+                  <p className="text-xs text-white/30">{lang === 'he' ? 'נדרש חיבור לפורטל הניהול לעריכת מבנה השאלון' : 'Admin portal is required for survey modification'}</p>
                 </div>
-                <div className="py-10 text-center text-white/20">Navigate to Admin portal for structure changes</div>
+                <div className="py-10 text-center text-white/20">{lang === 'he' ? 'עבור לדף הניהול (Admin) לשינויים מבניים בשאלון' : 'Navigate to Admin portal for structure changes'}</div>
             </div>
           )}
         </div>
