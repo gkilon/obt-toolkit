@@ -28,7 +28,6 @@ export const storageService = {
   
   updateUserQuestions: async (userId: string, questions: SurveyQuestion[]) => {
     await firebaseService.updateUserQuestions(userId, questions);
-    // עדכון המשתמש בסשן המקומי
     const current = storageService.getCurrentUser();
     if (current && current.id === userId) {
       localStorage.setItem(USER_KEY, JSON.stringify({ ...current, customQuestions: questions }));
@@ -51,6 +50,12 @@ export const storageService = {
       return user;
     }
     throw new Error("משתמש לא נמצא או סיסמה שגויה.");
+  },
+
+  loginWithGoogle: async (): Promise<User> => {
+    const user = await firebaseService.loginWithGoogle();
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    return user;
   },
 
   registerUser: async (name: string, email: string, password?: string, registrationCode?: string): Promise<User> => {

@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
+import { getAuth, Auth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { FirebaseConfig, User, FeedbackResponse, SurveyQuestion } from "../types";
 
 let app: FirebaseApp | null = null;
@@ -36,6 +36,32 @@ export const firebaseService = {
 
   isInitialized: () => !!db && !!auth,
 
+  // --- Auth & User Operations ---
+  loginWithGoogle: async (): Promise<User> => {
+    if (!auth || !db) throw new Error("Firebase not initialized");
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const fbUser = result.user;
+
+    if (!fbUser.email) throw new Error("No email returned from Google");
+
+    // בדוק אם המשתמש כבר קיים ב-Firestore
+    let user = await firebaseService.findUserByEmail(fbUser.email);
+    
+    if (!user) {
+      // אם משתמש חדש, צור רשומה (כאן אנחנו מאפשרים גוגל ללא קוד רישום כקיצור דרך)
+      user = {
+        id: fbUser.uid,
+        name: fbUser.displayName || "משתמש גוגל",
+        email: fbUser.email,
+        createdAt: Date.now()
+      };
+      await firebaseService.createUser(user);
+    }
+    
+    return user;
+  },
+
   logout: async (): Promise<void> => {
     if (auth) {
       await auth.signOut();
@@ -53,10 +79,10 @@ export const firebaseService = {
     await updateDoc(doc(db, "users", user.id), { password: newPassword });
   },
 
+  // --- Survey Config ---
   getSurveyQuestions: async (userId?: string): Promise<SurveyQuestion[]> => {
     if (!db) return [];
     
-    // 1. ניסיון לשלוף שאלות מותאמות אישית של המשתמש
     if (userId) {
       try {
         const userRef = doc(db, "users", userId);
@@ -65,38 +91,35 @@ export const firebaseService = {
           return userSnap.data().customQuestions as SurveyQuestion[];
         }
       } catch (e) {
-        console.error("Error fetching user custom questions", e);
+        console.error("Error fetching user questions", e);
       }
     }
 
-    // 2. ניסיון לשלוף שאלות גלובליות מהגדרות המערכת
     try {
       const docRef = doc(db, "settings", "survey_config");
       const snap = await getDoc(docRef);
       if (snap.exists() && snap.data().questions) {
         return snap.data().questions as SurveyQuestion[];
       }
+      return [
+        { 
+          id: 'q1', 
+          text_he: 'מהו לדעתך הדבר האחד שהוא/היא צריכים לשנות כדי להגיע לרמה הבאה?', 
+          text_en: 'What is the one thing they should change to reach the next level?', 
+          type: 'goal', 
+          required: true 
+        },
+        { 
+          id: 'q2', 
+          text_he: 'אילו התנהגויות מעכבות אותו/ה כיום?', 
+          text_en: 'Which behaviors currently hinder them?', 
+          type: 'blocker', 
+          required: true 
+        }
+      ];
     } catch (e) {
-      console.error("Error fetching global survey questions", e);
+      return [];
     }
-
-    // 3. ברירת מחדל קשיחה
-    return [
-      { 
-        id: 'q1', 
-        text_he: 'מהו לדעתך הדבר האחד שהוא/היא צריכים לשנות כדי להגיע לרמה הבאה?', 
-        text_en: 'What is the one thing they should change to reach the next level?', 
-        type: 'goal', 
-        required: true 
-      },
-      { 
-        id: 'q2', 
-        text_he: 'אילו התנהגויות מעכבות אותו/ה כיום?', 
-        text_en: 'Which behaviors currently hinder them?', 
-        type: 'blocker', 
-        required: true 
-      }
-    ];
   },
 
   updateSurveyQuestions: async (questions: SurveyQuestion[]): Promise<void> => {
@@ -110,6 +133,7 @@ export const firebaseService = {
     await updateDoc(doc(db, "users", userId), { customQuestions: questions });
   },
 
+  // --- Registration Code ---
   validateRegistrationCode: async (codeToCheck: string): Promise<boolean> => {
     if (!db) return false;
     const configRef = doc(db, "settings", "config");
@@ -124,6 +148,7 @@ export const firebaseService = {
     await setDoc(configRef, { registrationCode: newCode }, { merge: true });
   },
 
+  // --- User Operations ---
   createUser: async (user: User): Promise<void> => {
     if (!db) throw new Error("Database not connected");
     await setDoc(doc(db, "users", user.id), user);
@@ -147,6 +172,7 @@ export const firebaseService = {
     return snap.empty ? null : snap.docs[0].data() as User;
   },
 
+  // --- Response Operations ---
   addResponse: async (response: FeedbackResponse): Promise<void> => {
     if (!db) throw new Error("Database not connected");
     await setDoc(doc(db, "responses", response.id), response);
