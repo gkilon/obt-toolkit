@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { translations } from '../translations';
@@ -10,7 +11,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const t = translations[lang];
 
   useEffect(() => {
-    // Update HTML attributes dynamically
     document.documentElement.dir = t.dir;
     document.documentElement.lang = lang;
     localStorage.setItem('obt_lang', lang);
@@ -19,8 +19,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const toggleLang = () => {
     const nextLang = lang === 'he' ? 'en' : 'he';
     setLang(nextLang);
-    // Instead of reload, we rely on React state. 
-    // We trigger a custom event so other components know the language changed if they aren't children.
     window.dispatchEvent(new CustomEvent('langChange', { detail: nextLang }));
   };
 
@@ -65,13 +63,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </header>
       
       <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-12 relative z-10">
-        {/* Pass the lang to children via standard React patterns if needed, but translations handle it */}
         {children}
       </main>
       
       <footer className="border-t border-onyx-800 bg-onyx-900/80 py-8 relative z-10 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-xs text-onyx-500 uppercase tracking-widest">
-            <p>© 2025 OBT Intelligent Feedback</p>
+            <div className="flex items-center gap-6">
+              <p>© 2025 OBT Intelligent Feedback</p>
+              <Link to="/admin" className="text-amber-600 hover:text-amber-500 font-bold transition-colors">
+                ניהול מערכת (Admin)
+              </Link>
+            </div>
             <p className="mt-2 md:mt-0">Secured & Anonymous</p>
         </div>
       </footer>

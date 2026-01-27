@@ -99,19 +99,16 @@ export const exportToWord = async (
                 bidirectional: true,
                 spacing: { before: 200, after: 100 }
             }),
-            new Paragraph({
+            // Fixed: Iterate through the answers array to display feedback, resolving errors with q1_change/q2_actions
+            ...res.answers.map((ans, aIdx) => new Paragraph({
                 children: [
-                    new TextRun({ text: "1. הדבר לשינוי: ", bold: true }),
-                    new TextRun({ text: res.q1_change })
+                    new TextRun({ text: `${aIdx + 1}. תשובה: `, bold: true }),
+                    new TextRun({ text: ans.text })
                 ],
                 bidirectional: true,
-            }),
+            })),
             new Paragraph({
-                children: [
-                    new TextRun({ text: "2. פעולות סותרות: ", bold: true }),
-                    new TextRun({ text: res.q2_actions })
-                ],
-                bidirectional: true,
+                text: "",
                 spacing: { after: 300 },
                 border: { bottom: { color: "cccccc", space: 1, value: "single", size: 6 } }
             })

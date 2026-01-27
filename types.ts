@@ -9,13 +9,21 @@ export interface User {
 }
 
 export type RelationshipType = 'manager' | 'peer' | 'subordinate' | 'friend' | 'other';
+export type QuestionType = 'goal' | 'blocker' | 'general';
+
+export interface SurveyQuestion {
+  id: string;
+  text_he: string;
+  text_en: string;
+  type: QuestionType;
+  required: boolean;
+}
 
 export interface FeedbackResponse {
   id: string;
   surveyId: string;
   relationship: RelationshipType;
-  q1_change: string;
-  q2_actions: string;
+  answers: { questionId: string; text: string }[];
   timestamp: number;
 }
 
@@ -43,7 +51,6 @@ export interface AnalysisResult {
   question1Analysis: {
     opportunities_he: string[];
     opportunities_en: string[];
-    alignmentLevel?: string;
   };
   question2Analysis: {
     blockers_he: string[];

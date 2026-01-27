@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { AnalysisResult, FeedbackResponse } from "../types";
+import { AnalysisResult, FeedbackResponse, SurveyQuestion } from "../types";
 
 const getClient = () => {
   const apiKey = process.env.API_KEY;
@@ -8,29 +8,38 @@ const getClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: string): Promise<AnalysisResult> => {
+export const analyzeFeedback = async (
+  responses: FeedbackResponse[], 
+  userGoal?: string,
+  questions: SurveyQuestion[] = []
+): Promise<AnalysisResult> => {
   if (responses.length === 0) throw new Error("No responses to analyze");
   
   const ai = getClient();
   
-  const rawData = responses.map(r => ({
+  // Format data for AI: mapping IDs to labels
+  const dataForAI = responses.map(r => ({
       role: r.relationship,
-      q1: r.q1_change,
-      q2: r.q2_actions
+      answers: r.answers.map(a => {
+        const q = questions.find(question => question.id === a.questionId);
+        return {
+          question_text: q?.text_he || 'שאלה',
+          question_type: q?.type || 'general',
+          answer: a.text
+        };
+      })
   }));
 
   const prompt = `
-    משימה: עזור למנהל/ת להבין מה הסביבה אומרת עליו/ה.
+    משימה: ניתוח משוב 360 דינמי.
     מטרה שהציב המנהל: "${userGoal || 'לא הוגדרה'}"
-    משובים גולמיים: ${JSON.stringify(rawData)}
+    שאלות ותשובות שנאספו: ${JSON.stringify(dataForAI)}
     
-    כללים חשובים:
-    1. שפה: עברית פשוטה, חמה, לא מתנשאת. בלי מונחים פסיכולוגיים כבדים.
-    2. תפיסה: הכל בגדר הצעה. המשתמש הוא המומחה לחיים שלו.
-    3. מבנה:
-       - הצעה ל-One Big Thing (OBT) מרכזי.
-       - הצעה ל-OBT חלופי (זווית אחרת לגמרי שאפשר לראות מהנתונים).
-       - הסבר קצר למה המטרה המקורית שלו טובה או איפה היא קצת מפספסת.
+    הנחיות לניתוח:
+    1. זהה את התשובות לשאלות מסוג "goal" כדי להבין אם המטרה שהציב המנהל אכן נתפסת כחשובה.
+    2. זהה את התשובות לשאלות מסוג "blocker" כדי לזקק את הדברים שמעכבים אותו.
+    3. התייחס לשאלות מסוג "general" כמידע משלים לחיזוק התובנות.
+    4. כתוב פשוט, חברי, ומקדם צמיחה. הצג הכל כהצעה.
   `;
 
   try {
@@ -38,7 +47,7 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
       model: 'gemini-3-flash-preview', 
       contents: prompt,
       config: {
-        systemInstruction: `אתה חבר חכם ומלווה צמיחה. התפקיד שלך הוא להגיש את האמת בצורה רכה ומעוררת מחשבה. תמיד תציע שתי דרכים שונות להסתכל על הדברים. השב ב-JSON תקין בלבד.`,
+        systemInstruction: `אתה חבר חכם ומלווה צמיחה. ענה ב-JSON בלבד הכולל את כל השדות המוגדרים בסכימה.`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -101,6 +110,6 @@ export const analyzeFeedback = async (responses: FeedbackResponse[], userGoal?: 
     return JSON.parse(response.text) as AnalysisResult;
   } catch (error) {
     console.error("Gemini Error:", error);
-    throw new Error("משהו לא עבד בניתוח. כדאי לנסות שוב עוד רגע.");
+    throw new Error("משהו לא עבד בניתוח.");
   }
 };
