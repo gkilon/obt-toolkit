@@ -50,8 +50,8 @@ export const Dashboard: React.FC = () => {
       storageService.getResponsesForUser(currentUser.id),
       storageService.getSurveyQuestions(currentUser.id)
     ]).then(([resps, surqs]) => {
-      setResponses(resps);
-      setQuestions(surqs);
+      setResponses(resps || []);
+      setQuestions(surqs || []);
     }).catch(err => {
       console.error("Failed to load dashboard data", err);
     });
@@ -59,7 +59,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (loadingAnalysis) {
-      const messages = lang === 'he' ? ["מקשיב למשובים...", "מזהה דפוסים...", "מזקק תובנות...", "מכין את הדוח..."] : ["Listening to feedback...", "Identifying patterns...", "Synthesizing insights...", "Finalizing report..."];
+      const messages = lang === 'he' ? ["קורא את התשובות...", "מזהה דפוסים...", "מזקק תובנות...", "בגיבוש ה-The One Big Thing..."] : ["Reading responses...", "Identifying patterns...", "Synthesizing insights...", "Formulating The One Big Thing..."];
       let i = 0;
       setLoadingMessage(messages[0]);
       const interval = setInterval(() => {
@@ -116,7 +116,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleAnalyze = async () => {
-    if (responses.length === 0) return;
+    if (!responses || responses.length === 0) return;
     setLoadingAnalysis(true);
     setErrorMsg('');
     try {
@@ -149,7 +149,7 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-1">
             <span className="text-amber-600 font-bold tracking-widest text-[10px] uppercase block">לוח בקרה אישי</span>
             <h1 className="text-4xl font-bold text-white tracking-tight">{t.dashboardTitle}, {user.name}</h1>
-            <p className="text-white/40 text-sm">משובים שהתקבלו: <span className="text-amber-500 font-bold">{responses.length}</span></p>
+            <p className="text-white/40 text-sm">משובים שהתקבלו: <span className="text-amber-500 font-bold">{responses?.length || 0}</span></p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button onClick={copyLink} variant="outline" className="rounded-lg py-2.5">
@@ -173,7 +173,7 @@ export const Dashboard: React.FC = () => {
             onClick={() => setActiveTab('responses')} 
             className={`pb-4 px-2 text-sm font-bold uppercase tracking-widest transition-all ${activeTab === 'responses' ? 'text-amber-600 border-b-2 border-amber-600' : 'text-white/30 hover:text-white/60'}`}
           >
-            משובים ({responses.length})
+            משובים ({responses?.length || 0})
           </button>
           <button 
             onClick={() => setActiveTab('settings')} 
@@ -227,12 +227,12 @@ export const Dashboard: React.FC = () => {
                                 <p className="text-white/40">ה-AI יזקק עבורך את "הדבר האחד" שיעשה את ההבדל.</p>
                                 
                                 {errorMsg && (
-                                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm">
+                                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm animate-in fade-in duration-300">
                                     {errorMsg}
                                   </div>
                                 )}
 
-                                <Button onClick={handleAnalyze} className="w-full py-5 text-xl" disabled={responses.length < 1}>
+                                <Button onClick={handleAnalyze} className="w-full py-5 text-xl" disabled={!responses || responses.length < 1}>
                                     זקק לי את המשוב
                                 </Button>
                             </div>
@@ -243,13 +243,13 @@ export const Dashboard: React.FC = () => {
                         <div className="glass-panel p-10 bg-gradient-to-br from-onyx-800 to-onyx-950 border-amber-600/30">
                             <span className="px-3 py-1 bg-amber-600/20 text-amber-500 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 inline-block">הצעה לכיוון מרכזי</span>
                             <h2 className="text-amber-500 text-sm font-bold uppercase tracking-[0.2em] mb-4">The One Big Thing</h2>
-                            <p className="text-4xl font-bold text-white leading-tight mb-8">{lang === 'he' ? analysis.theOneBigThing_he : analysis.theOneBigThing_en}</p>
-                            <div className="p-6 bg-white/5 rounded-2xl italic text-white/50 text-lg">"{lang === 'he' ? analysis.executiveSummary_he : analysis.executiveSummary_en}"</div>
+                            <p className="text-4xl font-bold text-white leading-tight mb-8">{lang === 'he' ? analysis?.theOneBigThing_he : analysis?.theOneBigThing_en}</p>
+                            <div className="p-6 bg-white/5 rounded-2xl italic text-white/50 text-lg">"{lang === 'he' ? analysis?.executiveSummary_he : analysis?.executiveSummary_en}"</div>
                         </div>
                         
-                        <div className="flex justify-center pt-8">
+                        <div className="flex justify-center pt-8 gap-4">
                           <Button onClick={() => exportToWord(user, analysis, responses)} variant="outline">ייצוא דוח מלא (Word)</Button>
-                          <Button onClick={() => setAnalysis(null)} variant="ghost" className="text-white/20 ml-4">ניתוח מחדש</Button>
+                          <Button onClick={() => setAnalysis(null)} variant="ghost" className="text-white/20">ניתוח מחדש</Button>
                         </div>
                     </div>
                 )}
@@ -260,14 +260,14 @@ export const Dashboard: React.FC = () => {
           {activeTab === 'responses' && (
             <div className="lg:col-span-12">
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {responses.length > 0 ? responses.map(r => (
+                  {responses && responses.length > 0 ? responses.map(r => (
                       <div key={r.id} className="glass-panel p-6 border-white/5 space-y-6 hover:bg-white/[0.02] transition-colors">
                           <div className="flex justify-between items-center pb-4 border-b border-white/5">
                             <span className="text-[10px] text-amber-600 font-bold uppercase tracking-widest">{translations[lang][r.relationship] || r.relationship}</span>
                             <span className="text-[9px] text-white/10">{new Date(r.timestamp).toLocaleDateString('he-IL')}</span>
                           </div>
                           <div className="space-y-6">
-                            {r.answers.map(a => {
+                            {(r.answers || []).map(a => {
                               const q = questions.find(qu => qu.id === a.questionId);
                               return (
                                 <div key={a.questionId} className="space-y-2">
@@ -293,11 +293,11 @@ export const Dashboard: React.FC = () => {
                       <h2 className="text-xl font-bold text-amber-600">עריכת שאלות השאלון</h2>
                       <p className="text-xs text-white/30">כאן תוכל להגדיר מה תרצה לשאול את האנשים שיתנו לך משוב</p>
                     </div>
-                    <span className="text-xs text-white/20 uppercase tracking-widest">שאלות: {questions.length}</span>
+                    <span className="text-xs text-white/20 uppercase tracking-widest">שאלות: {questions?.length || 0}</span>
                   </div>
 
                   <div className="space-y-6">
-                    {questions.map((q, idx) => (
+                    {questions && questions.map((q, idx) => (
                       <div key={q.id} className="p-6 bg-white/5 rounded-xl border border-white/10 space-y-4 hover:border-white/20 transition-all">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">

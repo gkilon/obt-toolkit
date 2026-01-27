@@ -13,22 +13,24 @@ export const analyzeFeedback = async (
   userGoal?: string,
   questions: SurveyQuestion[] = []
 ): Promise<AnalysisResult> => {
-  if (responses.length === 0) throw new Error("לא נמצאו תשובות לניתוח.");
+  if (!responses || responses.length === 0) throw new Error("לא נמצאו תשובות לניתוח.");
   
   const ai = getClient();
   
-  // הכנת המידע ל-AI: מיפוי תשובות לשאלות והצמדת סוג השאלה
-  const dataForAI = responses.map(r => ({
-      relationship: r.relationship,
-      feedback: r.answers.map(a => {
+  // הכנת המידע ל-AI עם הגנות מובנות
+  const dataForAI = responses.filter(r => r && r.answers).map(r => ({
+      relationship: r.relationship || 'unknown',
+      feedback: (r.answers || []).map(a => {
         const q = questions.find(question => question.id === a.questionId);
         return {
           question: q?.text_he || 'שאלה כללית',
           type: q?.type || 'general',
-          answer: a.text
+          answer: a.text || ''
         };
       })
   }));
+
+  if (dataForAI.length === 0) throw new Error("המשובים שנמצאו אינם מכילים תשובות תקינות.");
 
   const prompt = `
     משימה: אתה יועץ פיתוח מנהיגות בכיר. עליך לנתח משוב 360 עבור מנהל.
@@ -38,22 +40,21 @@ export const analyzeFeedback = async (
     ${JSON.stringify(dataForAI, null, 2)}
     
     הנחיות לניתוח:
-    1. קרא את כל התשובות. חפש תבניות שחוזרות על עצמן.
-    2. "The One Big Thing": זהה את השינוי האחד והמשמעותי ביותר (המנוע המרכזי) שישנה את כל התמונה עבור המנהל הזה.
-    3. נתח את הדיוק של המטרה המקורית מול מה שאנשים אומרים בשטח.
-    4. בודד חסמים (Blockers) - התנהגויות ספציפיות שמעכבות אותו.
-    5. בנה תוכנית פעולה של 3 צעדים פרקטיים.
+    1. זהה את ה-"One Big Thing" - השינוי המשמעותי ביותר.
+    2. נתח את הדיוק של המטרה המקורית.
+    3. בודד חסמים (Blockers).
+    4. בנה תוכנית פעולה של 3 צעדים פרקטיים.
     
     חשוב: ענה בעברית רהוטה ומקצועית.
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // שימוש ב-Pro לניתוח עמוק יותר
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
-        systemInstruction: `אתה מומחה לניתוח משוב 360. עליך להחזיר תשובה בפורמט JSON תקין בלבד, על פי הסכימה המדויקת שסופקה. אל תוסיף טקסט לפני או אחרי ה-JSON.`,
-        thinkingConfig: { thinkingBudget: 4000 }, // מאפשר ל-AI "לחשוב" לפני מתן תשובה סופית
+        systemInstruction: `אתה מומחה לניתוח משוב 360. עליך להחזיר תשובה בפורמט JSON תקין בלבד. אל תוסיף טקסט לפני או אחרי ה-JSON.`,
+        thinkingConfig: { thinkingBudget: 4000 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -61,7 +62,7 @@ export const analyzeFeedback = async (
             goalPrecision: {
                 type: Type.OBJECT,
                 properties: {
-                    score: { type: Type.NUMBER, description: "ציון בין 1-10 למידת הדיוק של המטרה המקורית" },
+                    score: { type: Type.NUMBER },
                     critique_he: { type: Type.STRING },
                     critique_en: { type: Type.STRING },
                     refinedGoal_he: { type: Type.STRING },
@@ -112,18 +113,11 @@ export const analyzeFeedback = async (
       },
     });
 
-    if (!response.text) {
-      console.error("Gemini returned empty text response");
-      throw new Error("ה-AI לא הצליח לייצר תשובה. נסה שוב בעוד רגע.");
-    }
-
-    const cleanJson = response.text.trim();
-    return JSON.parse(cleanJson) as AnalysisResult;
+    const text = response.text;
+    if (!text) throw new Error("ה-AI החזיר תשובה ריקה.");
+    return JSON.parse(text.trim()) as AnalysisResult;
   } catch (error: any) {
-    console.error("Gemini Service Detailed Error:", error);
-    if (error.message?.includes("API_KEY")) {
-      throw new Error("מפתח ה-API חסר או לא תקין.");
-    }
-    throw new Error(`תקלה בניתוח הנתונים: ${error.message || "שגיאה לא ידועה"}`);
+    console.error("Gemini Error:", error);
+    throw new Error(error.message || "תקלה בתקשורת עם ה-AI. נסה שנית.");
   }
 };
