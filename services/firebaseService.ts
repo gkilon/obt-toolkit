@@ -8,7 +8,6 @@ import {
   getDocs, 
   query, 
   where,
-  limit,
   updateDoc
 } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
@@ -36,17 +35,13 @@ export const firebaseService = {
 
   isInitialized: () => !!db && !!auth,
 
-  // --- Auth & User Operations ---
   loginWithGoogle: async (): Promise<User> => {
     if (!auth || !db) throw new Error("Firebase not initialized");
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     const fbUser = result.user;
-
     if (!fbUser.email) throw new Error("No email returned from Google");
-
     let user = await firebaseService.findUserByEmail(fbUser.email);
-    
     if (!user) {
       user = {
         id: fbUser.uid,
@@ -56,30 +51,24 @@ export const firebaseService = {
       };
       await firebaseService.createUser(user);
     }
-    
     return user;
   },
 
   logout: async (): Promise<void> => {
-    if (auth) {
-      await auth.signOut();
-    }
+    if (auth) await auth.signOut();
   },
 
   resetPassword: async (email: string, code: string, newPassword: string): Promise<void> => {
     if (!db) throw new Error("Database not connected");
     const valid = await firebaseService.validateRegistrationCode(code);
     if (!valid) throw new Error("קוד רישום שגוי.");
-    
     const user = await firebaseService.findUserByEmail(email);
     if (!user) throw new Error("משתמש לא נמצא.");
-    
     await updateDoc(doc(db, "users", user.id), { password: newPassword });
   },
 
   getSurveyQuestions: async (userId?: string): Promise<SurveyQuestion[]> => {
     if (!db) return [];
-    
     if (userId) {
       try {
         const userRef = doc(db, "users", userId);
@@ -87,58 +76,48 @@ export const firebaseService = {
         if (userSnap.exists() && userSnap.data().customQuestions) {
           return userSnap.data().customQuestions as SurveyQuestion[];
         }
-      } catch (e) {
-        console.error("Error fetching user questions", e);
-      }
+      } catch (e) {}
     }
-
     try {
       const docRef = doc(db, "settings", "survey_config");
       const snap = await getDoc(docRef);
-      if (snap.exists() && snap.data().questions) {
-        return snap.data().questions as SurveyQuestion[];
-      }
+      if (snap.exists() && snap.data().questions) return snap.data().questions;
       return [
         { id: 'q1', text_he: 'מהו לדעתך הדבר האחד שהוא/היא צריכים לשנות כדי להגיע לרמה הבאה?', text_en: 'What is the one thing they should change to reach the next level?', type: 'goal', required: true },
         { id: 'q2', text_he: 'אילו התנהגויות מעכבות אותו/ה כיום?', text_en: 'Which behaviors currently hinder them?', type: 'blocker', required: true }
       ];
-    } catch (e) {
-      return [];
-    }
+    } catch (e) { return []; }
   },
 
   updateSurveyQuestions: async (questions: SurveyQuestion[]): Promise<void> => {
     if (!db) return;
-    const docRef = doc(db, "settings", "survey_config");
-    await setDoc(docRef, { questions }, { merge: true });
+    await setDoc(doc(db, "settings", "survey_config"), { questions }, { merge: true });
   },
 
   updateUserQuestions: async (userId: string, questions: SurveyQuestion[]): Promise<void> => {
-    if (!db) throw new Error("Database disconnected");
+    if (!db) return;
     await updateDoc(doc(db, "users", userId), { customQuestions: questions });
   },
 
   validateRegistrationCode: async (codeToCheck: string): Promise<boolean> => {
     if (!db) return false;
-    const configRef = doc(db, "settings", "config");
-    const docSnap = await getDoc(configRef);
+    const docSnap = await getDoc(doc(db, "settings", "config"));
     const validCode = docSnap.exists() ? docSnap.data().registrationCode : "OBT-VIP";
     return codeToCheck.trim().toUpperCase() === validCode.toUpperCase();
   },
 
   updateRegistrationCode: async (newCode: string): Promise<void> => {
-    if (!db) throw new Error("Database not connected");
-    const configRef = doc(db, "settings", "config");
-    await setDoc(configRef, { registrationCode: newCode }, { merge: true });
+    if (!db) return;
+    await setDoc(doc(db, "settings", "config"), { registrationCode: newCode }, { merge: true });
   },
 
   createUser: async (user: User): Promise<void> => {
-    if (!db) throw new Error("Database not connected");
+    if (!db) return;
     await setDoc(doc(db, "users", user.id), user);
   },
 
   updateUserGoal: async (userId: string, goal: string): Promise<void> => {
-    if (!db) throw new Error("Database disconnected");
+    if (!db) return;
     await updateDoc(doc(db, "users", userId), { userGoal: goal });
   },
 
@@ -156,7 +135,7 @@ export const firebaseService = {
   },
 
   addResponse: async (response: FeedbackResponse): Promise<void> => {
-    if (!db) throw new Error("Database not connected");
+    if (!db) return;
     await setDoc(doc(db, "responses", response.id), response);
   },
 
@@ -169,15 +148,21 @@ export const firebaseService = {
       
       snap.forEach(docSnap => {
         const data = docSnap.data();
-        // הגנה: וודא שהנתונים קיימים ושיש תשובות
-        if (data && data.answers) {
+        if (data) {
+          // מיפוי נתונים ישנים אם קיימים (Backward Compatibility)
+          let finalAnswers = data.answers || [];
+          if (finalAnswers.length === 0) {
+            if (data.q1_change) finalAnswers.push({ questionId: 'q1', text: data.q1_change });
+            if (data.q2_actions) finalAnswers.push({ questionId: 'q2', text: data.q2_actions });
+          }
+          
           results.push({
             ...data,
-            id: docSnap.id // תמיד השתמש ב-ID של המסמך כמזהה הייחודי
+            id: docSnap.id,
+            answers: finalAnswers
           } as FeedbackResponse);
         }
       });
-      
       return results.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     } catch (e) {
       console.error("Error fetching responses:", e);

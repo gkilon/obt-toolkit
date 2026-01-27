@@ -4,7 +4,7 @@ import { AnalysisResult, FeedbackResponse, SurveyQuestion } from "../types";
 
 const getClient = () => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API Key (process.env.API_KEY) missing. Please check your environment variables.");
+  if (!apiKey) throw new Error("API Key missing.");
   return new GoogleGenAI({ apiKey });
 };
 
@@ -13,39 +13,37 @@ export const analyzeFeedback = async (
   userGoal?: string,
   questions: SurveyQuestion[] = []
 ): Promise<AnalysisResult> => {
-  if (!responses || responses.length === 0) throw new Error("לא נמצאו תשובות לניתוח.");
+  if (!responses || responses.length === 0) throw new Error("No responses for analysis.");
   
   const ai = getClient();
-  
-  // הכנת המידע ל-AI עם הגנות מובנות
-  const dataForAI = responses.filter(r => r && r.answers).map(r => ({
-      relationship: r.relationship || 'unknown',
+  const dataForAI = responses.map(r => ({
+      relationship: r.relationship,
       feedback: (r.answers || []).map(a => {
         const q = questions.find(question => question.id === a.questionId);
         return {
-          question: q?.text_he || 'שאלה כללית',
+          question: q?.text_he || 'General',
           type: q?.type || 'general',
           answer: a.text || ''
         };
       })
   }));
 
-  if (dataForAI.length === 0) throw new Error("המשובים שנמצאו אינם מכילים תשובות תקינות.");
-
   const prompt = `
-    משימה: אתה יועץ פיתוח מנהיגות בכיר. עליך לנתח משוב 360 עבור מנהל.
-    המטרה שהמנהל הציב לעצמו: "${userGoal || 'לא הוגדרה מטרה ספציפית'}"
+    ROLE: You are a World-Class Executive Coach and Leadership Strategist (Think McKinsey/HBS style).
+    CONTEXT: You are analyzing 360-degree feedback for a leader.
+    USER'S SELF-DEFINED GOAL: "${userGoal || 'Not specified'}"
     
-    נתוני המשוב (בפורמט JSON):
+    RAW DATA:
     ${JSON.stringify(dataForAI, null, 2)}
     
-    הנחיות לניתוח:
-    1. זהה את ה-"One Big Thing" - השינוי המשמעותי ביותר.
-    2. נתח את הדיוק של המטרה המקורית.
-    3. בודד חסמים (Blockers).
-    4. בנה תוכנית פעולה של 3 צעדים פרקטיים.
+    YOUR MISSION:
+    1. VALIDATE THE GOAL: Is the user's goal actually what they need based on the feedback? Or are they focusing on a symptom instead of the root cause? 
+    2. THE ONE BIG THING: Identify the single most transformative shift (psychological or behavioral) that will unlock their next level of performance.
+    3. BLIND SPOTS: Reveal what others see that the leader is missing.
+    4. ALTERNATIVE GOALS: If their current goal is weak or misaligned, propose a "Power Goal".
+    5. PSYCHOLOGICAL PATTERNS: Identify the underlying internal narratives driving their external blockers.
     
-    חשוב: ענה בעברית רהוטה ומקצועית.
+    OUTPUT: Hebrew (Fluent, Professional, Direct, High-Level).
   `;
 
   try {
@@ -53,8 +51,8 @@ export const analyzeFeedback = async (
       model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
-        systemInstruction: `אתה מומחה לניתוח משוב 360. עליך להחזיר תשובה בפורמט JSON תקין בלבד. אל תוסיף טקסט לפני או אחרי ה-JSON.`,
-        thinkingConfig: { thinkingBudget: 4000 },
+        systemInstruction: "You provide elite executive analysis. You must return ONLY valid JSON matching the schema. No conversational filler. Your analysis must be cutting, deep, and highly actionable.",
+        thinkingConfig: { thinkingBudget: 16000 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -62,27 +60,26 @@ export const analyzeFeedback = async (
             goalPrecision: {
                 type: Type.OBJECT,
                 properties: {
-                    score: { type: Type.NUMBER },
-                    critique_he: { type: Type.STRING },
+                    score: { type: Type.NUMBER, description: "1-10 alignment score" },
+                    critique_he: { type: Type.STRING, description: "Deep analysis of why the goal is/isn't right" },
                     critique_en: { type: Type.STRING },
-                    refinedGoal_he: { type: Type.STRING },
+                    refinedGoal_he: { type: Type.STRING, description: "The upgraded version of the goal" },
                     refinedGoal_en: { type: Type.STRING }
                 },
-                required: ["score", "critique_he", "critique_en", "refinedGoal_he", "refinedGoal_en"]
+                required: ["score", "critique_he", "refinedGoal_he"]
             },
             executiveSummary_he: { type: Type.STRING },
             executiveSummary_en: { type: Type.STRING },
             theOneBigThing_he: { type: Type.STRING },
             theOneBigThing_en: { type: Type.STRING },
-            alternativeOBT_he: { type: Type.STRING },
+            alternativeOBT_he: { type: Type.STRING, description: "If the first OBT isn't the whole story" },
             alternativeOBT_en: { type: Type.STRING },
             question1Analysis: {
                 type: Type.OBJECT,
                 properties: {
                     opportunities_he: { type: Type.ARRAY, items: { type: Type.STRING } },
                     opportunities_en: { type: Type.ARRAY, items: { type: Type.STRING } }
-                },
-                required: ["opportunities_he", "opportunities_en"]
+                }
             },
             question2Analysis: {
                 type: Type.OBJECT,
@@ -91,8 +88,7 @@ export const analyzeFeedback = async (
                     blockers_en: { type: Type.ARRAY, items: { type: Type.STRING } },
                     psychologicalPatterns_he: { type: Type.STRING },
                     psychologicalPatterns_en: { type: Type.STRING }
-                },
-                required: ["blockers_he", "blockers_en", "psychologicalPatterns_he", "psychologicalPatterns_en"]
+                }
             },
             actionPlan: {
                 type: Type.ARRAY,
@@ -103,21 +99,18 @@ export const analyzeFeedback = async (
                         title_en: { type: Type.STRING },
                         content_he: { type: Type.STRING },
                         content_en: { type: Type.STRING }
-                    },
-                    required: ["title_he", "title_en", "content_he", "content_en"]
+                    }
                 }
             }
           },
-          required: ["goalPrecision", "executiveSummary_he", "executiveSummary_en", "theOneBigThing_he", "theOneBigThing_en", "alternativeOBT_he", "alternativeOBT_en", "question1Analysis", "question2Analysis", "actionPlan"],
+          required: ["goalPrecision", "executiveSummary_he", "theOneBigThing_he", "question1Analysis", "question2Analysis", "actionPlan"],
         },
       },
     });
 
-    const text = response.text;
-    if (!text) throw new Error("ה-AI החזיר תשובה ריקה.");
-    return JSON.parse(text.trim()) as AnalysisResult;
+    return JSON.parse(response.text.trim()) as AnalysisResult;
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    throw new Error(error.message || "תקלה בתקשורת עם ה-AI. נסה שנית.");
+    throw new Error("כשל בניתוח הנתונים. וודא שיש מספיק משובים איכותיים.");
   }
 };
