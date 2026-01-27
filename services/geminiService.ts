@@ -37,13 +37,13 @@ export const analyzeFeedback = async (
     ${JSON.stringify(dataForAI, null, 2)}
     
     YOUR MISSION:
-    1. VALIDATE THE GOAL: Is the user's goal actually what they need based on the feedback? Or are they focusing on a symptom instead of the root cause? 
-    2. THE ONE BIG THING: Identify the single most transformative shift (psychological or behavioral) that will unlock their next level of performance.
+    1. VALIDATE THE GOAL: Is the user's goal actually what they need based on the feedback?
+    2. THE ONE BIG THING: Identify the single most transformative shift that will unlock their next level.
     3. BLIND SPOTS: Reveal what others see that the leader is missing.
-    4. ALTERNATIVE GOALS: If their current goal is weak or misaligned, propose a "Power Goal".
-    5. PSYCHOLOGICAL PATTERNS: Identify the underlying internal narratives driving their external blockers.
+    4. ALTERNATIVE GOALS: Propose a "Power Goal" if the current one is misaligned.
+    5. PSYCHOLOGICAL PATTERNS: Identify underlying narratives.
     
-    OUTPUT: Hebrew (Fluent, Professional, Direct, High-Level).
+    OUTPUT: Hebrew (Professional Elite style).
   `;
 
   try {
@@ -51,8 +51,8 @@ export const analyzeFeedback = async (
       model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
-        systemInstruction: "You provide elite executive analysis. You must return ONLY valid JSON matching the schema. No conversational filler. Your analysis must be cutting, deep, and highly actionable.",
-        thinkingConfig: { thinkingBudget: 16000 },
+        systemInstruction: "You provide elite executive analysis. You must return ONLY valid JSON matching the schema.",
+        thinkingConfig: { thinkingBudget: 4000 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -60,10 +60,10 @@ export const analyzeFeedback = async (
             goalPrecision: {
                 type: Type.OBJECT,
                 properties: {
-                    score: { type: Type.NUMBER, description: "1-10 alignment score" },
-                    critique_he: { type: Type.STRING, description: "Deep analysis of why the goal is/isn't right" },
+                    score: { type: Type.NUMBER },
+                    critique_he: { type: Type.STRING },
                     critique_en: { type: Type.STRING },
-                    refinedGoal_he: { type: Type.STRING, description: "The upgraded version of the goal" },
+                    refinedGoal_he: { type: Type.STRING },
                     refinedGoal_en: { type: Type.STRING }
                 },
                 required: ["score", "critique_he", "refinedGoal_he"]
@@ -72,7 +72,7 @@ export const analyzeFeedback = async (
             executiveSummary_en: { type: Type.STRING },
             theOneBigThing_he: { type: Type.STRING },
             theOneBigThing_en: { type: Type.STRING },
-            alternativeOBT_he: { type: Type.STRING, description: "If the first OBT isn't the whole story" },
+            alternativeOBT_he: { type: Type.STRING },
             alternativeOBT_en: { type: Type.STRING },
             question1Analysis: {
                 type: Type.OBJECT,
@@ -111,6 +111,6 @@ export const analyzeFeedback = async (
     return JSON.parse(response.text.trim()) as AnalysisResult;
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    throw new Error("כשל בניתוח הנתונים. וודא שיש מספיק משובים איכותיים.");
+    throw new Error("Analysis failed. Ensure you have high-quality feedback.");
   }
 };
