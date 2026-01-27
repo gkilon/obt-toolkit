@@ -29,27 +29,28 @@ export const analyzeFeedback = async (
   }));
 
   const prompt = `
-    ROLE: You are an Elite Executive Strategy Consultant.
-    TASK: Synthesize 360-degree feedback to find the "One Big Thing" for growth.
+    ROLE: Elite Executive Strategy Consultant.
+    TASK: Analyze 360 feedback and identify the "One Big Thing" (OBT) for professional growth.
     USER GOAL: "${userGoal || 'Not specified'}"
     DATA: ${JSON.stringify(dataForAI)}
     
-    REQUIRED ANALYSIS:
-    1. GOAL VALIDATION: Score 1-10 alignment between their goal and reality. Provide a "Power Goal".
-    2. THE ONE BIG THING: The single psychological or behavioral shift needed.
-    3. BLIND SPOTS: Hidden patterns others see.
-    4. PSYCHOLOGICAL PATTERNS: The internal "narrative" holding them back.
+    ANALYSIS REQUIREMENTS:
+    1. GOAL VALIDATION: Score 1-10 (alignment with feedback). Provide a "Power Goal".
+    2. THE ONE BIG THING: The single most important shift needed.
+    3. PSYCHOLOGICAL PATTERNS: The inner narrative behind the behavior.
+    4. ACTION PLAN: Concrete high-level steps.
     
-    OUTPUT: Valid JSON only. Languages: Provide both Hebrew and English for all fields.
+    OUTPUT: Strict JSON matching the provided schema. Provide both Hebrew and English for all text fields.
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        systemInstruction: "You are a high-level leadership analyst. Return ONLY a JSON object. Be direct, profound, and sharp. Do not include introductory text.",
-        thinkingConfig: { thinkingBudget: 2000 },
+        systemInstruction: "You are a direct, sharp, and elite leadership analyst. Return ONLY the requested JSON. No preamble. No conversational filler.",
+        // Flash models respond much faster with thinkingBudget: 0 for this type of task
+        thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -76,7 +77,8 @@ export const analyzeFeedback = async (
                 properties: {
                     opportunities_he: { type: Type.ARRAY, items: { type: Type.STRING } },
                     opportunities_en: { type: Type.ARRAY, items: { type: Type.STRING } }
-                }
+                },
+                required: ["opportunities_he", "opportunities_en"]
             },
             question2Analysis: {
                 type: Type.OBJECT,
@@ -85,7 +87,8 @@ export const analyzeFeedback = async (
                     blockers_en: { type: Type.ARRAY, items: { type: Type.STRING } },
                     psychologicalPatterns_he: { type: Type.STRING },
                     psychologicalPatterns_en: { type: Type.STRING }
-                }
+                },
+                required: ["blockers_he", "blockers_en", "psychologicalPatterns_he", "psychologicalPatterns_en"]
             },
             actionPlan: {
                 type: Type.ARRAY,
@@ -96,7 +99,8 @@ export const analyzeFeedback = async (
                         title_en: { type: Type.STRING },
                         content_he: { type: Type.STRING },
                         content_en: { type: Type.STRING }
-                    }
+                    },
+                    required: ["title_he", "title_en", "content_he", "content_en"]
                 }
             }
           },
@@ -108,6 +112,6 @@ export const analyzeFeedback = async (
     return JSON.parse(response.text.trim()) as AnalysisResult;
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    throw new Error("Analysis failed. Please try again with more data.");
+    throw new Error("Analysis process timed out or failed. Please try again.");
   }
 };

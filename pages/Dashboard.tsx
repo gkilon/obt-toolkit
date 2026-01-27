@@ -48,14 +48,14 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     if (loadingAnalysis) {
       const messages = lang === 'he' ? 
-        ["מנתח דפוסים פסיכולוגיים...", "מתקף את מטרת הצמיחה שלך...", "מזקק תובנות אסטרטגיות...", "מנסח את ה-The One Big Thing..."] : 
-        ["Analyzing psychological patterns...", "Validating your growth goal...", "Synthesizing strategic insights...", "Formulating The One Big Thing..."];
+        ["מזקק תובנות אסטרטגיות...", "מתקף את המטרה...", "מנסח את ה-OBT...", "כמעט מוכן..."] : 
+        ["Synthesizing insights...", "Validating goal...", "Formulating OBT...", "Almost ready..."];
       let i = 0;
       setLoadingMessage(messages[0]);
       const interval = setInterval(() => {
         i = (i + 1) % messages.length;
         setLoadingMessage(messages[i]);
-      }, 3000);
+      }, 2000);
       return () => clearInterval(interval);
     }
   }, [loadingAnalysis, lang]);
