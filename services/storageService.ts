@@ -23,8 +23,17 @@ export const storageService = {
 
   isCloudEnabled: () => firebaseService.isInitialized(),
 
-  getSurveyQuestions: async () => firebaseService.getSurveyQuestions(),
+  getSurveyQuestions: async (userId?: string) => firebaseService.getSurveyQuestions(userId),
   updateSurveyQuestions: async (questions: SurveyQuestion[]) => firebaseService.updateSurveyQuestions(questions),
+  
+  updateUserQuestions: async (userId: string, questions: SurveyQuestion[]) => {
+    await firebaseService.updateUserQuestions(userId, questions);
+    // עדכון המשתמש בסשן המקומי
+    const current = storageService.getCurrentUser();
+    if (current && current.id === userId) {
+      localStorage.setItem(USER_KEY, JSON.stringify({ ...current, customQuestions: questions }));
+    }
+  },
 
   getCurrentUser: (): User | null => {
     const stored = localStorage.getItem(USER_KEY);
@@ -33,7 +42,6 @@ export const storageService = {
 
   updateRegistrationCode: async (newCode: string) => firebaseService.updateRegistrationCode(newCode),
 
-  // Added resetPassword method to fix error in Landing.tsx
   resetPassword: async (email: string, code: string, newPassword: string) => firebaseService.resetPassword(email, code, newPassword),
 
   login: async (email: string, password?: string): Promise<User> => {
@@ -56,7 +64,13 @@ export const storageService = {
     return newUser;
   },
 
-  updateUserGoal: async (userId: string, goal: string) => firebaseService.updateUserGoal(userId, goal),
+  updateUserGoal: async (userId: string, goal: string) => {
+    await firebaseService.updateUserGoal(userId, goal);
+    const current = storageService.getCurrentUser();
+    if (current && current.id === userId) {
+      localStorage.setItem(USER_KEY, JSON.stringify({ ...current, userGoal: goal }));
+    }
+  },
 
   logout: async () => {
     await firebaseService.logout();
@@ -78,7 +92,11 @@ export const storageService = {
 
   getUserDataById: async (userId: string) => {
     const user = await firebaseService.getUser(userId);
-    return user ? { name: user.name, userGoal: user.userGoal } : { name: "משתמש" };
+    return user ? { 
+      name: user.name, 
+      userGoal: user.userGoal,
+      customQuestions: user.customQuestions 
+    } : { name: "משתמש" };
   }
 };
 

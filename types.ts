@@ -5,6 +5,7 @@ export interface User {
   email: string;
   password?: string;
   userGoal?: string; 
+  customQuestions?: SurveyQuestion[]; // שאלות מותאמות אישית למשתמש
   createdAt: number;
 }
 

@@ -36,7 +36,6 @@ export const firebaseService = {
 
   isInitialized: () => !!db && !!auth,
 
-  // --- Auth & User Operations ---
   logout: async (): Promise<void> => {
     if (auth) {
       await auth.signOut();
@@ -54,35 +53,50 @@ export const firebaseService = {
     await updateDoc(doc(db, "users", user.id), { password: newPassword });
   },
 
-  // --- Survey Config ---
-  getSurveyQuestions: async (): Promise<SurveyQuestion[]> => {
+  getSurveyQuestions: async (userId?: string): Promise<SurveyQuestion[]> => {
     if (!db) return [];
+    
+    // 1. ניסיון לשלוף שאלות מותאמות אישית של המשתמש
+    if (userId) {
+      try {
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists() && userSnap.data().customQuestions) {
+          return userSnap.data().customQuestions as SurveyQuestion[];
+        }
+      } catch (e) {
+        console.error("Error fetching user custom questions", e);
+      }
+    }
+
+    // 2. ניסיון לשלוף שאלות גלובליות מהגדרות המערכת
     try {
       const docRef = doc(db, "settings", "survey_config");
       const snap = await getDoc(docRef);
       if (snap.exists() && snap.data().questions) {
         return snap.data().questions as SurveyQuestion[];
       }
-      // שאלות ברירת מחדל בדיוק כמו המקוריות
-      return [
-        { 
-          id: 'q1', 
-          text_he: 'האם לדעתך המטרה שהוצגה תקפיץ אותו/ה מדרגה?', 
-          text_en: 'Do you think the proposed goal will take them to the next level?', 
-          type: 'goal', 
-          required: true 
-        },
-        { 
-          id: 'q2', 
-          text_he: 'אילו התנהגויות קיימות כיום מעכבות אותו/ה או סותרות את השינוי הזה?', 
-          text_en: 'Which current behaviors hinder or contradict this change?', 
-          type: 'blocker', 
-          required: true 
-        }
-      ];
     } catch (e) {
-      return [];
+      console.error("Error fetching global survey questions", e);
     }
+
+    // 3. ברירת מחדל קשיחה
+    return [
+      { 
+        id: 'q1', 
+        text_he: 'מהו לדעתך הדבר האחד שהוא/היא צריכים לשנות כדי להגיע לרמה הבאה?', 
+        text_en: 'What is the one thing they should change to reach the next level?', 
+        type: 'goal', 
+        required: true 
+      },
+      { 
+        id: 'q2', 
+        text_he: 'אילו התנהגויות מעכבות אותו/ה כיום?', 
+        text_en: 'Which behaviors currently hinder them?', 
+        type: 'blocker', 
+        required: true 
+      }
+    ];
   },
 
   updateSurveyQuestions: async (questions: SurveyQuestion[]): Promise<void> => {
@@ -91,7 +105,11 @@ export const firebaseService = {
     await setDoc(docRef, { questions }, { merge: true });
   },
 
-  // --- Registration Code ---
+  updateUserQuestions: async (userId: string, questions: SurveyQuestion[]): Promise<void> => {
+    if (!db) throw new Error("Database disconnected");
+    await updateDoc(doc(db, "users", userId), { customQuestions: questions });
+  },
+
   validateRegistrationCode: async (codeToCheck: string): Promise<boolean> => {
     if (!db) return false;
     const configRef = doc(db, "settings", "config");
@@ -106,7 +124,6 @@ export const firebaseService = {
     await setDoc(configRef, { registrationCode: newCode }, { merge: true });
   },
 
-  // --- User Operations ---
   createUser: async (user: User): Promise<void> => {
     if (!db) throw new Error("Database not connected");
     await setDoc(doc(db, "users", user.id), user);
@@ -130,7 +147,6 @@ export const firebaseService = {
     return snap.empty ? null : snap.docs[0].data() as User;
   },
 
-  // --- Response Operations ---
   addResponse: async (response: FeedbackResponse): Promise<void> => {
     if (!db) throw new Error("Database not connected");
     await setDoc(doc(db, "responses", response.id), response);

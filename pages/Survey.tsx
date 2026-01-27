@@ -9,16 +9,8 @@ import { translations } from '../translations';
 
 export const Survey: React.FC = () => {
   const [lang, setLang] = useState<'he' | 'en'>(() => (localStorage.getItem('obt_lang') as 'he' | 'en') || 'he');
-  
-  useEffect(() => {
-    const handleLangChange = (e: any) => setLang(e.detail);
-    window.addEventListener('langChange', handleLangChange);
-    return () => window.removeEventListener('langChange', handleLangChange);
-  }, []);
-
-  const t = translations[lang];
-
   const { userId } = useParams<{ userId: string }>();
+
   const [userName, setUserName] = useState<string>('');
   const [userGoal, setUserGoal] = useState<string>('');
   const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
@@ -30,14 +22,26 @@ export const Survey: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const handleLangChange = (e: any) => setLang(e.detail);
+    window.addEventListener('langChange', handleLangChange);
+    return () => window.removeEventListener('langChange', handleLangChange);
+  }, []);
+
+  const t = translations[lang];
+
+  useEffect(() => {
     if (userId) {
-      Promise.all([
-        storageService.getUserDataById(userId),
-        storageService.getSurveyQuestions()
-      ]).then(([userData, surveyQuestions]) => {
+      storageService.getUserDataById(userId).then(userData => {
         setUserName(userData.name);
         setUserGoal(userData.userGoal || '');
-        setQuestions(surveyQuestions);
+        
+        // שליפת שאלות המשתמש או ברירת מחדל
+        storageService.getSurveyQuestions(userId).then(surveyQuestions => {
+          setQuestions(surveyQuestions);
+          setIsLoading(false);
+        });
+      }).catch(err => {
+        console.error("Failed to load survey", err);
         setIsLoading(false);
       });
     }
@@ -46,16 +50,28 @@ export const Survey: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
-    setIsSending(true);
     
+    // בדיקת שאלות חובה
+    const missing = questions.filter(q => q.required && !answers[q.id]);
+    if (missing.length > 0) {
+      alert(lang === 'he' ? "אנא מלא את כל שאלות החובה" : "Please fill all required questions");
+      return;
+    }
+
+    setIsSending(true);
     const formattedAnswers = Object.entries(answers).map(([qid, text]) => ({
       questionId: qid,
       text
     }));
 
-    await storageService.addResponse(userId, relationship, formattedAnswers);
-    setSubmitted(true);
-    setIsSending(false);
+    try {
+      await storageService.addResponse(userId, relationship, formattedAnswers);
+      setSubmitted(true);
+    } catch (err) {
+      alert("שגיאה בשליחת המשוב");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const updateAnswer = (qid: string, text: string) => {
