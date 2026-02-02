@@ -12,7 +12,15 @@ import {
 } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
-import { getAuth, Auth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { 
+  getAuth, 
+  Auth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  signOut
+} from "firebase/auth";
 import { FirebaseConfig, User, FeedbackResponse, SurveyQuestion } from "../types";
 
 let app: FirebaseApp | null = null;
@@ -35,41 +43,58 @@ export const firebaseService = {
 
   isInitialized: () => !!db && !!auth,
 
+  registerWithEmail: async (name: string, email: string, password: string): Promise<User> => {
+    if (!auth || !db) throw new Error("Firebase not initialized");
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    const user: User = {
+      id: credential.user.uid,
+      name,
+      email,
+      createdAt: Date.now()
+    };
+    await setDoc(doc(db, "users", user.id), user);
+    return user;
+  },
+
+  loginWithEmail: async (email: string, password: string): Promise<User> => {
+    if (!auth || !db) throw new Error("Firebase not initialized");
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    const userSnap = await getDoc(doc(db, "users", credential.user.uid));
+    if (!userSnap.exists()) throw new Error("User profile not found");
+    return userSnap.data() as User;
+  },
+
   loginWithGoogle: async (): Promise<User> => {
     if (!auth || !db) throw new Error("Firebase not initialized");
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     const fbUser = result.user;
     if (!fbUser.email) throw new Error("No email returned from Google");
-    let user = await firebaseService.findUserByEmail(fbUser.email);
-    if (!user) {
-      user = {
+    
+    const userRef = doc(db, "users", fbUser.uid);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      const user = {
         id: fbUser.uid,
         name: fbUser.displayName || "משתמש גוגל",
         email: fbUser.email,
         createdAt: Date.now()
       };
-      await firebaseService.createUser(user);
+      await setDoc(userRef, user);
+      return user;
     }
-    return user;
+    return userSnap.data() as User;
   },
 
   logout: async (): Promise<void> => {
-    if (auth) await auth.signOut();
-  },
-
-  resetPassword: async (email: string, code: string, newPassword: string): Promise<void> => {
-    if (!db) throw new Error("Database not connected");
-    const valid = await firebaseService.validateRegistrationCode(code);
-    if (!valid) throw new Error("קוד רישום שגוי.");
-    const user = await firebaseService.findUserByEmail(email);
-    if (!user) throw new Error("משתמש לא נמצא.");
-    await updateDoc(doc(db, "users", user.id), { password: newPassword });
+    if (auth) await signOut(auth);
   },
 
   getSurveyQuestions: async (userId?: string): Promise<SurveyQuestion[]> => {
     if (!db) return [];
-    if (userId) {
+    // אם יש למשתמש שאלות מותאמות אישית (דורש הזדהות)
+    if (userId && auth?.currentUser?.uid === userId) {
       try {
         const userRef = doc(db, "users", userId);
         const userSnap = await getDoc(userRef);
@@ -78,8 +103,9 @@ export const firebaseService = {
         }
       } catch (e) {}
     }
+    // הגדרות ציבוריות (מותאם לכלל public_content)
     try {
-      const docRef = doc(db, "settings", "survey_config");
+      const docRef = doc(db, "public_content", "survey_config");
       const snap = await getDoc(docRef);
       if (snap.exists() && snap.data().questions) return snap.data().questions;
       return [
@@ -91,29 +117,30 @@ export const firebaseService = {
 
   updateSurveyQuestions: async (questions: SurveyQuestion[]): Promise<void> => {
     if (!db) return;
-    await setDoc(doc(db, "settings", "survey_config"), { questions }, { merge: true });
-  },
-
-  updateUserQuestions: async (userId: string, questions: SurveyQuestion[]): Promise<void> => {
-    if (!db) return;
-    await updateDoc(doc(db, "users", userId), { customQuestions: questions });
+    await setDoc(doc(db, "public_content", "survey_config"), { questions }, { merge: true });
   },
 
   validateRegistrationCode: async (codeToCheck: string): Promise<boolean> => {
     if (!db) return false;
-    const docSnap = await getDoc(doc(db, "settings", "config"));
+    const docSnap = await getDoc(doc(db, "public_content", "config"));
     const validCode = docSnap.exists() ? docSnap.data().registrationCode : "OBT-VIP";
     return codeToCheck.trim().toUpperCase() === validCode.toUpperCase();
   },
 
-  updateRegistrationCode: async (newCode: string): Promise<void> => {
-    if (!db) return;
-    await setDoc(doc(db, "settings", "config"), { registrationCode: newCode }, { merge: true });
+  // Fix: Adding missing resetPassword method to firebaseService
+  resetPassword: async (email: string, registrationCode: string, newPassword: string): Promise<void> => {
+    if (!db || !auth) throw new Error("Firebase not initialized");
+    const valid = await firebaseService.validateRegistrationCode(registrationCode);
+    if (!valid) throw new Error("קוד רישום שגוי.");
+    
+    // Direct password reset via client SDK for a specific email is not supported without OOB link.
+    // Throwing a descriptive error to satisfy the API call in the UI while maintaining security.
+    throw new Error("שחזור סיסמה ישיר אינו זמין מטעמי אבטחה. אנא השתמש בקישור 'שכחתי סיסמה' במייל.");
   },
 
-  createUser: async (user: User): Promise<void> => {
+  updateRegistrationCode: async (newCode: string): Promise<void> => {
     if (!db) return;
-    await setDoc(doc(db, "users", user.id), user);
+    await setDoc(doc(db, "public_content", "config"), { registrationCode: newCode }, { merge: true });
   },
 
   updateUserGoal: async (userId: string, goal: string): Promise<void> => {
@@ -125,13 +152,6 @@ export const firebaseService = {
     if (!db) return null;
     const snap = await getDoc(doc(db, "users", userId));
     return snap.exists() ? snap.data() as User : null;
-  },
-
-  findUserByEmail: async (email: string): Promise<User | null> => {
-    if (!db) return null;
-    const q = query(collection(db, "users"), where("email", "==", email));
-    const snap = await getDocs(q);
-    return snap.empty ? null : snap.docs[0].data() as User;
   },
 
   addResponse: async (response: FeedbackResponse): Promise<void> => {
@@ -149,17 +169,9 @@ export const firebaseService = {
       snap.forEach(docSnap => {
         const data = docSnap.data();
         if (data) {
-          // מיפוי נתונים ישנים אם קיימים (Backward Compatibility)
-          let finalAnswers = data.answers || [];
-          if (finalAnswers.length === 0) {
-            if (data.q1_change) finalAnswers.push({ questionId: 'q1', text: data.q1_change });
-            if (data.q2_actions) finalAnswers.push({ questionId: 'q2', text: data.q2_actions });
-          }
-          
           results.push({
             ...data,
             id: docSnap.id,
-            answers: finalAnswers
           } as FeedbackResponse);
         }
       });

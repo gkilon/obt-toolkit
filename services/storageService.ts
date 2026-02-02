@@ -26,13 +26,9 @@ export const storageService = {
   getSurveyQuestions: async (userId?: string) => firebaseService.getSurveyQuestions(userId),
   updateSurveyQuestions: async (questions: SurveyQuestion[]) => firebaseService.updateSurveyQuestions(questions),
   
-  updateUserQuestions: async (userId: string, questions: SurveyQuestion[]) => {
-    await firebaseService.updateUserQuestions(userId, questions);
-    const current = storageService.getCurrentUser();
-    if (current && current.id === userId) {
-      localStorage.setItem(USER_KEY, JSON.stringify({ ...current, customQuestions: questions }));
-    }
-  },
+  // Fix: Adding missing resetPassword method to storageService
+  resetPassword: async (email: string, registrationCode: string, newPassword: string) => 
+    firebaseService.resetPassword(email, registrationCode, newPassword),
 
   getCurrentUser: (): User | null => {
     const stored = localStorage.getItem(USER_KEY);
@@ -41,15 +37,11 @@ export const storageService = {
 
   updateRegistrationCode: async (newCode: string) => firebaseService.updateRegistrationCode(newCode),
 
-  resetPassword: async (email: string, code: string, newPassword: string) => firebaseService.resetPassword(email, code, newPassword),
-
   login: async (email: string, password?: string): Promise<User> => {
-    const user = await firebaseService.findUserByEmail(email);
-    if (user && user.password === password) {
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
-      return user;
-    }
-    throw new Error("משתמש לא נמצא או סיסמה שגויה.");
+    if (!password) throw new Error("Password required");
+    const user = await firebaseService.loginWithEmail(email, password);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    return user;
   },
 
   loginWithGoogle: async (): Promise<User> => {
@@ -62,9 +54,9 @@ export const storageService = {
     if (!registrationCode) throw new Error("נדרש קוד רישום.");
     const valid = await firebaseService.validateRegistrationCode(registrationCode);
     if (!valid) throw new Error("קוד רישום שגוי.");
+    if (!password) throw new Error("נדרשת סיסמה.");
     
-    const newUser: User = { id: generateId(), name, email, password, createdAt: Date.now() };
-    await firebaseService.createUser(newUser);
+    const newUser = await firebaseService.registerWithEmail(name, email, password);
     localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     return newUser;
   },
