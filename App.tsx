@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
 import { Survey } from './pages/Survey';
 import { Admin } from './pages/Admin';
+import { Privacy } from './pages/Privacy';
 
 const App: React.FC = () => {
   return (
@@ -13,6 +15,7 @@ const App: React.FC = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/survey/:userId" element={<Survey />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/privacy" element={<Privacy />} />
       </Routes>
     </HashRouter>
   );

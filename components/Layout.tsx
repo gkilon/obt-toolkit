@@ -68,10 +68,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       
       <footer className="border-t border-onyx-800 bg-onyx-900/80 py-8 relative z-10 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-xs text-onyx-500 uppercase tracking-widest">
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-6">
               <p>© 2025 OBT Intelligent Feedback</p>
               <Link to="/admin" className="text-amber-600 hover:text-amber-500 font-bold transition-colors">
                 ניהול מערכת (Admin)
+              </Link>
+              <Link to="/privacy" className="text-onyx-400 hover:text-white transition-colors">
+                {t.privacyPolicy}
               </Link>
             </div>
             <p className="mt-2 md:mt-0">Secured & Anonymous</p>
