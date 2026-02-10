@@ -27,6 +27,11 @@ let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
 let auth: Auth | null = null;
 
+const DEFAULT_QUESTIONS: SurveyQuestion[] = [
+  { id: 'q1', text_he: 'מהו לדעתך הדבר האחד שהוא/היא צריכים לשנות כדי להגיע לרמה הבאה?', text_en: 'What is the one thing they should change to reach the next level?', type: 'goal', required: true },
+  { id: 'q2', text_he: 'אילו התנהגויות מעכבות אותו/ה כיום?', text_en: 'Which behaviors currently hinder them?', type: 'blocker', required: true }
+];
+
 export const firebaseService = {
   init: (config: FirebaseConfig) => {
     if (!config.apiKey || config.apiKey.length === 0) return false;
@@ -92,27 +97,34 @@ export const firebaseService = {
   },
 
   getSurveyQuestions: async (userId?: string): Promise<SurveyQuestion[]> => {
-    if (!db) return [];
-    // אם יש למשתמש שאלות מותאמות אישית (דורש הזדהות)
-    if (userId && auth?.currentUser?.uid === userId) {
+    if (!db) return DEFAULT_QUESTIONS;
+    
+    // 1. ניסיון לטעון שאלות ספציפיות למשתמש (אם קיים userId בקישור)
+    if (userId) {
       try {
         const userRef = doc(db, "users", userId);
         const userSnap = await getDoc(userRef);
-        if (userSnap.exists() && userSnap.data().customQuestions) {
+        if (userSnap.exists() && userSnap.data().customQuestions && userSnap.data().customQuestions.length > 0) {
           return userSnap.data().customQuestions as SurveyQuestion[];
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn("Could not fetch user-specific questions, falling back to global/defaults", e);
+      }
     }
-    // הגדרות ציבוריות (מותאם לכלל public_content)
+
+    // 2. ניסיון לטעון הגדרות גלובליות (public_content)
     try {
       const docRef = doc(db, "public_content", "survey_config");
       const snap = await getDoc(docRef);
-      if (snap.exists() && snap.data().questions) return snap.data().questions;
-      return [
-        { id: 'q1', text_he: 'מהו לדעתך הדבר האחד שהוא/היא צריכים לשנות כדי להגיע לרמה הבאה?', text_en: 'What is the one thing they should change to reach the next level?', type: 'goal', required: true },
-        { id: 'q2', text_he: 'אילו התנהגויות מעכבות אותו/ה כיום?', text_en: 'Which behaviors currently hinder them?', type: 'blocker', required: true }
-      ];
-    } catch (e) { return []; }
+      if (snap.exists() && snap.data().questions && snap.data().questions.length > 0) {
+        return snap.data().questions;
+      }
+    } catch (e) {
+      console.warn("Could not fetch global questions, using defaults", e);
+    }
+
+    // 3. חזרה לברירת מחדל קשיחה
+    return DEFAULT_QUESTIONS;
   },
 
   updateSurveyQuestions: async (questions: SurveyQuestion[]): Promise<void> => {
@@ -127,14 +139,10 @@ export const firebaseService = {
     return codeToCheck.trim().toUpperCase() === validCode.toUpperCase();
   },
 
-  // Fix: Adding missing resetPassword method to firebaseService
   resetPassword: async (email: string, registrationCode: string, newPassword: string): Promise<void> => {
     if (!db || !auth) throw new Error("Firebase not initialized");
     const valid = await firebaseService.validateRegistrationCode(registrationCode);
     if (!valid) throw new Error("קוד רישום שגוי.");
-    
-    // Direct password reset via client SDK for a specific email is not supported without OOB link.
-    // Throwing a descriptive error to satisfy the API call in the UI while maintaining security.
     throw new Error("שחזור סיסמה ישיר אינו זמין מטעמי אבטחה. אנא השתמש בקישור 'שכחתי סיסמה' במייל.");
   },
 
@@ -150,8 +158,13 @@ export const firebaseService = {
 
   getUser: async (userId: string): Promise<User | null> => {
     if (!db) return null;
-    const snap = await getDoc(doc(db, "users", userId));
-    return snap.exists() ? snap.data() as User : null;
+    try {
+      const snap = await getDoc(doc(db, "users", userId));
+      return snap.exists() ? snap.data() as User : null;
+    } catch (e) {
+      console.error("Error fetching user data:", e);
+      return null;
+    }
   },
 
   addResponse: async (response: FeedbackResponse): Promise<void> => {

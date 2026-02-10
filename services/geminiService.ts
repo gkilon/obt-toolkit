@@ -2,12 +2,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, FeedbackResponse, SurveyQuestion } from "../types";
 
-const getClient = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API Key missing.");
-  return new GoogleGenAI({ apiKey });
-};
-
 export const analyzeFeedback = async (
   responses: FeedbackResponse[], 
   userGoal?: string,
@@ -15,7 +9,9 @@ export const analyzeFeedback = async (
 ): Promise<AnalysisResult> => {
   if (!responses || responses.length === 0) throw new Error("No responses for analysis.");
   
-  const ai = getClient();
+  // Fix: Initialize GoogleGenAI right before making an API call using the mandatory process.env.API_KEY
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
   const dataForAI = responses.map(r => ({
       relationship: r.relationship,
       feedback: (r.answers || []).map(a => {
@@ -44,13 +40,12 @@ export const analyzeFeedback = async (
   `;
 
   try {
+    // Fix: Upgrade to 'gemini-3-pro-preview' for advanced reasoning/complex text tasks as per guidelines
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         systemInstruction: "You are a direct, sharp, and elite leadership analyst. Return ONLY the requested JSON. No preamble. No conversational filler.",
-        // Flash models respond much faster with thinkingBudget: 0 for this type of task
-        thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -109,6 +104,7 @@ export const analyzeFeedback = async (
       },
     });
 
+    // Fix: Access response.text as a property, not a method, per guidelines
     return JSON.parse(response.text.trim()) as AnalysisResult;
   } catch (error: any) {
     console.error("Gemini Error:", error);

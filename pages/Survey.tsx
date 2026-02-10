@@ -54,7 +54,11 @@ export const Survey: React.FC = () => {
       return;
     }
     setIsSending(true);
-    const formattedAnswers = Object.entries(answers).map(([qid, text]) => ({ questionId: qid, text }));
+    // Fix: Explicitly cast 'text' to string to satisfy TypeScript when mapping Object.entries of a Record
+    const formattedAnswers = Object.entries(answers).map(([qid, text]) => ({ 
+      questionId: qid, 
+      text: text as string 
+    }));
     try {
       await storageService.addResponse(userId, relationship, formattedAnswers);
       setSubmitted(true);
