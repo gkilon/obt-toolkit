@@ -9,44 +9,44 @@ export const analyzeFeedback = async (
 ): Promise<AnalysisResult> => {
   if (!responses || responses.length === 0) throw new Error("No responses for analysis.");
   
-  // Fix: Initialize GoogleGenAI right before making an API call using the mandatory process.env.API_KEY
+  // שימוש ב-GoogleGenAI עם מפתח ה-API מהסביבה
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
+  // הכנת הנתונים למודל בצורה תמציתית כדי לחסוך בטוקנים וזמן עיבוד
   const dataForAI = responses.map(r => ({
-      relationship: r.relationship,
-      feedback: (r.answers || []).map(a => {
+      r: r.relationship,
+      a: (r.answers || []).map(a => {
         const q = questions.find(question => question.id === a.questionId);
         return {
-          question: q?.text_he || 'General',
-          type: q?.type || 'general',
-          answer: a.text || ''
+          q: q?.text_he || 'General',
+          v: a.text || ''
         };
       })
   }));
 
   const prompt = `
-    ROLE: Elite Executive Strategy Consultant.
-    TASK: Analyze 360 feedback and identify the "One Big Thing" (OBT) for professional growth.
-    USER GOAL: "${userGoal || 'Not specified'}"
-    DATA: ${JSON.stringify(dataForAI)}
+    Analyze 360 feedback for growth identification.
+    Target Goal: "${userGoal || 'Professional growth'}"
+    Feedback Data: ${JSON.stringify(dataForAI)}
     
-    ANALYSIS REQUIREMENTS:
-    1. GOAL VALIDATION: Score 1-10 (alignment with feedback). Provide a "Power Goal".
-    2. THE ONE BIG THING: The single most important shift needed.
-    3. PSYCHOLOGICAL PATTERNS: The inner narrative behind the behavior.
-    4. ACTION PLAN: Concrete high-level steps.
+    Instructions:
+    1. Identify the 'One Big Thing' (OBT) - the most critical shift.
+    2. Provide a 'Power Goal' that refines their current goal.
+    3. Analyze psychological patterns and missed opportunities.
     
-    OUTPUT: Strict JSON matching the provided schema. Provide both Hebrew and English for all text fields.
+    Return ONLY JSON matching the schema.
   `;
 
   try {
-    // Fix: Upgrade to 'gemini-3-pro-preview' for advanced reasoning/complex text tasks as per guidelines
+    // מעבר למודל Flash לצורך מהירות תגובה מקסימלית כפי שביקש המשתמש
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        systemInstruction: "You are a direct, sharp, and elite leadership analyst. Return ONLY the requested JSON. No preamble. No conversational filler.",
+        systemInstruction: "You are a professional executive coach. Be sharp, direct, and fast. Output raw JSON ONLY. No markdown formatting.",
         responseMimeType: "application/json",
+        // הגדרת תקציב חשיבה נמוך/אפס לטובת מהירות (Latency)
+        thinkingConfig: { thinkingBudget: 0 },
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -104,10 +104,9 @@ export const analyzeFeedback = async (
       },
     });
 
-    // Fix: Access response.text as a property, not a method, per guidelines
     return JSON.parse(response.text.trim()) as AnalysisResult;
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    throw new Error("Analysis process timed out or failed. Please try again.");
+    throw new Error("הניתוח נכשל או לקח זמן רב מדי. אנא נסה שנית.");
   }
 };
