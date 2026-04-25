@@ -94,11 +94,17 @@ export const Survey: React.FC = () => {
     <Layout>
       <div className="max-w-2xl mx-auto w-full space-y-10">
         <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-white tracking-tight">{userName}</h1>
+            <h1 className="text-5xl font-extrabold text-white tracking-tight mb-2">{userName}</h1>
             {userGoal && (
-              <div className="glass-panel p-6 border-amber-600/20 bg-amber-600/5">
-                <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-2">{t.myGoal}:</p>
-                <p className="italic text-lg text-white/80">"{userGoal}"</p>
+              <div className="glass-panel p-8 border-amber-600/30 bg-amber-600/5 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600/10 blur-3xl -mr-16 -mt-16 rounded-full group-hover:bg-amber-600/20 transition-all duration-700"></div>
+                <p className="text-sm font-bold text-amber-600 uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                  {t.surveyGoalSubtitle.replace('{name}', userName)}
+                </p>
+                <blockquote className="text-2xl font-medium text-white leading-relaxed italic">
+                  "{userGoal}"
+                </blockquote>
               </div>
             )}
         </div>
