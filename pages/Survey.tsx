@@ -93,18 +93,22 @@ export const Survey: React.FC = () => {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto w-full space-y-10">
-        <div className="text-center space-y-4 px-4">
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-2 break-words">{userName}</h1>
-            {userGoal && (
-              <div className="glass-panel p-5 md:p-8 border-amber-600/30 bg-amber-600/5 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-amber-600/10 blur-3xl -mr-12 md:-mr-16 -mt-12 md:-mt-16 rounded-full group-hover:bg-amber-600/20 transition-all duration-700"></div>
-                <p className="text-xs md:text-sm font-bold text-amber-600 uppercase tracking-widest mb-3 md:mb-4 flex items-center justify-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+        <div className="text-center space-y-6 px-4">
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight break-words">{userName}</h1>
+            {userGoal ? (
+              <div className="bg-onyx-800/80 border border-amber-600/30 rounded-2xl p-6 md:p-8 relative overflow-hidden ring-1 ring-white/5">
+                <p className="text-[10px] md:text-xs font-bold text-amber-500 uppercase tracking-[0.2em] mb-4 flex items-center justify-center gap-2">
+                  <span className="w-4 h-px bg-amber-600/30"></span>
                   {t.surveyGoalSubtitle.replace('{name}', userName)}
+                  <span className="w-4 h-px bg-amber-600/30"></span>
                 </p>
-                <blockquote className="text-lg md:text-2xl font-medium text-white leading-relaxed italic break-words">
+                <div className="text-xl md:text-2xl font-medium text-white leading-relaxed italic break-words">
                   "{userGoal}"
-                </blockquote>
+                </div>
+              </div>
+            ) : (
+              <div className="text-white/20 text-xs italic">
+                {/* Debug: Goal is missing or empty if you see this */}
               </div>
             )}
         </div>
