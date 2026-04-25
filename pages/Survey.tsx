@@ -93,16 +93,16 @@ export const Survey: React.FC = () => {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto w-full space-y-10">
-        <div className="text-center space-y-4">
-            <h1 className="text-5xl font-extrabold text-white tracking-tight mb-2">{userName}</h1>
+        <div className="text-center space-y-4 px-4">
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-2 break-words">{userName}</h1>
             {userGoal && (
-              <div className="glass-panel p-8 border-amber-600/30 bg-amber-600/5 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600/10 blur-3xl -mr-16 -mt-16 rounded-full group-hover:bg-amber-600/20 transition-all duration-700"></div>
-                <p className="text-sm font-bold text-amber-600 uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+              <div className="glass-panel p-5 md:p-8 border-amber-600/30 bg-amber-600/5 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-amber-600/10 blur-3xl -mr-12 md:-mr-16 -mt-12 md:-mt-16 rounded-full group-hover:bg-amber-600/20 transition-all duration-700"></div>
+                <p className="text-xs md:text-sm font-bold text-amber-600 uppercase tracking-widest mb-3 md:mb-4 flex items-center justify-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
                   {t.surveyGoalSubtitle.replace('{name}', userName)}
                 </p>
-                <blockquote className="text-2xl font-medium text-white leading-relaxed italic">
+                <blockquote className="text-lg md:text-2xl font-medium text-white leading-relaxed italic break-words">
                   "{userGoal}"
                 </blockquote>
               </div>
