@@ -152,8 +152,8 @@ export const Dashboard: React.FC = () => {
                 ) : (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto">
                         {/* Summary Section */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="md:col-span-1 glass-panel p-6 border-l-4 border-l-amber-600 h-fit">
+                        <div className="grid grid-cols-1 gap-6">
+                            <div className="glass-panel p-6 border-l-4 border-l-amber-600 h-fit">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-xs font-bold text-white/40 uppercase tracking-tighter">{t.originalGoal}</h3>
                                     <button onClick={() => setIsEditingGoal(true)} className="text-amber-600 text-[10px] uppercase hover:underline">{t.edit}</button>
@@ -169,19 +169,6 @@ export const Dashboard: React.FC = () => {
                                 ) : (
                                     <p className="text-md font-light leading-relaxed text-white/90 italic">"{goal || t.goalHint}"</p>
                                 )}
-                            </div>
-                            
-                            <div className="md:col-span-2 glass-panel p-6 border-l-4 border-l-blue-500 bg-blue-500/5 h-fit">
-                                <h3 className="text-xs font-bold text-blue-400 uppercase tracking-tighter mb-4">{t.validationTitle}</h3>
-                                <div className="flex items-center gap-4 mb-3">
-                                  <div className="text-2xl font-bold text-white">{analysis.goalPrecision.score}/10</div>
-                                  <div className="text-xs text-white/40">{t.alignmentLevel}</div>
-                                </div>
-                                <p className="text-xs text-white/70 leading-relaxed mb-4">{lang === 'he' ? analysis.goalPrecision.critique_he : analysis.goalPrecision.critique_en}</p>
-                                <div className="pt-3 border-t border-white/10">
-                                  <span className="text-[9px] font-bold text-blue-400 uppercase">{t.powerGoal}:</span>
-                                  <p className="text-sm font-bold text-white mt-1">"{lang === 'he' ? analysis.goalPrecision.refinedGoal_he : analysis.goalPrecision.refinedGoal_en}"</p>
-                                </div>
                             </div>
                         </div>
 

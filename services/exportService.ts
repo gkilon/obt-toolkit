@@ -36,35 +36,11 @@ export const exportToWord = async (
         // Analysis Section (if exists)
         ...(analysis ? [
             new Paragraph({
-                text: "תיקוף המטרה",
-                heading: HeadingLevel.HEADING_2,
-                bidirectional: true,
-                spacing: { before: 400, after: 200 }
-            }),
-            new Paragraph({
                 children: [
                     new TextRun({ text: `המטרה המקורית: "${user.userGoal || ""}"`, italics: true, rightToLeft: true }),
                 ],
                 bidirectional: true,
-            }),
-            new Paragraph({
-                children: [
-                    new TextRun({ text: `ציון התאמה: ${analysis.goalPrecision.score}/10`, bold: true, rightToLeft: true }),
-                ],
-                bidirectional: true,
-                spacing: { after: 100 }
-            }),
-            new Paragraph({
-                text: analysis.goalPrecision.critique_he,
-                bidirectional: true,
-                spacing: { after: 200 }
-            }),
-            new Paragraph({
-                children: [
-                    new TextRun({ text: `המטרה המשודרגת: "${analysis.goalPrecision.refinedGoal_he}"`, bold: true, color: "0000FF", rightToLeft: true }),
-                ],
-                bidirectional: true,
-                spacing: { after: 400 }
+                spacing: { before: 400, after: 400 }
             }),
 
             // Part 1

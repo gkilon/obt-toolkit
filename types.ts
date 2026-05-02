@@ -36,13 +36,6 @@ export interface DeepInsight {
 }
 
 export interface AnalysisResult {
-  goalPrecision: {
-    score: number;
-    critique_he: string;
-    critique_en: string;
-    refinedGoal_he: string;
-    refinedGoal_en: string;
-  };
   executiveSummary_he: string;
   executiveSummary_en: string;
   theOneBigThing_he: string;
