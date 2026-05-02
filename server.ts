@@ -2,10 +2,35 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
+import { readFileSync } from 'fs';
+import { GoogleGenAI, HarmBlockThreshold, HarmCategory } from '@google/genai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// --- Load .env.local manually (tsx doesn't load it automatically) ---
+function loadEnvFile(filePath: string) {
+  try {
+    const content = readFileSync(filePath, 'utf-8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx === -1) continue;
+      const key = trimmed.substring(0, eqIdx).trim();
+      const value = trimmed.substring(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+      if (key && !process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+    console.log('✅ Loaded environment from', filePath);
+  } catch (e) {
+    // File doesn't exist - that's fine in production
+  }
+}
+
+loadEnvFile(path.join(__dirname, '.env.local'));
+loadEnvFile(path.join(__dirname, '.env'));
 
 async function startServer() {
   const app = express();
@@ -15,12 +40,13 @@ async function startServer() {
 
   // Health check route
   app.get('/api/health', (req, res) => {
-    console.log('Health check requested');
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
       env: process.env.NODE_ENV,
-      port: PORT
+      port: PORT,
+      apiKeyPresent: !!apiKey,
     });
   });
 
@@ -32,20 +58,19 @@ async function startServer() {
     // Check multiple potential environment variable names for flexibility
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
     
-    if (!apiKey) {
-      console.error('SERVER ERROR: Gemini API Key is missing in environment variables.');
+    if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
+      console.error('SERVER ERROR: Gemini API Key is missing or is still a placeholder.');
       return res.status(500).json({ 
-        error: 'מפתח Gemini API חסר בשרת. אנא וודא שהגדרת אותו ב-Settings -> Secrets תחת השם GEMINI_API_KEY.' 
+        error: 'מפתח Gemini API חסר בשרת. אנא הגדר GEMINI_API_KEY בקובץ .env.local' 
       });
     }
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const genAI = new GoogleGenAI({ apiKey });
       
-      // Use gemini-2.0-flash as it's the current cutting-edge model
-      const modelName = 'gemini-2.0-flash'; 
-      
-      // Handle different systemInstruction formats (object with text property or raw string)
+      const modelName = 'gemini-2.0-flash';
+
+      // Handle different systemInstruction formats
       let instruction = "You are a professional assistant.";
       if (typeof systemInstruction === 'string') {
         instruction = systemInstruction;
@@ -53,32 +78,29 @@ async function startServer() {
         instruction = systemInstruction.text;
       }
 
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction: instruction,
-      });
-
       console.log(`Starting generation with model: ${modelName}`);
 
-      const result = await model.generateContentStream({
+      const stream = await genAI.models.generateContentStream({
+        model: modelName,
         contents: prompt,
-        generationConfig: {
-          responseMimeType: "application/json",
+        config: {
+          systemInstruction: instruction,
+          responseMimeType: responseSchema ? "application/json" : "text/plain",
           responseSchema: responseSchema,
+          safetySettings: [
+            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+          ],
         },
-        safetySettings: [
-          { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-        ],
       });
 
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.setHeader('Transfer-Encoding', 'chunked');
 
-      for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
+      for await (const chunk of stream) {
+        const chunkText = chunk.text;
         if (chunkText) {
           res.write(chunkText);
         }
@@ -87,10 +109,13 @@ async function startServer() {
       res.end();
     } catch (error: any) {
       console.error('Backend Gemini Error:', error);
+      if (res.headersSent) {
+        res.end();
+        return;
+      }
       const status = error.status || 500;
       res.status(status).json({ 
         error: error.message || 'AI synthesis failed',
-        details: error.details || []
       });
     }
   });
@@ -111,7 +136,13 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`\n🚀 Server running on http://localhost:${PORT}`);
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+    if (apiKey && apiKey !== 'PLACEHOLDER_API_KEY') {
+      console.log('✅ Gemini API Key loaded successfully.');
+    } else {
+      console.warn('⚠️  WARNING: Gemini API Key is missing. Add it to .env.local');
+    }
   });
 }
 
