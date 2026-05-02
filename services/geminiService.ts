@@ -20,12 +20,12 @@ export const analyzeFeedback = async (
   }));
 
   const prompt = `
-    Analyze 360 feedback for growth identification.
+    Analyze 360 feedback for development.
     Target Goal: "${userGoal || 'Professional growth'}"
     Feedback Data: ${JSON.stringify(dataForAI)}
     
     Instructions:
-   1. PART 1 - CONTRADICTING BEHAVIORS: Identify recurring behaviors that CONTRADICT the Target Goal based on the feedback ("What does the person do or not do that contradicts their goal?"). 
+    1. PART 1 - CONTRADICTING BEHAVIORS: Identify recurring behaviors that CONTRADICT the Target Goal based on the feedback ("What does the person do or not do that contradicts their goal?"). 
        Style: Sharp and factual. DO NOT use improvement language like "needs to", "should", or "develop". For example: instead of "He should be more assertive", write "He does not express his opinion in meetings".
        Present as bullet points of what stood out and a concise summary of the main patterns.
     2. PART 2 - ADDITIONAL GOALS: Based on the feedback, suggest other potential goals the user could set for themselves if relevant.
@@ -40,60 +40,36 @@ export const analyzeFeedback = async (
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt: [{ role: 'user', parts: [{ text: prompt }] }],
-        systemInstruction: { text: "You are a professional executive coach. Focus on identifying behaviors that contradict the user's goal. Focus on 'what characterizes' these behaviors rather than 'why' they happen. Provide synthesis and integration without explanation. Be sharp, direct, and fast. Output raw JSON ONLY. No markdown formatting." },
+        systemInstruction: { text: "You are a professional executive coach. Your analysis must be simple and consists of two parts: 1) Contradicting behaviors (Direct, factual bullet points of what recurring behaviors CONTRADICT the goal - what they do or don't do, without using 'improvement' language + concise summary) and 2) Additional goals derived from feedback. Be sharp, dry, and direct. Output raw JSON ONLY. No markdown formatting." },
         responseSchema: {
           type: "object",
           properties: {
-            goalPrecision: {
-                type: "object",
-                properties: {
-                    score: { type: "number" },
-                    critique_he: { type: "string" },
-                    critique_en: { type: "string" },
-                    refinedGoal_he: { type: "string" },
-                    refinedGoal_en: { type: "string" }
-                },
-                required: ["score", "critique_he", "critique_en", "refinedGoal_he", "refinedGoal_en"]
-            },
-            executiveSummary_he: { type: "string" },
-            executiveSummary_en: { type: "string" },
-            theOneBigThing_he: { type: "string" },
-            theOneBigThing_en: { type: "string" },
-            alternativeOBT_he: { type: "string" },
-            alternativeOBT_en: { type: "string" },
-            question1Analysis: {
-                type: "object",
-                properties: {
-                    opportunities_he: { type: "array", items: { type: "string" } },
-                    opportunities_en: { type: "array", items: { type: "string" } }
-                },
-                required: ["opportunities_he", "opportunities_en"]
-            },
-            question2Analysis: {
-                type: "object",
-                properties: {
-                    blockers_he: { type: "array", items: { type: "string" } },
-                    blockers_en: { type: "array", items: { type: "string" } },
-                    psychologicalPatterns_he: { type: "string" },
-                    psychologicalPatterns_en: { type: "string" }
-                },
-                required: ["blockers_he", "blockers_en", "psychologicalPatterns_he", "psychologicalPatterns_en"]
-            },
-            actionPlan: {
-                type: "array",
-                items: {
-                    type: "object",
-                    properties: {
-                        title_he: { type: "string" },
-                        title_en: { type: "string" },
-                        content_he: { type: "string" },
-                        content_en: { type: "string" }
-                    },
-                    required: ["title_he", "title_en", "content_he", "content_en"]
-                }
-            }
+          executiveSummary_he: { type: "string", description: "SUMMARY of focus points regarding contradicting behaviors" },
+          executiveSummary_en: { type: "string" },
+          theOneBigThing_he: { type: "string", description: "The core contradicting behavior pattern" },
+          theOneBigThing_en: { type: "string" },
+          question1Analysis: {
+              type: "object",
+              description: "CONTRADICTING BEHAVIORS - Bullet points",
+              properties: {
+                  opportunities_he: { type: "array", items: { type: "string" }, description: "Bullet points of recurring contradicting behaviors" },
+                  opportunities_en: { type: "array", items: { type: "string" } }
+              },
+              required: ["opportunities_he", "opportunities_en"]
           },
-          required: ["goalPrecision", "executiveSummary_he", "executiveSummary_en", "theOneBigThing_he", "theOneBigThing_en", "question1Analysis", "question2Analysis", "actionPlan"],
+          question2Analysis: {
+              type: "object",
+              description: "ADDITIONAL GOALS",
+              properties: {
+                  blockers_he: { type: "array", items: { type: "string" }, description: "Suggested additional goals" },
+                  blockers_en: { type: "array", items: { type: "string" } },
+                  psychologicalPatterns_he: { type: "string", description: "Brief synthesis of additional growth areas" },
+                  psychologicalPatterns_en: { type: "string" }
+              },
+              required: ["blockers_he", "blockers_en", "psychologicalPatterns_he", "psychologicalPatterns_en"]
+          }
+        },
+        required: ["executiveSummary_he", "executiveSummary_en", "theOneBigThing_he", "theOneBigThing_en", "question1Analysis", "question2Analysis"],
         }
       })
     });
