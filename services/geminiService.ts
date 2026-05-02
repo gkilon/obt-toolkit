@@ -25,9 +25,10 @@ export const analyzeFeedback = async (
     Feedback Data: ${JSON.stringify(dataForAI)}
     
     Instructions:
-    1. Identify the 'One Big Thing' (OBT) - the most critical shift.
-    2. Provide a 'Power Goal' that refines their current goal.
-    3. Analyze psychological patterns and missed opportunities.
+   1. Identify the 'One Big Thing' (OBT) - focus primarily on behaviors that CONTRADICT the Target Goal.
+    2. Analyze WHAT characterizes these contradicting behaviors (not "why").
+    3. Provide a 'Power Goal' or suggest additional goals as a secondary focus.
+    4. Provide synthesis and integration of patterns without providing explanations for them.
     
     Return ONLY JSON.
   `;
@@ -38,7 +39,7 @@ export const analyzeFeedback = async (
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt: [{ role: 'user', parts: [{ text: prompt }] }],
-        systemInstruction: { text: "You are a professional executive coach. Be sharp, direct, and fast. Output raw JSON ONLY. No markdown formatting." },
+        systemInstruction: { text: "You are a professional executive coach. Focus on identifying behaviors that contradict the user's goal. Focus on 'what characterizes' these behaviors rather than 'why' they happen. Provide synthesis and integration without explanation. Be sharp, direct, and fast. Output raw JSON ONLY. No markdown formatting." },
         responseSchema: {
           type: "object",
           properties: {
