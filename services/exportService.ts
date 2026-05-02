@@ -36,50 +36,112 @@ export const exportToWord = async (
         // Analysis Section (if exists)
         ...(analysis ? [
             new Paragraph({
-                text: "סיכום תובנות (AI Analysis)",
+                text: "תיקוף המטרה",
                 heading: HeadingLevel.HEADING_2,
                 bidirectional: true,
                 spacing: { before: 400, after: 200 }
             }),
             new Paragraph({
                 children: [
-                    new TextRun({ text: "הדבר האחד לפריצת דרך:", bold: true, size: 28, rightToLeft: true }),
+                    new TextRun({ text: `המטרה המקורית: "${user.userGoal || ""}"`, italics: true, rightToLeft: true }),
+                ],
+                bidirectional: true,
+            }),
+            new Paragraph({
+                children: [
+                    new TextRun({ text: `ציון התאמה: ${analysis.goalPrecision.score}/10`, bold: true, rightToLeft: true }),
                 ],
                 bidirectional: true,
                 spacing: { after: 100 }
             }),
-            // Fixed: Using language-specific field executiveSummary_he
+            new Paragraph({
+                text: analysis.goalPrecision.critique_he,
+                bidirectional: true,
+                spacing: { after: 200 }
+            }),
+            new Paragraph({
+                children: [
+                    new TextRun({ text: `המטרה המשודרגת: "${analysis.goalPrecision.refinedGoal_he}"`, bold: true, color: "0000FF", rightToLeft: true }),
+                ],
+                bidirectional: true,
+                spacing: { after: 400 }
+            }),
+
+            // Part 1
+            new Paragraph({
+                text: "חלק 1: התנהגויות סותרות",
+                heading: HeadingLevel.HEADING_2,
+                bidirectional: true,
+                spacing: { before: 400, after: 200 }
+            }),
+            new Paragraph({
+                children: [
+                    new TextRun({ text: "דפוס בולט:", bold: true, size: 28, rightToLeft: true }),
+                ],
+                bidirectional: true,
+                spacing: { after: 100 }
+            }),
+            new Paragraph({
+                text: analysis.theOneBigThing_he,
+                bidirectional: true,
+                spacing: { after: 200 }
+            }),
+            new Paragraph({
+                children: [
+                    new TextRun({ text: "תמצית המיקודים:", bold: true, size: 24, rightToLeft: true }),
+                ],
+                bidirectional: true,
+                spacing: { after: 100 }
+            }),
             new Paragraph({
                 text: analysis.executiveSummary_he,
                 bidirectional: true,
                 spacing: { after: 300 }
             }),
-            // Note: groupPerspectives does not exist on AnalysisResult, 
-            // but question1Analysis and question2Analysis do. 
-            // We'll skip groupPerspectives since it's not in the type definition.
-            
             new Paragraph({
                 children: [
-                    new TextRun({ text: "תכנית פעולה:", bold: true, size: 28, rightToLeft: true }),
+                    new TextRun({ text: "מה חזר על עצמו ובלט:", bold: true, size: 24, rightToLeft: true }),
                 ],
                 bidirectional: true,
-                spacing: { before: 300 }
+                spacing: { after: 100 }
             }),
-            // Fixed: Using language-specific field theOneBigThing_he
-            new Paragraph({
-                text: analysis.theOneBigThing_he,
-                bidirectional: true,
-            }),
-            // Fixed: Using language-specific fields from DeepInsight
-            ...analysis.actionPlan.map(step => new Paragraph({
-                children: [
-                    new TextRun({ text: `${step.title_he}: `, bold: true }),
-                    new TextRun({ text: step.content_he })
-                ],
+            ...(analysis.question1Analysis?.opportunities_he || []).map(o => new Paragraph({
+                text: o,
                 bidirectional: true,
                 bullet: { level: 0 }
             })),
-            new Paragraph({ text: "", spacing: { after: 600 } }) // Spacer
+
+            // Part 2
+            new Paragraph({
+                text: "חלק 2: מטרות נוספות",
+                heading: HeadingLevel.HEADING_2,
+                bidirectional: true,
+                spacing: { before: 400, after: 200 }
+            }),
+            new Paragraph({
+                children: [
+                    new TextRun({ text: "מטרות נוספות שיכולות לסייע:", bold: true, size: 24, rightToLeft: true }),
+                ],
+                bidirectional: true,
+                spacing: { after: 100 }
+            }),
+            ...(analysis.question2Analysis?.blockers_he || []).map(g => new Paragraph({
+                text: g,
+                bidirectional: true,
+                bullet: { level: 0 }
+            })),
+            new Paragraph({
+                children: [
+                    new TextRun({ text: "כיווני התפתחות נוספים:", bold: true, size: 24, rightToLeft: true }),
+                ],
+                bidirectional: true,
+                spacing: { before: 200, after: 100 }
+            }),
+            new Paragraph({
+                text: analysis.question2Analysis?.psychologicalPatterns_he,
+                bidirectional: true,
+                spacing: { after: 600 }
+            })
         ] : []),
 
         // Raw Responses

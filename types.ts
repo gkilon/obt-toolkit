@@ -47,8 +47,8 @@ export interface AnalysisResult {
   executiveSummary_en: string;
   theOneBigThing_he: string;
   theOneBigThing_en: string;
-  alternativeOBT_he: string;
-  alternativeOBT_en: string;
+  alternativeOBT_he?: string;
+  alternativeOBT_en?: string;
   question1Analysis: {
     opportunities_he: string[];
     opportunities_en: string[];
@@ -59,7 +59,7 @@ export interface AnalysisResult {
     psychologicalPatterns_he: string;
     psychologicalPatterns_en: string;
   };
-  actionPlan: DeepInsight[];
+  actionPlan?: DeepInsight[];
 }
 
 export interface FirebaseConfig {

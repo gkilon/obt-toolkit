@@ -48,8 +48,8 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     if (loadingAnalysis) {
       const messages = lang === 'he' ? 
-        ["מזקק תובנות אסטרטגיות...", "מתקף את המטרה...", "מנסח את ה-OBT...", "כמעט מוכן..."] : 
-        ["Synthesizing insights...", "Validating goal...", "Formulating OBT...", "Almost ready..."];
+        ["מנתח התנהגויות סותרות...", "מזהה תבניות חוזרות...", "מגבש מטרות נוספות...", "כמעט מוכן..."] : 
+        ["Analyzing contradicting behaviors...", "Identifying patterns...", "Synthesizing additional goals...", "Almost ready..."];
       let i = 0;
       setLoadingMessage(messages[0]);
       const interval = setInterval(() => {
@@ -127,42 +127,7 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {activeTab === 'overview' && (
             <>
-              <div className="lg:col-span-4 space-y-8">
-                <div className="glass-panel p-6 border-l-4 border-l-amber-600">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xs font-bold text-white/40 uppercase tracking-tighter">{t.originalGoal}</h3>
-                        <button onClick={() => setIsEditingGoal(true)} className="text-amber-600 text-[10px] uppercase hover:underline">{t.edit}</button>
-                    </div>
-                    {isEditingGoal ? (
-                        <div className="space-y-4">
-                            <textarea value={goal} onChange={(e) => setGoal(e.target.value)} className="dark-input w-full text-sm" rows={4} autoFocus />
-                            <div className="flex gap-2">
-                                <Button onClick={handleSaveGoal} className="px-4 py-2 text-xs">{t.save}</Button>
-                                <button onClick={() => setIsEditingGoal(false)} className="text-white/40 text-xs">{t.cancel}</button>
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="text-lg font-light leading-relaxed text-white/90">"{goal || t.goalHint}"</p>
-                    )}
-                </div>
-
-                {analysis && (
-                  <div className="glass-panel p-6 border-l-4 border-l-blue-500 bg-blue-500/5">
-                    <h3 className="text-xs font-bold text-blue-400 uppercase tracking-tighter mb-4">{t.validationTitle}</h3>
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="text-3xl font-bold text-white">{analysis.goalPrecision.score}/10</div>
-                      <div className="text-xs text-white/40">{t.alignmentLevel}</div>
-                    </div>
-                    <p className="text-sm text-white/70 leading-relaxed mb-4">{lang === 'he' ? analysis.goalPrecision.critique_he : analysis.goalPrecision.critique_en}</p>
-                    <div className="pt-4 border-t border-white/10">
-                      <span className="text-[10px] font-bold text-blue-400 uppercase">{t.powerGoal}:</span>
-                      <p className="text-md font-bold text-white mt-1">"{lang === 'he' ? analysis.goalPrecision.refinedGoal_he : analysis.goalPrecision.refinedGoal_en}"</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="lg:col-span-8">
+              <div className="lg:col-span-12">
                 {!analysis ? (
                     <div className="glass-panel min-h-[500px] flex flex-col items-center justify-center text-center p-12">
                         {loadingAnalysis ? (
@@ -178,39 +143,110 @@ export const Dashboard: React.FC = () => {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
                                 </div>
                                 <h2 className="text-3xl font-bold text-white">{t.generateReport}</h2>
-                                <p className="text-white/40">{lang === 'he' ? `ה-AI ינתח את כל ${responses.length} המשובים כדי לחשוף את הנקודות העיוורות שלך.` : `AI will analyze all ${responses.length} feedbacks to reveal your blind spots.`}</p>
+                                <p className="text-white/40">{lang === 'he' ? `ה-AI ינתח את כל ${responses.length} המשובים כדי לחשוף את ההתנהגויות הסותרות.` : `AI will analyze all ${responses.length} feedbacks to reveal contradicting behaviors.`}</p>
                                 {errorMsg && <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm">{errorMsg}</div>}
                                 <Button onClick={handleAnalyze} className="w-full py-5 text-xl" disabled={responses.length < 1}>{t.generateReport}</Button>
                             </div>
                         )}
                     </div>
                 ) : (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="glass-panel p-10 bg-gradient-to-br from-onyx-800 to-onyx-950 border-amber-600/30 relative overflow-hidden">
-                            <span className="px-3 py-1 bg-amber-600/20 text-amber-500 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 inline-block">{t.strategicSynthesis}</span>
-                            <h2 className="text-amber-500 text-sm font-bold uppercase tracking-[0.2em] mb-4">{t.obtTitle}</h2>
-                            <p className="text-4xl font-bold text-white leading-tight mb-8">{lang === 'he' ? analysis.theOneBigThing_he : analysis.theOneBigThing_en}</p>
-                            <div className="p-6 bg-white/5 rounded-2xl italic text-white/70 text-lg leading-relaxed">
-                              "{lang === 'he' ? analysis.executiveSummary_he : analysis.executiveSummary_en}"
+                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto">
+                        {/* Summary Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="md:col-span-1 glass-panel p-6 border-l-4 border-l-amber-600 h-fit">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xs font-bold text-white/40 uppercase tracking-tighter">{t.originalGoal}</h3>
+                                    <button onClick={() => setIsEditingGoal(true)} className="text-amber-600 text-[10px] uppercase hover:underline">{t.edit}</button>
+                                </div>
+                                {isEditingGoal ? (
+                                    <div className="space-y-4">
+                                        <textarea value={goal} onChange={(e) => setGoal(e.target.value)} className="dark-input w-full text-sm" rows={4} autoFocus />
+                                        <div className="flex gap-2">
+                                            <Button onClick={handleSaveGoal} className="px-4 py-2 text-xs">{t.save}</Button>
+                                            <button onClick={() => setIsEditingGoal(false)} className="text-white/40 text-xs">{t.cancel}</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-md font-light leading-relaxed text-white/90 italic">"{goal || t.goalHint}"</p>
+                                )}
+                            </div>
+                            
+                            <div className="md:col-span-2 glass-panel p-6 border-l-4 border-l-blue-500 bg-blue-500/5 h-fit">
+                                <h3 className="text-xs font-bold text-blue-400 uppercase tracking-tighter mb-4">{t.validationTitle}</h3>
+                                <div className="flex items-center gap-4 mb-3">
+                                  <div className="text-2xl font-bold text-white">{analysis.goalPrecision.score}/10</div>
+                                  <div className="text-xs text-white/40">{t.alignmentLevel}</div>
+                                </div>
+                                <p className="text-xs text-white/70 leading-relaxed mb-4">{lang === 'he' ? analysis.goalPrecision.critique_he : analysis.goalPrecision.critique_en}</p>
+                                <div className="pt-3 border-t border-white/10">
+                                  <span className="text-[9px] font-bold text-blue-400 uppercase">{t.powerGoal}:</span>
+                                  <p className="text-sm font-bold text-white mt-1">"{lang === 'he' ? analysis.goalPrecision.refinedGoal_he : analysis.goalPrecision.refinedGoal_en}"</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                           <div className="glass-panel p-6 space-y-4">
-                              <h4 className="text-xs font-bold text-amber-600 uppercase">{t.psychologicalPatterns}</h4>
-                              <p className="text-sm text-white/60 leading-relaxed">{lang === 'he' ? analysis.question2Analysis?.psychologicalPatterns_he : analysis.question2Analysis?.psychologicalPatterns_en}</p>
-                           </div>
-                           <div className="glass-panel p-6 space-y-4">
-                              <h4 className="text-xs font-bold text-amber-600 uppercase">{t.missedOpportunities}</h4>
-                              <ul className="space-y-2">
-                                {(lang === 'he' ? analysis.question1Analysis?.opportunities_he : analysis.question1Analysis?.opportunities_en).map((o: string, i: number) => (
-                                  <li key={i} className="text-sm text-white/80 flex gap-2"><span className="text-amber-600">•</span> {o}</li>
-                                ))}
-                              </ul>
-                           </div>
+                        {/* Part 1: Contradicting Behaviors */}
+                        <div className="glass-panel p-8 bg-gradient-to-br from-onyx-800 to-onyx-950 border-amber-600/30">
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center text-white font-bold">1</span>
+                                <h2 className="text-2xl font-bold text-white uppercase tracking-tight">{t.part1Title}</h2>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <div className="space-y-6">
+                                    <div>
+                                        <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3">{t.part1SummaryLabel}</h4>
+                                        <p className="text-2xl font-bold text-white leading-tight mb-4">{lang === 'he' ? analysis.theOneBigThing_he : analysis.theOneBigThing_en}</p>
+                                        <div className="p-5 bg-white/5 rounded-xl text-white/70 text-md leading-relaxed border border-white/5">
+                                          "{lang === 'he' ? analysis.executiveSummary_he : analysis.executiveSummary_en}"
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3">{t.recurringBehaviorsLabel}</h4>
+                                    <ul className="space-y-4">
+                                        {(lang === 'he' ? analysis.question1Analysis?.opportunities_he : analysis.question1Analysis?.opportunities_en)?.map((o: string, i: number) => (
+                                            <li key={i} className="text-md text-white/90 flex gap-3 p-3 bg-white/5 rounded-lg border border-white/5 hover:border-amber-600/20 transition-colors">
+                                                <span className="text-amber-600 shrink-0 mt-1.5">•</span> 
+                                                <span>{o}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Part 2: Additional Goals */}
+                        <div className="glass-panel p-8 bg-onyx-900/50 border-white/5">
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white font-bold">2</span>
+                                <h2 className="text-2xl font-bold text-white uppercase tracking-tight">{t.part2Title}</h2>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3">{t.suggestedGoalsLabel}</h4>
+                                    <ul className="space-y-3">
+                                        {(lang === 'he' ? analysis.question2Analysis?.blockers_he : analysis.question2Analysis?.blockers_en)?.map((g: string, i: number) => (
+                                            <li key={i} className="text-sm text-white/80 flex gap-2 items-start transition-all">
+                                                <svg className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                                                {g}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3">{t.growthAreasLabel}</h4>
+                                    <p className="text-sm text-white/60 leading-relaxed p-6 bg-white/5 rounded-2xl italic">
+                                        {lang === 'he' ? analysis.question2Analysis?.psychologicalPatterns_he : analysis.question2Analysis?.psychologicalPatterns_en}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div className="flex justify-center pt-8 gap-4">
+                        <div className="flex justify-center pt-8 gap-4 pb-20">
                           <Button onClick={() => exportToWord(user, analysis, responses)} variant="outline">{t.exportWord}</Button>
                           <Button onClick={() => setAnalysis(null)} variant="ghost" className="text-white/20">{t.reAnalyze}</Button>
                         </div>
