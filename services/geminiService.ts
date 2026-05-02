@@ -25,10 +25,12 @@ export const analyzeFeedback = async (
     Feedback Data: ${JSON.stringify(dataForAI)}
     
     Instructions:
-   1. PART 1 - CONTRADICTING BEHAVIORS: Identify recurring behaviors that CONTRADICT the Target Goal. What characterizes them? Present as bullet points of what stood out and a concise summary of the main focus areas.
+   1. PART 1 - CONTRADICTING BEHAVIORS: Identify recurring behaviors that CONTRADICT the Target Goal based on the feedback ("What does the person do or not do that contradicts their goal?"). 
+       Style: Sharp and factual. DO NOT use improvement language like "needs to", "should", or "develop". For example: instead of "He should be more assertive", write "He does not express his opinion in meetings".
+       Present as bullet points of what stood out and a concise summary of the main patterns.
     2. PART 2 - ADDITIONAL GOALS: Based on the feedback, suggest other potential goals the user could set for themselves if relevant.
     
-    Keep it very simple and direct.
+    Style: Sharp, direct, and factual. No coaching jargon.
     Return ONLY JSON.
   `;
 
