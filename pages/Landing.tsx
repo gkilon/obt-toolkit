@@ -10,6 +10,12 @@ export const Landing: React.FC = () => {
   const [lang, setLang] = useState<'he' | 'en'>(() => (localStorage.getItem('obt_lang') as 'he' | 'en') || 'he');
   
   useEffect(() => {
+    // Check backend health
+    fetch('/api/health')
+      .then(r => r.json())
+      .then(data => console.log('Backend Health:', data))
+      .catch(err => console.error('Backend unreachable:', err));
+
     const handleLangChange = (e: any) => setLang(e.detail);
     window.addEventListener('langChange', handleLangChange);
     return () => window.removeEventListener('langChange', handleLangChange);

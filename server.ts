@@ -15,11 +15,18 @@ async function startServer() {
 
   // Health check route
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    console.log('Health check requested');
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV,
+      port: PORT
+    });
   });
 
   // API Route for Gemini
   app.post('/api/gemini', async (req, res) => {
+    console.log('POST /api/gemini received');
     const { prompt, systemInstruction, responseSchema } = req.body;
     
     // Check multiple potential environment variable names for flexibility
@@ -60,10 +67,10 @@ async function startServer() {
           responseSchema: responseSchema,
         },
         safetySettings: [
-          { category: HarmCategory.HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          { category: HarmCategory.DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+          { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+          { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+          { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+          { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
         ],
       });
 

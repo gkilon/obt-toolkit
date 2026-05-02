@@ -90,7 +90,7 @@ export const Survey: React.FC = () => {
     setIsSending(true);
     
     const formattedAnswers = Object.entries(answers).flatMap(([qid, texts]) => 
-      texts.filter(t => t.trim() !== '').map(text => ({ 
+      (texts as string[]).filter(t => t.trim() !== '').map(text => ({ 
         questionId: qid, 
         text: text as string 
       }))

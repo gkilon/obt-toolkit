@@ -110,7 +110,7 @@ export const exportToWord = async (
             new Paragraph({
                 text: "",
                 spacing: { after: 300 },
-                border: { bottom: { color: "cccccc", space: 1, value: "single", size: 6 } }
+                border: { bottom: { color: "cccccc", space: 1, style: "single", size: 6 } }
             })
         ])
       ],
