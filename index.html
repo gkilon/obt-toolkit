@@ -1,133 +1,16 @@
-
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OBT 360 | One Big Thing</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;500;700;800;900&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['"Heebo"', 'sans-serif'],
-              heading: ['"Heebo"', 'sans-serif'],
-            },
-            colors: {
-              onyx: {
-                950: '#0a0d14', // כחול-כהה עמוק כמו בתמונה
-                900: '#11151f',
-                800: '#1a1f2e',
-                700: '#252b3d',
-              },
-              amber: {
-                600: '#c25400', // כתום תפוז עמוק
-                500: '#e66a00', // כתום בהיר יותר ל-hover
-              }
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      body {
-        background-color: #0a0d14;
-        color: #f0f0f0;
-        font-family: 'Heebo', sans-serif;
-        min-height: 100vh;
-        overflow-x: hidden;
-      }
-      
-      /* Noise Texture Overlay */
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.02%22/%3E%3C/svg%3E');
-        pointer-events: none;
-        z-index: 999;
-        opacity: 0.4;
-      }
-
-      .glass-panel {
-        background: rgba(30, 37, 56, 0.4);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 1.25rem;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-      }
-
-      .dark-input {
-        background: rgba(15, 20, 32, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #fff;
-        border-radius: 0.75rem;
-        padding: 1rem 1.25rem;
-        width: 100%;
-        transition: all 0.2s ease;
-      }
-
-      .dark-input:focus {
-        border-color: rgba(230, 106, 0, 0.5);
-        outline: none;
-        background: rgba(15, 20, 32, 0.8);
-      }
-
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 4px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: rgba(194, 84, 0, 0.3);
-      }
-
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #0a0d14;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #1f2535;
-        border-radius: 10px;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
-    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
-    "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "docx": "https://jspm.dev/docx",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+    <link rel="stylesheet" href="/index.css">
+  </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>

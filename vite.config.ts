@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
@@ -7,13 +8,15 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, (process as any).cwd(), '');
 
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      tailwindcss(),
+    ],
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),
       
       // Robust Environment Variable Injection
       // We explicitly try to grab from process.env (Server/CI) first, then the loaded .env file
-      'process.env.API_KEY': JSON.stringify(process.env.API_KEY || env.API_KEY || ''),
       'process.env.FIREBASE_API_KEY': JSON.stringify(process.env.FIREBASE_API_KEY || env.FIREBASE_API_KEY || ''),
       'process.env.FIREBASE_AUTH_DOMAIN': JSON.stringify(process.env.FIREBASE_AUTH_DOMAIN || env.FIREBASE_AUTH_DOMAIN || ''),
       'process.env.FIREBASE_PROJECT_ID': JSON.stringify(process.env.FIREBASE_PROJECT_ID || env.FIREBASE_PROJECT_ID || ''),

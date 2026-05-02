@@ -2,7 +2,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI, HarmBlockThreshold, HarmCategory } from '@google/genai';
+import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,25 +13,46 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Health check route
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // API Route for Gemini
   app.post('/api/gemini', async (req, res) => {
     const { prompt, systemInstruction, responseSchema } = req.body;
     
-    // Always use GEMINI_API_KEY from environment
-    const apiKey = process.env.GEMINI_API_KEY;
+    // Check multiple potential environment variable names for flexibility
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+    
     if (!apiKey) {
-      console.error('SERVER ERROR: GEMINI_API_KEY is missing');
-      return res.status(500).send('API Key configuration error on server');
+      console.error('SERVER ERROR: Gemini API Key is missing in environment variables.');
+      return res.status(500).json({ 
+        error: 'מפתח Gemini API חסר בשרת. אנא וודא שהגדרת אותו ב-Settings -> Secrets תחת השם GEMINI_API_KEY.' 
+      });
     }
 
     try {
-      const genAI = new GoogleGenAI({ apiKey });
+      const genAI = new GoogleGenerativeAI(apiKey);
+      
+      // Use gemini-2.0-flash as it's the current cutting-edge model
+      const modelName = 'gemini-2.0-flash'; 
+      
+      // Handle different systemInstruction formats (object with text property or raw string)
+      let instruction = "You are a professional assistant.";
+      if (typeof systemInstruction === 'string') {
+        instruction = systemInstruction;
+      } else if (systemInstruction && typeof systemInstruction.text === 'string') {
+        instruction = systemInstruction.text;
+      }
+
       const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        systemInstruction: systemInstruction || "You are a professional assistant.",
+        model: modelName,
+        systemInstruction: instruction,
       });
 
-      // Request streaming for better responsiveness as per user's prompt
+      console.log(`Starting generation with model: ${modelName}`);
+
       const result = await model.generateContentStream({
         contents: prompt,
         generationConfig: {
@@ -49,22 +70,21 @@ async function startServer() {
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.setHeader('Transfer-Encoding', 'chunked');
 
-      // Robust iterator implementation
-      const iterator = result.stream || (typeof (result as any)[Symbol.asyncIterator] === 'function' ? result : null);
-
-      if (!iterator) {
-        throw new Error('Failed to initialize streaming iterator');
-      }
-
-      for await (const chunk of iterator) {
+      for await (const chunk of result.stream) {
         const chunkText = chunk.text();
-        res.write(chunkText);
+        if (chunkText) {
+          res.write(chunkText);
+        }
       }
 
       res.end();
     } catch (error: any) {
       console.error('Backend Gemini Error:', error);
-      res.status(500).send(error.message || 'AI synthesis failed');
+      const status = error.status || 500;
+      res.status(status).json({ 
+        error: error.message || 'AI synthesis failed',
+        details: error.details || []
+      });
     }
   });
 

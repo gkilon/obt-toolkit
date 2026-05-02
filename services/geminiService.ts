@@ -97,8 +97,20 @@ export const analyzeFeedback = async (
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'Failed to analyze feedback');
+      let errorMessage = 'Analysis failed';
+      try {
+        const bodyText = await response.text();
+        try {
+          const errorData = JSON.parse(bodyText);
+          errorMessage = errorData.error || bodyText;
+        } catch (e) {
+          errorMessage = bodyText || errorMessage;
+        }
+      } catch (e) {
+        // Fallback
+      }
+      console.error("Backend error detected:", errorMessage);
+      throw new Error(errorMessage);
     }
 
     const reader = response.body?.getReader();
@@ -107,16 +119,31 @@ export const analyzeFeedback = async (
     const decoder = new TextDecoder();
     let fullText = "";
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      fullText += decoder.decode(value, { stream: true });
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+      }
+    } catch (streamError) {
+      console.error("Streaming error:", streamError);
+      throw new Error("שגיאה בהזרמת נתונים מהשרת. אנא נסה שנית.");
     }
 
-    return JSON.parse(fullText.trim()) as AnalysisResult;
+    if (!fullText.trim()) {
+      throw new Error("השרת החזיר תשובה ריקה.");
+    }
+
+    try {
+      return JSON.parse(fullText.trim()) as AnalysisResult;
+    } catch (parseError) {
+      console.error("JSON Parse Error. Full text received:", fullText);
+      throw new Error("הניתוח נכשל בגלל מבנה נתונים לא תקין.");
+    }
   } catch (error: any) {
-    console.error("Gemini Error:", error);
-    throw new Error("הניתוח נכשל או לקח זמן רב מדי. אנא נסה שנית.");
+    console.error("Gemini Service Error:", error);
+    // Be transparent with the user about the error
+    throw error;
   }
 };
 
