@@ -27,7 +27,7 @@ export default async (req: Request) => {
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const modelName = "gemini-2.0-flash";
+    const modelName = "gemini-2.5-flash";
 
     // Handle systemInstruction in different formats
     let instruction = "You are a professional executive coach.";
