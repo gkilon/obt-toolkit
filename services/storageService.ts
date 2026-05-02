@@ -89,11 +89,12 @@ export const storageService = {
 
   getUserDataById: async (userId: string) => {
     const user = await firebaseService.getUser(userId);
-    return user ? { 
+    if (!user) throw new Error("USER_NOT_FOUND");
+    return { 
       name: user.name, 
       userGoal: user.userGoal,
       customQuestions: user.customQuestions 
-    } : { name: "משתמש" };
+    };
   }
 };
 

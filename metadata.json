@@ -1,5 +1,6 @@
 {
   "name": "OBT AI 360",
   "description": "A 360-degree feedback tool focusing on the 'One Big Thing' to change, powered by Gemini AI for synthesis.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }

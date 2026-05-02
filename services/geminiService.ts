@@ -1,5 +1,4 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, FeedbackResponse, SurveyQuestion } from "../types";
 
 export const analyzeFeedback = async (
@@ -9,10 +8,6 @@ export const analyzeFeedback = async (
 ): Promise<AnalysisResult> => {
   if (!responses || responses.length === 0) throw new Error("No responses for analysis.");
   
-  // שימוש ב-GoogleGenAI עם מפתח ה-API מהסביבה
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  // הכנת הנתונים למודל בצורה תמציתית כדי לחסוך בטוקנים וזמן עיבוד
   const dataForAI = responses.map(r => ({
       r: r.relationship,
       a: (r.answers || []).map(a => {
@@ -34,79 +29,96 @@ export const analyzeFeedback = async (
     2. Provide a 'Power Goal' that refines their current goal.
     3. Analyze psychological patterns and missed opportunities.
     
-    Return ONLY JSON matching the schema.
+    Return ONLY JSON.
   `;
 
-  try {
-    // מעבר למודל Flash לצורך מהירות תגובה מקסימלית כפי שביקש המשתמש
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        systemInstruction: "You are a professional executive coach. Be sharp, direct, and fast. Output raw JSON ONLY. No markdown formatting.",
-        responseMimeType: "application/json",
-        // הגדרת תקציב חשיבה נמוך/אפס לטובת מהירות (Latency)
-        thinkingConfig: { thinkingBudget: 0 },
-        responseSchema: {
-          type: Type.OBJECT,
+  const responseSchema = {
+    type: "object",
+    properties: {
+      goalPrecision: {
+          type: "object",
           properties: {
-            goalPrecision: {
-                type: Type.OBJECT,
-                properties: {
-                    score: { type: Type.NUMBER },
-                    critique_he: { type: Type.STRING },
-                    critique_en: { type: Type.STRING },
-                    refinedGoal_he: { type: Type.STRING },
-                    refinedGoal_en: { type: Type.STRING }
-                },
-                required: ["score", "critique_he", "critique_en", "refinedGoal_he", "refinedGoal_en"]
-            },
-            executiveSummary_he: { type: Type.STRING },
-            executiveSummary_en: { type: Type.STRING },
-            theOneBigThing_he: { type: Type.STRING },
-            theOneBigThing_en: { type: Type.STRING },
-            alternativeOBT_he: { type: Type.STRING },
-            alternativeOBT_en: { type: Type.STRING },
-            question1Analysis: {
-                type: Type.OBJECT,
-                properties: {
-                    opportunities_he: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    opportunities_en: { type: Type.ARRAY, items: { type: Type.STRING } }
-                },
-                required: ["opportunities_he", "opportunities_en"]
-            },
-            question2Analysis: {
-                type: Type.OBJECT,
-                properties: {
-                    blockers_he: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    blockers_en: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    psychologicalPatterns_he: { type: Type.STRING },
-                    psychologicalPatterns_en: { type: Type.STRING }
-                },
-                required: ["blockers_he", "blockers_en", "psychologicalPatterns_he", "psychologicalPatterns_en"]
-            },
-            actionPlan: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        title_he: { type: Type.STRING },
-                        title_en: { type: Type.STRING },
-                        content_he: { type: Type.STRING },
-                        content_en: { type: Type.STRING }
-                    },
-                    required: ["title_he", "title_en", "content_he", "content_en"]
-                }
-            }
+              score: { type: "number" },
+              critique_he: { type: "string" },
+              critique_en: { type: "string" },
+              refinedGoal_he: { type: "string" },
+              refinedGoal_en: { type: "string" }
           },
-          required: ["goalPrecision", "executiveSummary_he", "executiveSummary_en", "theOneBigThing_he", "theOneBigThing_en", "question1Analysis", "question2Analysis", "actionPlan"],
-        },
+          required: ["score", "critique_he", "critique_en", "refinedGoal_he", "refinedGoal_en"]
       },
+      executiveSummary_he: { type: "string" },
+      executiveSummary_en: { type: "string" },
+      theOneBigThing_he: { type: "string" },
+      theOneBigThing_en: { type: "string" },
+      alternativeOBT_he: { type: "string" },
+      alternativeOBT_en: { type: "string" },
+      question1Analysis: {
+          type: "object",
+          properties: {
+              opportunities_he: { type: "array", items: { type: "string" } },
+              opportunities_en: { type: "array", items: { type: "string" } }
+          },
+          required: ["opportunities_he", "opportunities_en"]
+      },
+      question2Analysis: {
+          type: "object",
+          properties: {
+              blockers_he: { type: "array", items: { type: "string" } },
+              blockers_en: { type: "array", items: { type: "string" } },
+              psychologicalPatterns_he: { type: "string" },
+              psychologicalPatterns_en: { type: "string" }
+          },
+          required: ["blockers_he", "blockers_en", "psychologicalPatterns_he", "psychologicalPatterns_en"]
+      },
+      actionPlan: {
+          type: "array",
+          items: {
+              type: "object",
+              properties: {
+                  title_he: { type: "string" },
+                  title_en: { type: "string" },
+                  content_he: { type: "string" },
+                  content_en: { type: "string" }
+              },
+              required: ["title_he", "title_en", "content_he", "content_en"]
+          }
+      }
+    },
+    required: ["goalPrecision", "executiveSummary_he", "executiveSummary_en", "theOneBigThing_he", "theOneBigThing_en", "question1Analysis", "question2Analysis", "actionPlan"],
+  };
+
+  try {
+    const response = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: [{ text: prompt }],
+        systemInstruction: { text: "You are a professional executive coach. Be sharp, direct, and fast. Output raw JSON ONLY. No markdown formatting." },
+        responseSchema
+      })
     });
 
-    return JSON.parse(response.text.trim()) as AnalysisResult;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to analyze feedback');
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("Could not initialize stream reader");
+
+    const decoder = new TextDecoder();
+    let fullText = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      fullText += decoder.decode(value, { stream: true });
+    }
+
+    return JSON.parse(fullText.trim()) as AnalysisResult;
   } catch (error: any) {
     console.error("Gemini Error:", error);
     throw new Error("הניתוח נכשל או לקח זמן רב מדי. אנא נסה שנית.");
   }
 };
+
