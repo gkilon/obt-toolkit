@@ -17,43 +17,43 @@ async function startServer() {
   app.post('/api/gemini', async (req, res) => {
     const { prompt, systemInstruction, responseSchema } = req.body;
     
-    const apiKey = process.env.API_KEY;
+    // Always use GEMINI_API_KEY from environment
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'API_KEY is not configured on the server.' });
+      console.error('SERVER ERROR: GEMINI_API_KEY is missing');
+      return res.status(500).send('API Key configuration error on server');
     }
 
     try {
       const genAI = new GoogleGenAI({ apiKey });
-      
-      // Using gemini-2.0-flash as a modern stable alias for the requested 2.5 series context
-      const model = genAI.models.get({
-        model: 'gemini-2.0-flash',
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        systemInstruction: systemInstruction || "You are a professional assistant.",
       });
 
+      // Request streaming for better responsiveness as per user's prompt
       const result = await model.generateContentStream({
         contents: prompt,
-        config: {
-          systemInstruction: systemInstruction || "You are a professional assistant.",
+        generationConfig: {
           responseMimeType: "application/json",
           responseSchema: responseSchema,
-          safetySettings: [
-            { category: HarmCategory.HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-            { category: HarmCategory.SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-            { category: HarmCategory.HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-            { category: HarmCategory.DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          ],
-        }
+        },
+        safetySettings: [
+          { category: HarmCategory.HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+          { category: HarmCategory.SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+          { category: HarmCategory.HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+          { category: HarmCategory.DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        ],
       });
 
-      // Streaming implementation
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.setHeader('Transfer-Encoding', 'chunked');
 
-      // Robust iterator as requested
+      // Robust iterator implementation
       const iterator = result.stream || (typeof (result as any)[Symbol.asyncIterator] === 'function' ? result : null);
 
       if (!iterator) {
-        throw new Error('Could not initialize streaming iterator');
+        throw new Error('Failed to initialize streaming iterator');
       }
 
       for await (const chunk of iterator) {
@@ -64,7 +64,7 @@ async function startServer() {
       res.end();
     } catch (error: any) {
       console.error('Backend Gemini Error:', error);
-      res.status(500).json({ error: error.message || 'AI synthesis failed' });
+      res.status(500).send(error.message || 'AI synthesis failed');
     }
   });
 
