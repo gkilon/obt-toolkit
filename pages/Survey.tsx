@@ -164,22 +164,6 @@ export const Survey: React.FC = () => {
       <div className="max-w-2xl mx-auto w-full space-y-10">
         <div className="text-center space-y-6 px-4">
             <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight break-words">{userName}</h1>
-            {userGoal ? (
-              <div className="bg-onyx-800/80 border border-amber-600/30 rounded-2xl p-6 md:p-8 relative overflow-hidden ring-1 ring-white/5">
-                <p className="text-[10px] md:text-xs font-bold text-amber-500 uppercase tracking-[0.2em] mb-4 flex items-center justify-center gap-2">
-                  <span className="w-4 h-px bg-amber-600/30"></span>
-                  {t.surveyGoalSubtitle.replace('{name}', userName)}
-                  <span className="w-4 h-px bg-amber-600/30"></span>
-                </p>
-                <div className="text-xl md:text-2xl font-medium text-white leading-relaxed italic break-words">
-                  "{userGoal}"
-                </div>
-              </div>
-            ) : (
-              <div className="text-white/20 text-xs italic">
-                {/* Debug: Goal is missing or empty if you see this */}
-              </div>
-            )}
         </div>
 
         <form onSubmit={handleSubmit} className="glass-panel p-10 space-y-10">
@@ -194,9 +178,21 @@ export const Survey: React.FC = () => {
                 </select>
             </div>
             <div className="space-y-12">
-              {questions.map((q) => (
+              {questions.map((q, idx) => (
                 <div key={q.id} className="space-y-4">
-                    <div className="space-y-1">
+                    <div className="space-y-4">
+                      {idx === 0 && userGoal && (
+                        <div className="bg-gradient-to-br from-amber-600/20 to-orange-600/10 border border-amber-500/40 rounded-xl p-5 md:p-6 relative overflow-hidden shadow-2xl mb-6">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/20 rounded-bl-full filter blur-xl"></div>
+                          <p className="text-[11px] font-bold text-amber-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                            {t.surveyGoalSubtitle.replace('{name}', userName)}
+                          </p>
+                          <div className="text-xl md:text-2xl font-bold text-white leading-relaxed">
+                            "{userGoal}"
+                          </div>
+                        </div>
+                      )}
                       <label className="block text-xl font-medium leading-relaxed">
                         {lang === 'he' ? q.text_he : q.text_en}
                         {q.required && <span className="text-amber-600 mx-2">*</span>}

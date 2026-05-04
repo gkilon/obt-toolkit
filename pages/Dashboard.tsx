@@ -164,6 +164,16 @@ export const Dashboard: React.FC = () => {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
                                 </div>
                                 <h2 className="text-3xl font-bold text-white">{t.generateReport}</h2>
+                                
+                                <div className={`bg-white/5 border border-white/10 rounded-xl p-6 mb-6 text-right ${lang === 'he' ? 'dir-rtl' : 'dir-ltr text-left'}`}>
+                                    <h3 className="text-lg font-bold text-amber-500 mb-4">{lang === 'he' ? 'איך זה עובד?' : 'How it works?'}</h3>
+                                    <ol className="list-decimal list-inside space-y-3 text-sm text-white/80">
+                                        <li><strong>{lang === 'he' ? 'הגדר מטרה:' : 'Set Goal:'}</strong> {lang === 'he' ? 'ודא ש"המטרה המקורית שלי" מוגדרת למעלה.' : 'Ensure your original goal is defined above.'}</li>
+                                        <li><strong>{lang === 'he' ? 'שלח קישור:' : 'Send Link:'}</strong> {lang === 'he' ? 'העתק את הקישור מראש העמוד ושלח למשיבים (הם יראו את המטרה ויענו אנונימית).' : 'Copy the link from the top and send to respondents.'}</li>
+                                        <li><strong>{lang === 'he' ? 'זקק התנהגויות:' : 'Distill Behaviors:'}</strong> {lang === 'he' ? 'כשיתקבלו תשובות, לחץ על הכפתור למטה לניתוח ה-AI.' : 'When answers are received, click the button below for AI analysis.'}</li>
+                                    </ol>
+                                </div>
+
                                 <p className="text-white/40">{lang === 'he' ? `ה-AI ינתח את כל ${responses.length} המשובים כדי לחשוף את ההתנהגויות הסותרות.` : `AI will analyze all ${responses.length} feedbacks to reveal contradicting behaviors.`}</p>
                                 {errorMsg && <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm">{errorMsg}</div>}
                                 <Button onClick={handleAnalyze} className="w-full py-5 text-xl" disabled={responses.length < 1}>{t.generateReport}</Button>
