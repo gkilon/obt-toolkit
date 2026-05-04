@@ -127,7 +127,28 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {activeTab === 'overview' && (
             <>
-              <div className="lg:col-span-12">
+              <div className="lg:col-span-12 space-y-10">
+                {/* Goal Section - Always Visible */}
+                <div className="grid grid-cols-1 gap-6 max-w-5xl mx-auto w-full">
+                    <div className="glass-panel p-6 border-l-4 border-l-amber-600 h-fit">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xs font-bold text-white/40 uppercase tracking-tighter">{t.originalGoal}</h3>
+                            <button onClick={() => setIsEditingGoal(true)} className="text-amber-600 text-[10px] uppercase hover:underline">{t.edit}</button>
+                        </div>
+                        {isEditingGoal ? (
+                            <div className="space-y-4">
+                                <textarea value={goal} onChange={(e) => setGoal(e.target.value)} className="dark-input w-full text-sm" rows={4} autoFocus />
+                                <div className="flex gap-2">
+                                    <Button onClick={handleSaveGoal} className="px-4 py-2 text-xs">{t.save}</Button>
+                                    <button onClick={() => setIsEditingGoal(false)} className="text-white/40 text-xs">{t.cancel}</button>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-md font-light leading-relaxed text-white/90 italic">"{goal || t.goalHint}"</p>
+                        )}
+                    </div>
+                </div>
+
                 {!analysis ? (
                     <div className="glass-panel min-h-[500px] flex flex-col items-center justify-center text-center p-12">
                         {loadingAnalysis ? (
@@ -151,27 +172,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 ) : (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto">
-                        {/* Summary Section */}
-                        <div className="grid grid-cols-1 gap-6">
-                            <div className="glass-panel p-6 border-l-4 border-l-amber-600 h-fit">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xs font-bold text-white/40 uppercase tracking-tighter">{t.originalGoal}</h3>
-                                    <button onClick={() => setIsEditingGoal(true)} className="text-amber-600 text-[10px] uppercase hover:underline">{t.edit}</button>
-                                </div>
-                                {isEditingGoal ? (
-                                    <div className="space-y-4">
-                                        <textarea value={goal} onChange={(e) => setGoal(e.target.value)} className="dark-input w-full text-sm" rows={4} autoFocus />
-                                        <div className="flex gap-2">
-                                            <Button onClick={handleSaveGoal} className="px-4 py-2 text-xs">{t.save}</Button>
-                                            <button onClick={() => setIsEditingGoal(false)} className="text-white/40 text-xs">{t.cancel}</button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <p className="text-md font-light leading-relaxed text-white/90 italic">"{goal || t.goalHint}"</p>
-                                )}
-                            </div>
-                        </div>
-
                         {/* Part 1: Contradicting Behaviors */}
                         <div className="glass-panel p-8 bg-gradient-to-br from-onyx-800 to-onyx-950 border-amber-600/30">
                             <div className="flex items-center gap-3 mb-6">

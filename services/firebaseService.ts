@@ -135,8 +135,8 @@ export const firebaseService = {
   validateRegistrationCode: async (codeToCheck: string): Promise<boolean> => {
     if (!db) return false;
     const docSnap = await getDoc(doc(db, "public_content", "config"));
-    const validCode = docSnap.exists() ? docSnap.data().registrationCode : "OBT-VIP";
-    return codeToCheck.trim().toUpperCase() === validCode.toUpperCase();
+    const validCode = docSnap.exists() ? docSnap.data().registrationCode : "obt26";
+    return codeToCheck.trim().toLowerCase() === validCode.toLowerCase();
   },
 
   resetPassword: async (email: string, registrationCode: string, newPassword: string): Promise<void> => {

@@ -37,6 +37,8 @@ export const storageService = {
 
   updateRegistrationCode: async (newCode: string) => firebaseService.updateRegistrationCode(newCode),
 
+  validateRegistrationCode: async (code: string) => firebaseService.validateRegistrationCode(code),
+
   login: async (email: string, password?: string): Promise<User> => {
     if (!password) throw new Error("Password required");
     const user = await firebaseService.loginWithEmail(email, password);
