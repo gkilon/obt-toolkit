@@ -143,12 +143,29 @@ export const Landing: React.FC = () => {
             </div>
         ) : (
             <div className="glass-panel w-full max-w-[460px] p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="mb-10 text-center">
-                    <h2 className="text-2xl font-medium text-white">
-                        {view === 'register' ? t.registerTitle : view === 'reset' ? t.resetTitle : t.loginTitle}
-                    </h2>
-                    <div className="h-px bg-white/10 w-full mt-6"></div>
-                </div>
+                {view !== 'reset' ? (
+                    <div className="flex bg-white/5 rounded-xl p-1.5 mb-10 border border-white/10">
+                        <button 
+                            type="button"
+                            onClick={() => setView('register')}
+                            className={`flex-1 py-3.5 text-sm font-bold rounded-lg transition-all duration-300 ${view === 'register' ? 'bg-amber-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+                        >
+                            {lang === 'he' ? 'משתמש חדש' : 'New User'}
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={() => setView('login')}
+                            className={`flex-1 py-3.5 text-sm font-bold rounded-lg transition-all duration-300 ${view === 'login' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}
+                        >
+                            {lang === 'he' ? 'משתמש קיים' : 'Existing User'}
+                        </button>
+                    </div>
+                ) : (
+                    <div className="mb-10 text-center">
+                        <h2 className="text-2xl font-medium text-white">{t.resetTitle}</h2>
+                        <div className="h-px bg-white/10 w-full mt-6"></div>
+                    </div>
+                )}
 
                 <div className="mb-8">
                   <button 
@@ -204,16 +221,12 @@ export const Landing: React.FC = () => {
                     </Button>
                 </form>
 
-                <div className="mt-10 flex flex-col items-center gap-4 text-sm font-light">
-                    {view === 'login' ? (
-                        <>
-                            <button onClick={() => setView('reset')} className="text-white/40 hover:text-white transition-colors">{t.forgotPassword}</button>
-                            <div className="text-white/40 mt-2">
-                                {t.noAccount} <button onClick={() => setView('register')} className="text-[#e66a00] font-medium hover:underline">{t.registerBtn}</button>
-                            </div>
-                        </>
-                    ) : (
-                        <button onClick={() => setView('login')} className="text-white/40 hover:text-white transition-colors">{t.backToLogin}</button>
+                <div className="mt-8 flex flex-col items-center gap-4 text-sm font-light">
+                    {view === 'login' && (
+                        <button onClick={() => setView('reset')} className="text-white/40 hover:text-white transition-colors underline decoration-white/20 underline-offset-4">{t.forgotPassword}</button>
+                    )}
+                    {view === 'reset' && (
+                        <button onClick={() => setView('login')} className="text-white/40 hover:text-white transition-colors underline decoration-white/20 underline-offset-4">{t.backToLogin}</button>
                     )}
                 </div>
             </div>
